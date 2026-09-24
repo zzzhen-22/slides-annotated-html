@@ -10,13 +10,13 @@
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 34 个文件 ｜ 489 KB ｜ 1 个提交 |
-| 文档 | `README.md`（中文）、`SKILL.md`（410 行 / 27.5 KB，面向 Agent） |
-| **图片资源** | **0 张** —— README 纯文字，陌生人看不到效果 |
-| **示例输入/输出** | **无** —— 想试却手头没有合适的课件 |
-| **依赖清单** | **无** `requirements.txt`（真实依赖：`pymupdf`、`pillow`；可选 `node`） |
-| **CI** | **无** |
-| topics / homepage | 均为空 —— GitHub 搜索里很难被找到 |
+| 仓库 | 39 个文件 ｜ 489 KB ｜ 5 个提交 ｜ `main` 分支 |
+| 文档 | `README.md`（中文）、`SKILL.md`（410 行 / 27.5 KB，面向 Agent）、`TODO.md` |
+| 图片资源 | ✅ **3 张**（`docs/images/`，hero / notes / overview，各约 230 KB） |
+| 示例产物 | ✅ **在线 demo 已上线**（`docs/demo/index.html`，1.18 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/> |
+| 依赖清单 | **无** `requirements.txt`（真实依赖：`pymupdf`、`pillow`；可选 `node`） |
+| CI | **无** |
+| topics | **仍为空** —— GitHub 搜索里很难被找到（homepage 已填好） |
 | 跨平台 | 代码里已有 macOS / Linux 分支，但**从未在真机验证** |
 | 版本号 | 无 tag、无 CHANGELOG |
 
@@ -41,7 +41,7 @@
 > PNG 压缩率变差。UI 截图保持原始像素宽度即可。
 > README 顶部放 hero（逐页对照），特性段落后并排放概述卡与笔记抽屉两张。
 
-### [x] 2. 提供一份可直接打开的示例产物（demo）✅ **已完成（还需一步才能点开）**
+### [x] 2. 提供一份可直接打开的示例产物（demo）✅ **已完成（Pages 已上线，链接可点）**
 **为什么**：截图能看，但摸不到。真正的「啊，这东西有用」发生在**自己点一下目录、划一句话**的时候。
 
 **怎么做**
@@ -145,10 +145,16 @@ what it does / install / quick start / screenshots / limitations / license
 **为什么**：现在 topics 为空，GitHub 搜索 `pdf slides to html` 之类基本找不到。
 这是**成本最低、回报最高**的一条（点几下鼠标）。
 
+> **homepage 已完成**（`https://zzzhen-22.github.io/slides-annotated-html/demo/`），
+> **只剩 topics 待填**。一条 REST 请求即可：
+> ```bash
+> curl -X PUT -H "Authorization: Bearer $T" -H "Accept: application/vnd.github+json" \
+>   https://api.github.com/repos/zzzhen-22/slides-annotated-html/topics \
+>   -d '{"names":["pdf","slides","lecture-notes","katex","offline-first","html","annotation","courseware","python","agent-skill"]}'
+> ```
+
 建议 topics：`pdf` `slides` `lecture-notes` `katex` `offline-first` `html`
 `annotation` `courseware` `python` `agent-skill`
-
-homepage 填 demo 预览地址（配合第 2 条）
 
 **验收**：仓库页右侧出现 topics 标签
 
