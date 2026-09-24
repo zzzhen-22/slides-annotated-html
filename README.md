@@ -96,7 +96,8 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 ├─ references/
 │   ├─ pitfalls.md          ← 踩坑清单（36 条，按「频率 × 隐蔽度」排序）
 │   └─ content-quality.md   ← 讲解内容的质量标准
-└─ vendor/katex/            ← 离线 KaTeX（MIT，见下方致谢）
+├─ vendor/katex/            ← 离线 KaTeX（MIT，见下方致谢）
+└─ TODO.md                  ← 路线图：让它对陌生人更好用的待办清单
 ```
 
 **整个目录可以任意搬迁**：所有脚本都用相对自身位置定位资源，不含任何写死的用户名或安装路径。
