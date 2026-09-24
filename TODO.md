@@ -59,9 +59,9 @@
 > ③ 统一清洗隐私 —— 本机盘符路径（源文件路径里带微信 ID）、第三方个人邮箱。
 > 出厂自检：无 `file:///`、无盘符路径、无 `wxid`、无邮箱；`check_math` 全绿（8 页 / 8 缩略图 / 8 按钮）。
 >
-> **⚠️ 剩下的一步在仓库设置里，不在代码里**：需要把
-> **Settings → Pages → Source 设为「Deploy from a branch」→ `main` → `/docs`**，
-> README 顶部的在线 demo 链接才会生效（当前 `/repos/.../pages` 返回 404 = 未开启）。
+> **✅ Pages 已开启并验证**：来源 `main` / `/docs`，`GET /repos/.../pages` 返回 `status: built`（HTTPS 已强制）。
+> 站点 <https://zzzhen-22.github.io/slides-annotated-html/>，demo 落在 `/demo/`：
+> 实测 **HTTP 200 ｜ 1,238,803 字节 ｜ `text/html; charset=utf-8`**，8 页区块与 191 条公式均在线可用。
 
 ### [ ] 3. 补 `requirements.txt` 和一条最短上手命令
 **为什么**：`kitpath.py` 会提示缺什么，但那要**先跑脚本才知道**。
@@ -207,7 +207,10 @@ homepage 填 demo 预览地址（配合第 2 条）
       *（这一条是做 demo 时实测撞出来的，不是推测。）*
 - [ ] **22.** demo 的生成脚本没进仓库（含作者本机路径与素材位置）。
       若希望 demo 可重建，把它脱敏后放进 `docs/`，参数化成「源项目目录 → 输出 demo」的一步命令
-- [ ] **23.** 开启 Pages 后，把在线 demo 地址补进仓库的 **homepage** 字段，并考虑加一个 README 徽章
+- [x] **23.** 在线 demo 地址已写进仓库 **homepage** 字段
+      （`https://zzzhen-22.github.io/slides-annotated-html/demo/`）。
+      徽章**不做** —— README 顶部已经有醒目的「▶ 点这里在线试一下」，比徽章显眼得多；
+      再挂一排徽章只会让首屏变吵
 
 ---
 
