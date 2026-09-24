@@ -1,0 +1,80 @@
+<!-- ============================================================================
+     封面 + 使用说明（init_project.py 生成的骨架）
+     需要人工补写的地方都用 TODO 注释标出；其余可以照用。
+     ============================================================================ -->
+<section class="cover">
+  <p class="cover-kicker">逐页对照讲解 · 中文</p>
+  <h1>{{cover_h1}}<br><span>{{cover_h2}}</span></h1>
+  <p class="cover-sub">{{cover_sub}}</p>
+  <ul class="cover-meta">
+    <li><b>原文件</b><span>{{pdf_name}}</span></li>
+    <li><b>页数</b><span>{{page_count}} 页</span></li>
+    <li><b>讲解范围</b><span>原文第 1–{{page_count}} 页，顺序完全一致</span></li>
+    <li><b>读者定位</b><span><!-- TODO 一句话说明面向谁：零基础 / 有基础但想补细节 / 考前速查 --></span></li>
+    <li><b>公式</b><span>全部使用 LaTeX 排版，公式库已内嵌，断网也能正常显示</span></li>
+  </ul>
+</section>
+
+<section class="card howto">
+  <h2>这份文档怎么用</h2>
+  <div class="howto-grid">
+    <div class="howto-item">
+      <span class="n">1</span>
+      <h4>左边栏是页码索引</h4>
+      <p>左侧目录按原文件页码排列，点任意一条直接跳到该页讲解；滚动时目录会自动高亮当前页，方便知道读到哪儿了。目录可以逐级折叠，「展开全部 / 折叠全部」在顶部，折叠状态会被记住。</p>
+    </div>
+    <div class="howto-item">
+      <span class="n">2</span>
+      <h4>每一页都配原页缩略图</h4>
+      <p>每段讲解右侧都放了原文件该页的截图，点一下可放大细看。这样「左看讲解、右对原文」，不用来回切窗口。</p>
+    </div>
+    <div class="howto-item">
+      <span class="n">3</span>
+      <h4>徽标里的页码可跳回原文</h4>
+      <p>每个段落开头的 <span class="pg-badge demo">原文件 P12</span> 会锚定到本文档对应段落；段落里的「打开原 PDF 该页」按钮会尝试直接用系统阅读器翻到原文件的这一页。</p>
+    </div>
+    <div class="howto-item">
+      <span class="n">4</span>
+      <h4>灰底卡片是补充内容</h4>
+      <p>凡是标注「补充」的方框，都不属于原课件内容，而是讲解者加的解释。可以跳过，也可以慢慢看。红色卡片则是原稿本身的问题提醒。</p>
+    </div>
+    <div class="howto-item">
+      <span class="n">5</span>
+      <h4>划词就能做标记</h4>
+      <p>在正文里<b>选中任意一段文字</b>即可加入「我的标记」。三条入口任选：选区下方浮出的工具条、顶栏的「＋ 标记选中」、或者选中后直接按 <code>M</code>。
+      <b>为什么要有三条？</b>因为 Edge 选中文字时会浮出自己的「迷你菜单」，那条菜单由浏览器画出、盖在网页之上，任何网页元素都压不住它——所以工具条被放到选区<em>下方</em>避让，而顶栏按钮与 <code>M</code> 键则完全不依赖浮层。若想彻底清静，可在 Edge「设置 → 外观 → 迷你菜单」关掉它。</p>
+    </div>
+    <div class="howto-item">
+      <span class="n">6</span>
+      <h4>侧栏能收起，缩略图会变大</h4>
+      <p>点顶栏最左的「☰ 收起」或按 <code>B</code>，左栏收走后正文会拉宽，右侧的原页缩略图也会从 268 px 放大到 400 px——想把图看清楚时可以这么用。</p>
+    </div>
+  </div>
+</section>
+
+<section class="card roadmap" id="roadmap">
+  <h2>全文脉络：这 {{page_count}} 页讲一个什么故事</h2>
+  <!-- 下面这张表由 init_project.py 按原文件的目录结构自动生成，可以直接用； -->
+  <!-- TODO 建议在此表前后各补一段话：先给一句话总纲，再说明「为什么值得按顺序读」。 -->
+  <p class="lead"><b>先给一张地图。</b>下表是按原文件顺序切出的段落，每一段在正文里都有一张「本节概述」卡。</p>
+  <table class="tbl">
+    <thead><tr><th style="width:170px">段落</th><th style="width:110px">页码</th><th>在讲什么</th></tr></thead>
+    <tbody>
+{{roadmap_rows}}
+    </tbody>
+  </table>
+</section>
+
+<section class="card primer" id="primer">
+  <h2>阅读前必读：<!-- TODO 标题，例如「概率论零基础速成（补充）」 --></h2>
+  <!-- TODO 如果读者需要前置知识，用下面的折叠卡补上（details.pill 默认折叠，加 open 属性即展开）；
+       不需要就整段删掉，并记得从 config.json 的 groups 里去掉 #primer 这一条。
+       注意：本注释内不要写任何字面标签，否则会干扰构建与体检的标签配对（pitfalls 第 30 条）。 -->
+  <p class="lead">这几张折叠卡是<em>补充内容</em>，不属于原课件。已经会的话直接跳过。</p>
+  <details class="pill">
+    <summary>① <!-- TODO 卡片标题 --></summary>
+    <div class="pill-body">
+      <p><!-- TODO 正文 --></p>
+    </div>
+  </details>
+</section>

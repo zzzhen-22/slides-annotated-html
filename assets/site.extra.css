@@ -1,0 +1,301 @@
+/* ============================================================================
+   以下为追加样式：目录逐级折叠 / 侧栏收起 / 本节概述 / 标记与笔记
+   （放在 site.css 末尾，用更高的选择器优先级覆盖前面的默认值）
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   顶栏按钮
+   --------------------------------------------------------------------------- */
+.tb-btn{
+  display:inline-flex;align-items:center;gap:6px;background:var(--surface);
+  border:1px solid var(--line);border-radius:9px;padding:5px 11px;
+  font:inherit;font-size:12.5px;color:var(--text2);cursor:pointer;transition:.15s;
+  white-space:nowrap;
+}
+.tb-btn:hover{border-color:var(--accent-line);color:var(--accent);background:var(--accent-soft)}
+.tb-btn .tb-icon{font-size:13px;line-height:1}
+.tb-count{
+  min-width:18px;height:18px;line-height:18px;text-align:center;font-size:11px;
+  font-family:var(--mono);background:var(--accent);color:#fff;border-radius:9px;padding:0 5px;
+}
+.tb-count.zero{background:#cbd5e1;color:#475569}
+.topbar .tb-sep{width:1px;height:18px;background:var(--line);flex:0 0 1px}
+
+/* ---------------------------------------------------------------------------
+   目录：逐级折叠
+   --------------------------------------------------------------------------- */
+.toc-group{margin:0}
+.toc-head{display:flex;align-items:flex-start;gap:4px}
+.toc-toggle{
+  flex:1;display:flex;align-items:center;gap:7px;min-width:0;
+  background:none;border:0;font-family:inherit;cursor:pointer;text-align:left;
+  padding:7px 7px;border-radius:8px;color:var(--muted);transition:.13s;
+}
+.toc-toggle:hover{color:var(--accent2);background:var(--accent-soft)}
+.toc-toggle .chev{
+  flex:0 0 8px;width:0;height:0;margin-left:2px;
+  border-left:5px solid currentColor;
+  border-top:4px solid transparent;border-bottom:4px solid transparent;
+  transform:rotate(90deg);transform-origin:2px 50%;
+  transition:transform .18s ease;opacity:.65;
+}
+.toc-group.collapsed>.toc-head .chev{transform:rotate(0deg)}
+.toc-toggle .gt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gcount{
+  flex:0 0 auto;font-family:var(--mono);font-size:10.5px;color:var(--muted);
+  background:var(--surface2);border:1px solid var(--line);border-radius:6px;
+  padding:0 5px;line-height:15px;margin-top:1px;
+}
+.toc-group.collapsed>.toc-head .gcount{opacity:.6}
+
+/* 顶层组（大节）：沿用原来的 sticky 标题观感 */
+.toc-nav>.toc-group>.toc-head{
+  position:sticky;top:-10px;z-index:3;background:var(--surface);padding-top:4px;
+}
+.toc-nav>.toc-group>.toc-head .toc-toggle{
+  font-size:11.5px;font-weight:700;letter-spacing:.6px;padding:11px 7px 7px;
+}
+/* 嵌套层（小节）：轻一点 */
+.toc-items .toc-head .toc-toggle{
+  font-size:12.7px;font-weight:600;letter-spacing:0;color:var(--text2);padding:5px 7px;
+}
+.toc-items{margin-left:11px;padding-left:8px;border-left:1px solid var(--line2)}
+/* ★ 关键修复：.toc-group 是「包住整章的容器」，绝不能有粘性定位。
+   一旦它被钉住，比视口高的章节（例如「二」1815px）的下半段永远滚不出来 ——
+   而且滚动条会动、内容不动，极难排查。
+   根因：基础样式表 site.css 里遗留了旧版扁平目录的规则（那时 .toc-group 是
+   「分组标题」）。这里显式覆盖为 static，防止历史规则被重新引入。 */
+.toc-nav .toc-group{position:static}
+.toc-items .toc-items{margin-left:9px;padding-left:7px}
+.toc-group.collapsed>.toc-items{display:none}
+.toc-nav a .num{flex:0 0 20px}
+/* 搜索过滤 */
+.toc-group.hide{display:none}
+.toc-nav a.hide{display:none}
+.toc-nav .toc-group.hide>.toc-head{display:none}
+
+/* 目录工具行 */
+.toc-tools{display:flex;gap:7px;margin-top:9px}
+
+/* ---------------------------------------------------------------------------
+   侧栏收起：正文占满 + 缩略图放大
+   --------------------------------------------------------------------------- */
+.toc{transition:transform .24s ease}
+@media (min-width:1025px){
+  body.nav-hidden .toc{transform:translateX(-101%);box-shadow:none}
+  body.nav-hidden main{margin-left:0}
+  body.nav-hidden .pg{grid-template-columns:minmax(0,1fr) 400px;column-gap:30px}
+  body.nav-hidden .wrap{max-width:1220px}
+  body.nav-hidden .thumb figcaption{font-size:12.5px;padding:8px 12px}
+  /* 隐藏缩略图的优先级要更高，放在后面 */
+  body.hide-thumb .pg{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:1024px){
+  body.nav-shown .toc{transform:none;box-shadow:0 0 40px rgba(0,0,0,.18)}
+  body.nav-hidden .toc{transform:translateX(-101%)}
+  .thumb{max-width:560px}
+}
+
+/* ---------------------------------------------------------------------------
+   本节概述卡
+   --------------------------------------------------------------------------- */
+.card.overview{
+  border-left:4px solid var(--accent);
+  background:linear-gradient(180deg,#fbfcff 0%,#ffffff 60%);
+}
+.card.overview .ov-kicker{
+  display:inline-block;font-size:11.5px;font-weight:700;font-family:var(--mono);
+  letter-spacing:.5px;color:#fff;background:var(--accent);padding:2px 9px;border-radius:6px;
+}
+.card.overview h2{margin:9px 0 4px;font-size:22px}
+.card.overview h2 em{display:block;font-style:normal;font-size:13.5px;font-weight:500;
+  color:var(--muted);margin-top:3px}
+.ov-range{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin:0 0 12px}
+.ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin:14px 0}
+.ov-item{border:1px solid var(--line);border-radius:11px;padding:12px 15px;background:var(--surface2)}
+.ov-item.wide{grid-column:1 / -1}
+.ov-item h5{margin:0 0 7px;font-size:13.4px;color:var(--accent2);font-weight:700;
+  display:flex;align-items:center;gap:6px}
+.ov-item h5::before{content:"";width:4px;height:13px;border-radius:2px;background:var(--accent);opacity:.75}
+.ov-item p{margin:6px 0;font-size:13.9px}
+.ov-item ul{margin:6px 0;padding-left:18px;font-size:13.9px}
+.ov-item ul li{margin:5px 0}
+.ov-questions{counter-reset:q;list-style:none;padding:0;margin:6px 0}
+.ov-questions li{position:relative;padding-left:30px;margin:9px 0;font-size:13.9px}
+.ov-questions li::before{
+  counter-increment:q;content:"Q" counter(q);
+  position:absolute;left:0;top:.06em;font-family:var(--mono);font-size:11px;font-weight:700;
+  color:#fff;background:#94a3b8;border-radius:5px;padding:1px 6px;
+}
+.ov-chips{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 0}
+.ov-chips a{
+  font-size:12.4px;text-decoration:none;color:var(--accent);background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:999px;padding:3px 11px;transition:.15s;
+}
+.ov-chips a:hover{background:#e0e7ff;color:var(--accent2)}
+.ov-chips .chip-label{font-size:12.4px;color:var(--muted);padding:3px 2px}
+
+/* ---------------------------------------------------------------------------
+   内容标记
+   --------------------------------------------------------------------------- */
+mark.hl{
+  background:linear-gradient(180deg,transparent 50%,#ffe08a 50%);
+  color:inherit;padding:1px 0;cursor:pointer;border-radius:2px;transition:background .2s;
+}
+mark.hl:hover{background:linear-gradient(180deg,transparent 46%,#ffd34d 46%)}
+mark.hl.flash{animation:hlflash 1.9s ease}
+@keyframes hlflash{
+  0%,100%{background:linear-gradient(180deg,transparent 50%,#ffe08a 50%);box-shadow:none}
+  12%,58%{background:#ffb020;box-shadow:0 0 0 3px rgba(255,176,32,.30);border-radius:3px}
+}
+
+/* 选中浮动工具条 */
+.selbar{
+  position:absolute;z-index:70;display:none;gap:2px;align-items:center;
+  background:#1f2937;border-radius:9px;padding:4px;
+  box-shadow:0 8px 26px rgba(10,16,32,.30);
+}
+.selbar.on{display:flex}
+.selbar button{
+  background:none;border:0;color:#f1f5f9;font-family:inherit;font-size:12.5px;
+  padding:5px 11px;border-radius:6px;cursor:pointer;white-space:nowrap;line-height:1.4;
+}
+.selbar button:hover{background:#374151}
+.selbar button[data-act="cancel"]{padding:5px 9px;color:#9ca3af;font-size:14px}
+
+/* ---------------------------------------------------------------------------
+   笔记抽屉
+   --------------------------------------------------------------------------- */
+.drawer{
+  position:fixed;top:0;right:0;width:396px;max-width:94vw;height:100vh;
+  background:var(--surface);border-left:1px solid var(--line);z-index:55;
+  display:flex;flex-direction:column;
+  transform:translateX(102%);transition:transform .24s ease;
+  box-shadow:-12px 0 36px rgba(20,30,60,.10);
+}
+.drawer.on{transform:none}
+.dr-head{padding:15px 18px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.dr-head h3{margin:0;font-size:15.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+.dr-head .dr-count{font-size:11.5px;color:var(--muted);font-family:var(--mono);font-weight:400}
+.dr-head .sp{flex:1}
+.dr-close{
+  background:none;border:1px solid var(--line);border-radius:8px;width:28px;height:28px;
+  font-size:16px;line-height:1;color:var(--muted);cursor:pointer;font-family:inherit;
+}
+.dr-close:hover{color:var(--red);border-color:var(--red-line);background:var(--red-soft)}
+.dr-tools{display:flex;gap:7px;padding:10px 18px;border-bottom:1px solid var(--line2);flex-wrap:wrap}
+.dr-tools button{
+  font-family:inherit;font-size:12.3px;border-radius:8px;padding:4px 11px;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface2);color:var(--text2);transition:.15s;
+}
+.dr-tools button:hover{border-color:var(--accent-line);color:var(--accent);background:var(--accent-soft)}
+.dr-list{flex:1;overflow-y:auto;padding:12px 14px 44px;scrollbar-width:thin}
+.dr-list::-webkit-scrollbar{width:8px}
+.dr-list::-webkit-scrollbar-thumb{background:#d8dee9;border-radius:8px;border:2px solid #fff}
+.note-item{
+  border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:10px;
+  background:var(--surface2);transition:.18s;
+}
+.note-item.flash{border-color:#f0b429;background:#fffbeb;box-shadow:0 0 0 3px rgba(240,180,41,.18)}
+.ni-head{display:flex;align-items:center;gap:8px;font-size:11.5px;margin-bottom:7px;min-width:0}
+.ni-page{font-family:var(--mono);font-weight:700;color:#fff;background:var(--accent);
+  padding:1px 7px;border-radius:5px;flex:0 0 auto}
+/* 没有页码的区块（概述卡 / 封面 / 速查表…）用它显示「原文位置」：
+   过去这类笔记一律显示「P？」，用户根本不知道标在哪儿。
+   标签可能偏长，用单行省略 + title 提示（tooltip 里是完整位置）。 */
+.ni-loc{
+  font-weight:600;color:var(--accent2);background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:5px;padding:1px 7px;
+  max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto;
+}
+.ni-time{color:var(--muted);font-family:var(--mono);flex:0 0 auto}
+.ni-stale{color:#b45309;background:#fef3c7;border:1px solid #fcd34d;border-radius:5px;padding:1px 6px;flex:0 0 auto}
+.ni-quote{
+  margin:0 0 8px;padding:7px 11px;background:#fff;border-left:3px solid #f0b429;
+  border-radius:0 7px 7px 0;font-size:13.3px;color:var(--text2);line-height:1.72;
+}
+.note-input{
+  width:100%;font-family:inherit;font-size:13px;line-height:1.62;color:var(--text);
+  border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;
+  resize:vertical;outline:none;transition:.15s;
+}
+.note-input:focus{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.ni-actions{display:flex;gap:7px;margin-top:8px}
+.ni-actions button{
+  font-family:inherit;font-size:12.4px;border-radius:7px;padding:4px 13px;cursor:pointer;
+  border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent2);
+}
+.ni-actions button:hover{background:#e0e7ff}
+.ni-actions button.danger{border-color:var(--red-line);background:var(--red-soft);color:var(--red)}
+.ni-actions button.danger:hover{background:#fbdcd8}
+.dr-list .empty{color:var(--muted);font-size:13.6px;text-align:center;padding:44px 18px;line-height:2}
+.dr-list .empty span{font-size:12.5px;opacity:.85}
+body.drawer-open #toTop{right:416px}
+@media (max-width:1024px){
+  .drawer{width:100%;max-width:100%}
+  body.drawer-open #toTop{right:24px}
+}
+
+/* 移动端顶栏精简 */
+@media (max-width:860px){
+  .topbar .pdf-line{display:none}
+  .topbar{gap:9px}
+  .tb-btn .tb-label{display:none}
+  .tb-btn{padding:5px 9px}
+}
+
+@media print{
+  .drawer,.selbar,.tb-btn{display:none!important}
+  mark.hl{background:#ffe08a!important}
+}
+
+
+/* ---------------------------------------------------------------------------
+   选区工具条的避让 + 自绘右键菜单
+   背景：Edge 的「迷你菜单」（选中文本后浮出的 复制/搜索/Copilot 那一条）由浏览器
+   UI 层绘制，z-index 再高也压不住它。因此这里做三件事：
+     ① 工具条默认挪到选区【下方】（系统迷你菜单默认出现在上方/右上）
+     ② 提供完全不依赖浮层的入口：顶栏 #markBtn 与快捷键 M
+     ③ 正文内有选区时，用自绘菜单替换系统右键菜单 —— 两者互斥，自然不会互相遮挡
+   --------------------------------------------------------------------------- */
+
+/* ① 方向箭头：在选区下方时箭头朝上，在上方时箭头朝下 */
+.selbar{max-width:92vw;flex-wrap:wrap}
+.selbar.below::after,
+.selbar.above::after{
+  content:"";position:absolute;left:50%;margin-left:-5px;
+  border:5px solid transparent;
+}
+.selbar.below::after{top:-10px;border-bottom-color:#1f2937;border-top:0}
+.selbar.above::after{bottom:-10px;border-top-color:#1f2937;border-bottom:0}
+
+/* ③ 自绘右键菜单 */
+.ctxmenu{
+  position:absolute;z-index:71;display:none;min-width:160px;
+  background:#1f2937;border-radius:10px;padding:5px;
+  box-shadow:0 10px 30px rgba(10,16,32,.34);
+}
+.ctxmenu.on{display:block}
+.ctxmenu button{
+  display:flex;width:100%;align-items:center;gap:8px;justify-content:flex-start;
+  background:none;border:0;color:#f1f5f9;font-family:inherit;font-size:13px;
+  padding:7px 10px;border-radius:7px;cursor:pointer;text-align:left;line-height:1.4;
+}
+.ctxmenu button:hover{background:#374151}
+.ctxmenu button .k{margin-left:auto;font-family:var(--mono);font-size:11px;color:#9ca3af}
+.ctxmenu .sep{height:1px;background:#374151;margin:4px 6px}
+.ctxmenu .hint{font-size:11px;color:#9ca3af;padding:6px 10px 7px;line-height:1.55;
+  border-bottom:1px solid #374151;margin-bottom:5px}
+
+/* 顶栏「标记选中」：当前没有选区时做弱化提示 */
+#markBtn[data-empty="1"]{opacity:.5}
+
+@media (max-width:760px){
+  #markBtn .tb-label{display:none}
+}
+@media print{
+  .ctxmenu{display:none!important}
+}
+
+/* .tb-btn 自带 display:inline-flex，会盖掉 [hidden] 的 display:none —— 显式兜住 */
+.tb-btn[hidden]{display:none!important}

@@ -1,0 +1,138 @@
+<!-- ============================================================
+     逐页区块的标准写法（build.py 靠 id + data-page 注入缩略图）
+     把这一段复制 N 份，改页码与内容即可。
+     ============================================================ -->
+
+<section class="pg" id="p12" data-page="12">
+  <div class="pg-head">
+    <span class="pg-badge">原文件 P12</span>
+    <h3>Classification? <em>该怎么分类？</em></h3>
+    <a class="pdf-link" data-page="12">打开原 PDF 该页 ↗</a>
+  </div>
+  <div class="pg-text">
+
+    <!-- 正常段落。行内公式用 math/tex，独立成行用 mode=display -->
+    <p>这一页提出核心问题：抓到了一只新昆虫，量得<b>触角长 3 个单位</b>。</p>
+
+    <script type="math/tex; mode=display">P(\text{Grasshopper}\mid 3)=\frac{10}{10+2}=0.833</script>
+
+    <!-- 公式里的英文注释可以放 \text{} -->
+    <p>原页面右侧给出了对照表：</p>
+    <table class="tbl">
+      <thead><tr><th>触角长度</th><th>证据比</th><th>判断</th></tr></thead>
+      <tbody>
+        <tr><td>3</td><td>10 : 2</td><td>蚱蜢</td></tr>
+      </tbody>
+    </table>
+
+    <!-- 需要中文注释公式时，用 .gloss 放在公式外面（不要塞进 \text{}） -->
+    <script type="math/tex; mode=display">\mu_{\mathrm{ML}}=\frac{1}{N}\sum_{n=1}^{N}x_n</script><span class="gloss">（样本均值）</span>
+
+    <p>要点列表：</p>
+    <ul class="lst">
+      <li>第一点</li>
+      <li>第二点，可用行内公式 <script type="math/tex">P(Y\mid X)</script></li>
+    </ul>
+
+    <!-- 四种提示框：tip=绿(正面/直觉)  note=蓝(补充说明)  flag=红(警告/易错)  quote=灰(原文引用) -->
+    <div class="tip"><b>直觉：</b>两条曲线谁高，谁的可能性就大。</div>
+    <div class="note"><b>补充：</b>原文跳过的推导，这里补上。</div>
+    <div class="flag"><b>注意：</b>这一页原稿有一处笔误。</div>
+    <div class="quote">原文引用的英文原句照抄在这里。</div>
+
+  </div>
+  <!-- 缩略图由 build.py 自动插到本区块收尾标签之前，不要手写；
+       本注释内不要出现字面标签，否则会干扰 build.py 的区块匹配（见 pitfalls 第 30 条） -->
+</section>
+
+
+<!-- ============================================================
+     封面 / 补充篇 / 速查区的写法（不参与缩略图注入）
+     ============================================================ -->
+
+<section class="cover" id="cover">
+  <p class="cover-kicker">逐页对照讲解 · 中文</p>
+  <h1>English Title<br><span>中文标题</span></h1>
+  <p class="cover-sub">基于《……》逐页编写</p>
+  <ul class="cover-meta">
+    <li><b>原文件</b><span>xxx.pdf</span></li>
+    <li><b>页数</b><span>63 页</span></li>
+  </ul>
+</section>
+
+<section class="card extra" id="extraA">
+  <div class="pg-head">
+    <span class="pg-badge alt">补充篇 A</span>
+    <h3>Exponential Family <em>指数族分布</em></h3>
+    <span class="pg-note">原文件第 4 页大纲列出，正文未展开</span>
+  </div>
+  <p class="lead">补充内容……</p>
+  <h4>一、小节标题</h4>
+  <p>……</p>
+</section>
+
+<section class="card" id="cheatsheet">
+  <h2>一页纸速查</h2>
+  <table class="tbl">
+    <thead><tr><th>公式</th><th>含义</th><th>页码</th></tr></thead>
+    <tbody>
+      <tr><td><script type="math/tex">\sigma(v)=\frac{1}{1+e^{-v}}</script></td>
+          <td>Sigmoid</td><td><a href="#p46">P46</a></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 折叠卡（用于前置知识速成） -->
+<section class="card primer" id="primer">
+  <h2>阅读前必读（补充）</h2>
+  <details class="pill" open>
+    <summary>① 卡片标题</summary>
+    <div class="pill-body">
+      <p>正文……</p>
+    </div>
+  </details>
+</section>
+
+
+<!-- ============================================================
+     「本节概述」卡（每个大节一张，放在该节第一页之前）
+     单独存成 content/NN_ovN.html，紧跟其后的正文分片同序号。
+     ============================================================ -->
+
+<section class="card overview" id="ov2">
+  <span class="ov-kicker">本节概述 · 第二节</span>
+  <h2>这一节在讲什么<em>Naïve Bayes — 从「比曲线高度」到「数频率」</em></h2>
+  <p class="ov-range">覆盖原文件 P9–P39 ｜ 31 页 ｜ 建议 60 分钟</p>
+
+  <p class="lead"><b>三句话说明这一节的地位：</b>它在全文里处于什么位置、和前后节怎么衔接、
+  为什么值得按顺序读完而不是跳读。</p>
+
+  <div class="ov-grid">
+    <div class="ov-item">
+      <h5>这一节要回答</h5>
+      <ul>
+        <li>问题一</li>
+        <li>问题二</li>
+      </ul>
+    </div>
+    <div class="ov-item">
+      <h5>读完你应该能</h5>
+      <ul>
+        <li>能力一</li>
+        <li>能力二</li>
+      </ul>
+    </div>
+    <div class="ov-item wide">
+      <h5>和其它节的关系</h5>
+      <p>承接上一节的什么，为下一节的什么做铺垫。</p>
+    </div>
+    <div class="ov-questions">
+      <li>用来自测的追问，读完回到这里检查</li>
+    </div>
+  </div>
+
+  <div class="ov-chips">
+    <span class="chip-label">本小节页面</span>
+    <a href="#p09">P9</a><a href="#p10">P10</a><a href="#p11">P11</a>
+  </div>
+</section>

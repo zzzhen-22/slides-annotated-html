@@ -1,0 +1,22 @@
+# ---- 运行产物（属于「使用套件的项目」，不属于套件本身）----
+# 套件被拷到某个课件项目里运行时，会在项目侧生成这些目录；
+# 如果本项目直接放在套件目录下跑，顺手把它们挡掉。
+_extract/
+_katex/
+_selftest/
+*.tmp.html
+shotprof-*/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

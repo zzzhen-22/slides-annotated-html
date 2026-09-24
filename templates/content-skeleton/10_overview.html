@@ -1,0 +1,36 @@
+<!-- ============================================================================
+     「本节概述」卡骨架（每个大段一张，放在该段第一页之前）
+     单独存成 content/NN_ovN.html，紧跟其后的正文分片同序号。
+     TODO 处都要人工写；ov-range 里的页码/页数/建议时间是 init_project.py 填的。
+     ============================================================================ -->
+<section class="card overview" id="ov{{n}}">
+  <span class="ov-kicker">本节概述 · {{label}}</span>
+  <h2><!-- TODO 一句话标题 --><em><!-- TODO 英文/原文件标题 — 一句副标题 --></em></h2>
+  <p class="ov-range">覆盖原文件 P{{from}}–P{{to}} ｜ {{count}} 页 ｜ 建议 {{minutes}} 分钟</p>
+
+  <p class="lead"><!-- TODO 三句话：这一节在全文里处于什么位置、和前后节怎么连接、为什么值得按顺序读。 --></p>
+
+  <div class="ov-grid">
+    <div class="ov-item">
+      <h5>核心问题</h5>
+      <ul>
+        <li><!-- TODO --></li>
+      </ul>
+    </div>
+    <div class="ov-item">
+      <h5>读完应能</h5>
+      <ul>
+        <li><!-- TODO --></li>
+      </ul>
+    </div>
+    <div class="ov-item wide">
+      <h5>和其它节的关系</h5>
+      <p><!-- TODO 承接上一节的什么，为下一节的什么做铺垫。 --></p>
+    </div>
+  </div>
+
+  <div class="ov-chips">
+    <span class="chip-label">本小节页面</span>
+    {{chips}}
+  </div>
+</section>

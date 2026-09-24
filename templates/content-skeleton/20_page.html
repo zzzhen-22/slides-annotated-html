@@ -1,0 +1,19 @@
+<!-- ============================================================================
+     逐页区块骨架（build.py 靠 id="pNN" + data-page="N" 注入缩略图，别改这两个属性）
+     下面这一段复制 N 份即为一个分片；分片文件名建议 NN_pXX_pYY.html。
+     TODO：把 pg-text 里的「待补」卡片换成真正的讲解。
+     ============================================================================ -->
+<section class="pg" id="p{{nn}}" data-page="{{n}}">
+  <div class="pg-head">
+    <span class="pg-badge">原文件 P{{n}}</span>
+    <h3>{{title_en}} <em>{{title_cn}}</em></h3>
+    <a class="pdf-link" data-page="{{n}}">打开原 PDF 该页 ↗</a>
+  </div>
+  <div class="pg-text">
+    <div class="note"><b>待补：</b>这一页的讲解还没写。动笔前先看 <code>_extract/page-{{nn}}.png</code>
+      （或右侧缩略图）逐页核对公式与图示——PPT 导出的 PDF 文字层常把数学符号映射坏
+      （例如 <code>¡</code> 其实是减号、<code>¼</code> 其实是 π），只读文字层必然讲错公式。</div>
+  </div>
+  <!-- 缩略图由 build.py 自动插到本区块收尾标签之前，不要手写；
+       本注释内不要出现字面标签，否则会干扰 build.py 的区块匹配（见 pitfalls 第 30 条） -->
+</section>

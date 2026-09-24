@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+__KATEX_CSS__
+__CSS__
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<aside class="toc">
+  <div class="toc-top">
+    <div class="toc-title"><b>__BRAND__</b>__SIDEBAR_TITLE__<span>__SIDEBAR_SUB__</span></div>
+    <input id="q" class="search" type="search" placeholder="__SEARCH_PH__" autocomplete="off">
+    <div class="toc-tools">
+      <button id="tocExpand" class="btn-mini" type="button" title="展开目录中所有分组">展开全部</button>
+      <button id="tocCollapse" class="btn-mini" type="button" title="折叠目录中所有分组">折叠全部</button>
+    </div>
+  </div>
+  <nav class="toc-nav">__TOC__</nav>
+  <div class="toc-foot">__NAV_FOOT__</div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <button id="navToggle" class="tb-btn" type="button" aria-expanded="true"
+            title="显示／收起左侧目录（收起后正文与缩略图会放大）">
+      <span class="tb-icon">☰</span><span class="tb-label">收起</span></button>
+    <button id="thumbToggle" class="tb-btn" type="button" aria-pressed="false"
+            title="显示／隐藏每页右侧的原文件缩略图">
+      <span class="tb-icon">▤</span><span class="tb-label">隐藏缩略图</span></button>
+    <button id="markBtn" class="tb-btn" type="button"
+            title="把当前选中的文字加入笔记（选中后直接按 M 也行）">
+      <span class="tb-icon">＋</span><span class="tb-label">标记选中</span></button>
+    <span class="tb-sep"></span>
+    <span class="tb-title">__TOPBAR_TITLE__</span>
+    <span class="sp"></span>
+    <button id="notesBtn" class="tb-btn" type="button" aria-expanded="false"
+            title="打开我的标记笔记（快捷键 N）">
+      <span class="tb-icon">✎</span><span class="tb-label">笔记</span>
+      <span class="tb-count zero" id="notesBtnCount">0</span></button>
+    <span class="pdf-line">__PDF_LINE__</span>
+    <button id="savePdf" class="tb-btn" type="button" title="把内嵌在本文档里的原文件另存为 PDF" hidden>
+      <span class="tb-icon">⤓</span><span class="tb-label">另存原 PDF</span></button>
+  </div>
+  <div class="wrap">
+__BODY__
+
+
+
+  </div>
+  <footer class="doc-foot">
+  <p>__FOOT1__</p>
+  <p class="small">__FOOT2__</p>
+</footer>
+</main>
+
+<aside class="drawer" id="drawer" aria-label="我的标记笔记">
+  <div class="dr-head">
+    <h3>我的标记 <span class="dr-count" id="drawerCount"></span></h3>
+    <span class="sp"></span>
+    <button class="dr-close" id="drawerClose" type="button" title="关闭（Esc）">×</button>
+  </div>
+  <div class="dr-tools">
+    <button id="notesExport" type="button" title="把全部标记与备注导出为 Markdown 并复制到剪贴板">导出 Markdown</button>
+    <button id="notesClear" type="button" title="删除全部标记（正文高亮也会一并清除）">清空全部</button>
+  </div>
+  <div class="dr-list" id="drawerList"></div>
+</aside>
+
+<div class="lightbox" id="lightbox">
+  <span class="lb-close">×</span>
+  <img src="" alt="原页放大图">
+  <div class="lb-cap"></div>
+</div>
+<button id="toTop" type="button" title="回到顶部">↑</button>
+
+<!--BODY-END: 以下是脚本区，check_math.js 以此为标签体检的右边界-->
+<!-- 内嵌原文件（base64）。不启用内嵌时这里为空，只是多一个空 script，无副作用。
+     base64 里不可能出现 "</"，因此不会截断 script。 -->
+<script type="text/plain" id="pdfB64" data-pdf-name="__PDF_NAME__">__PDF_B64__</script>
+<script>__KATEX_JS__</script>
+<script>var PDFURL_BASE = "__PDFURL__"; var DOC_NS = "__DOC_NS__";
+__JS__
+</script>
+</body>
+</html>
