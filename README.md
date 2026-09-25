@@ -1,3 +1,5 @@
+[English](README.en.md) ｜ 简体中文
+
 # pdf-slides-annotated-html
 
 > 把 PDF / PPT 课件变成**内容完整**的「左看讲解、右对原文」单文件 HTML：
@@ -172,6 +174,17 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 ```bash
 python scripts/selftest.py        # 现造一份 6 页小 PDF，把整条流水线从零跑一遍，期望结尾「自检结果: PASS」
 ```
+
+---
+
+## 已知限制
+
+- 输入**只支持 PDF**；PPTX/Keynote 请先自行导出（不引入 LibreOffice 依赖是刻意的）
+- **PDF 文字层不可靠**：讲解一律从逐页渲染图写出，不读抽象文字层；套件不替你判断内容对错——原稿有错会如实标注，不会静默修正
+- 机械部分自动，**逐页看图写讲解由 agent（或你）完成**，套件只告诉你还差几页没写
+- 内嵌原 PDF 时产物 ≈ 原 PDF × 1.34 + 缩略图，几十页课件可能到 20 MB+
+- 默认产物是**中文排版优化**的（正文字体栈、标点挤压），其他语言内容也能用但排版不专门优化
+- 无头截图依赖 Chromium 系浏览器
 
 ---
 

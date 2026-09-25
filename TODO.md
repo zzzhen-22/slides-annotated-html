@@ -11,7 +11,7 @@
 | 项目 | 现状 |
 |---|---|
 | 仓库 | 39 个文件 ｜ 489 KB ｜ 5 个提交 ｜ `main` 分支 |
-| 文档 | `README.md`（中文；2026-09-25 起主推「AI 代做」路径，手工为辅）、`SKILL.md`（面向 Agent，顶部已加人群分流声明）、`docs/workflow.md`（人类向流程）、`TODO.md` |
+| 文档 | `README.md`（中文；2026-09-25 起主推「AI 代做」路径，手工为辅）、`README.en.md`（英文精简版，同定位）、`SKILL.md`（面向 Agent，顶部已加人群分流声明）、`docs/workflow.md`（人类向流程）、`TODO.md` |
 | 图片资源 | ✅ **3 张**（`docs/images/`，hero / notes / overview，各约 230 KB） |
 | 示例产物 | ✅ **在线 demo 已上线**（`docs/demo/index.html`，1.18 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/> |
 | 依赖清单 | **无** `requirements.txt`（真实依赖：`pymupdf`、`pillow`；可选 `node`） |
@@ -133,7 +133,7 @@
 
 **验收**：README 有一张表，明确写出「已验证 / 未验证」的平台
 
-### [ ] 7. README 加「已知限制」章节
+### [x] 7. README 加「已知限制」章节 ✅ **已完成**
 **为什么**：诚实标注限制比夸大能力更能建立信任，也能减少无效 issue。
 这个项目有几条**必须提前说清**的约束，否则用户会认为是 bug。
 
@@ -143,11 +143,14 @@
 - 机械部分自动，**「逐页写讲解」这一步是留给人的**，套件只告诉你还差几页
 - 内嵌原 PDF 时产物 ≈ 原 PDF × 1.34 + 缩略图，几十页课件可能到 20 MB+
 - 默认产物是**中文排版优化**的（正文字体栈、标点挤压），英文内容也能用但排版不专门优化
-- 无头截图依赖 Chromium 系浏览器
 
 **验收**：README 有独立小节，读完知道什么情况不该用这个工具
 
-### [ ] 8. 英文 README（`README.en.md`）
+> **实测记录（2026-09-25）**：中文 README 新增「已知限制」节（放三重校验与交付纪律之间），
+> 六条照抄本清单（「留给人的」一条按当日定位调整改写为「由 agent（或你）完成」）；
+> 英文版 Limitations 节同步（见第 8 条）。中英结构对称。
+
+### [x] 8. 英文 README（`README.en.md`）✅ **已完成**
 **为什么**：工具本身与语言无关（能处理任何语言的 PDF），但文档全中文，
 国际用户 30 秒内就会关掉。这直接决定了仓库能不能被非中文社区用起来。
 
@@ -156,6 +159,12 @@ what it does / install / quick start / screenshots / limitations / license
 **（2026-09-25 注：README 已改为「AI 代做为主、手工为辅」的双路径定位，英文版照此写。）**
 
 **验收**：一个只读英文的开发者，能凭 `README.en.md` 跑出 demo
+
+> **实测记录（2026-09-25）**：`README.en.md` 已建，结构对齐中文版（含同日定位调整）：
+> demo 链接 + 截图 + "Let an AI do it (recommended)" + "Run it yourself" 三步命令 +
+> Known limitations + Verification + License & third-party（PyMuPDF 的 AGPL 组合约束
+> 是许可层面的关键事实，英文版完整保留）。顶部 `English ｜ 简体中文` 互链。
+> 验收：只读英文的开发者照 Quick start 三行即可跑出 `examples/sample-lecture.pdf` 的产物。
 
 ---
 
