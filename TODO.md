@@ -13,7 +13,7 @@
 | 仓库 | 39 个文件 ｜ 489 KB ｜ 5 个提交 ｜ `main` 分支 |
 | 文档 | `README.md`（中文；2026-09-25 起主推「AI 代做」路径，手工为辅）、`README.en.md`（英文精简版，同定位）、`SKILL.md`（面向 Agent，顶部已加人群分流声明）、`docs/workflow.md`（人类向流程）、`TODO.md` |
 | 图片资源 | ✅ **3 张**（`docs/images/`，hero / notes / overview，各约 230 KB） |
-| 示例产物 | ✅ **在线 demo 已上线**（`docs/demo/index.html`，1.18 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/> |
+| 示例产物 | ✅ **在线 demo 已上线**（`docs/demo/index.html`，1.18 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.18 MB，讲解与界面全英文）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/> |
 | 依赖清单 | **无** `requirements.txt`（真实依赖：`pymupdf`、`pillow`；可选 `node`） |
 | CI | **无** |
 | topics | **仍为空** —— GitHub 搜索里很难被找到（homepage 已填好） |
@@ -62,6 +62,16 @@
 > **✅ Pages 已开启并验证**：来源 `main` / `/docs`，`GET /repos/.../pages` 返回 `status: built`（HTTPS 已强制）。
 > 站点 <https://zzzhen-22.github.io/slides-annotated-html/>，demo 落在 `/demo/`：
 > 实测 **HTTP 200 ｜ 1,238,803 字节 ｜ `text/html; charset=utf-8`**，8 页区块与 191 条公式均在线可用。
+>
+> **✅ 英文版 demo（2026-09-25 补）**：`docs/demo-en/index.html`（1.18 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。
+> 同一构建管线（build.py，不手改 HTML），五处不同：① content 五个分片由 agent 逐片英译
+> （锚点/公式/结构一字不动，公式 192 条语法失败 0）；② config 全英文（标题/目录标签/搜索占位/footer）；
+ ③ 产物后处理翻译 UI——shell 静态文案 24 处 + site.js 面向用户的字符串行 42 行
+> （按**整行**映射替换而非片段替换，避免「第 N 页」这类拼接串在不同上下文互相冲突）；
+> ④ build.py 注入的缩略图 alt/figcaption 一并英文化；
+> ⑤ 出厂自检升级：隐私/盘符/8 停用链接之外，新增 **CJK 残留扫描**——
+> 可见文本 0 字符 + JS 字符串字面量 0 条（JS 注释里的中文刻意保留，访客不可见）。
+> 双 README 的 demo 链接各自指向对应语言版本。
 
 ### [x] 3. 补 `requirements.txt` 和一条最短上手命令 ✅ **已完成**
 **为什么**：`kitpath.py` 会提示缺什么，但那要**先跑脚本才知道**。

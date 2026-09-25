@@ -5,7 +5,7 @@ English ｜ [简体中文](README.md)
 > Turn lecture PDFs into a **single-file HTML** with complete per-page explanations sitting next to the original slides: thumbnail cross-reference, offline formula rendering, collapsible TOC, text highlighting with a notes drawer — fully offline.
 > The explanations are **written by an AI agent**: hand it your deck, get a finished document in one conversation. You can also run everything yourself.
 
-**▶ [Try the live demo](https://zzzhen-22.github.io/slides-annotated-html/demo/)** — an 8-page interactive excerpt. Nothing to install: click the TOC, highlight a sentence, take a note.
+**▶ [Try the live demo](https://zzzhen-22.github.io/slides-annotated-html/demo-en/)** — an 8-page interactive excerpt, **fully in English**. Nothing to install: click the TOC, highlight a sentence, take a note. (The original Chinese demo lives [here](https://zzzhen-22.github.io/slides-annotated-html/demo/).)
 
 ![Per-page layout: explanations on the left, original page thumbnails on the right; offline formula rendering; four card types separating "what the original says" from "what the explainer added"](docs/images/hero.png)
 

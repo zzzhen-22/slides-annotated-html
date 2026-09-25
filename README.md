@@ -6,7 +6,7 @@
 > 逐页缩略图对照、公式离线渲染、目录折叠、划词标记＋笔记抽屉，断网可开。
 > 逐页讲解由 **AI agent 替你写**——丢给它一份课件，一轮对话拿成品；也可以自己动手跑。
 
-**▶ [点这里在线试一下](https://zzzhen-22.github.io/slides-annotated-html/demo/)** —— 节选 8 页的 demo，**不需要安装任何东西**，直接在浏览器里点目录、划句子、写笔记。
+**▶ [点这里在线试一下](https://zzzhen-22.github.io/slides-annotated-html/demo/)** —— 节选 8 页的 demo，**不需要安装任何东西**，直接在浏览器里点目录、划句子、写笔记。英文版：**[English demo](https://zzzhen-22.github.io/slides-annotated-html/demo-en/)**（讲解内容与界面为英文）。
 
 ![逐页对照：左侧中文讲解、右侧贴着原页缩略图；公式离线渲染；四类提示卡区分「原文有什么」与「讲解者加了什么」](docs/images/hero.png)
 
