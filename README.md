@@ -31,27 +31,29 @@
 
 ## 快速开始
 
+### 三步上手
+
+在仓库根目录执行：
+
+```bash
+pip install -r requirements.txt                        # ① 安装 Python 依赖（pymupdf、pillow）
+python scripts/kitpath.py                              # ② 自查：python / node / 浏览器 / 依赖
+python scripts/run_all.py "<你的课件>.pdf" --out demo   # ③ 一键跑完机械部分
+```
+
+- ② 打印四项检查，任何一项不是 ✔ 都会给出可直接照抄的解决办法；
+- ③ 的无头体检与截图需要 Chrome / Edge（自动探测，也可用环境变量 `KIT_BROWSER` 指定）；
+  `node` 只用于公式语法自检，缺了会自动跳过这一步。
+
 ### 环境
 
 | 依赖 | 用途 | 说明 |
 |---|---|---|
-| Python 3.9+ | 全部脚本 | 需要 `pymupdf`、`pillow`（脚本会在缺包时给出可直接照抄的 pip 命令） |
-| Node.js | `check_math.js` 公式自检 | 唯一用到 node 的地方 |
+| Python 3.9+ | 全部脚本 | 依赖清单见 `requirements.txt`；缺包时脚本会给出可直接照抄的 pip 命令 |
 | Chrome / Edge | 无头截图与 DOM 断言 | 自动探测：环境变量 → PATH → 常见安装位置 |
+| Node.js（可选） | `check_math.js` 公式自检 | 唯一用到 node 的地方；缺了时该步自动跳过 |
 
-先自查环境（会打印 python / node / 浏览器 / Python 依赖四项）：
-
-```bash
-python scripts/kitpath.py
-```
-
-### 一条命令跑完机械部分
-
-```bash
-python scripts/run_all.py "<课件.pdf>" --out "<输出目录>"
-```
-
-跑完你会得到：
+### 跑完 ③ 你会得到
 
 - `config.json` — 组装配置（目录结构、标题、内嵌开关）
 - `content/` — 逐页骨架，**带 TODO 标记**，等人来写讲解

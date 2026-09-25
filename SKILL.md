@@ -38,7 +38,8 @@ PY="$(command -v python || command -v python3)"
 > **可迁移**：套件内所有脚本都用**相对自身位置**定位资源，不含任何写死的用户名或安装路径。
 > `node` 与浏览器按「环境变量 → PATH → 常见安装位置」自动探测；
 > 探测不到时用 `KIT_NODE` / `KIT_BROWSER` 指定，或先跑 `scripts/kitpath.py` 看诊断。
-> Python 依赖只有两个（`pymupdf`、`pillow`），缺了会给出 `pip install` 命令而不是报 `ModuleNotFoundError`。
+> Python 依赖只有两个（`pymupdf`、`pillow`，仓库根目录 `pip install -r requirements.txt` 一把装齐），
+> 缺了会给出 `pip install` 命令而不是报 `ModuleNotFoundError`。
 
 跑完你会得到：`config.json` · `content/`（封面/概述卡/逐页骨架/收尾，含 TODO 标记）·
 `_extract/`（`page-NN.png` 逐页核对用 + `thumb_NN.jpg`）· `_katex/`（套件自带的离线 KaTeX，

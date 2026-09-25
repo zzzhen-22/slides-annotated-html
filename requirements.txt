@@ -1,0 +1,11 @@
+# pdf-slides-annotated-html —— Python 运行依赖
+# 安装：pip install -r requirements.txt
+pymupdf    # 读 PDF / 渲染逐页图与文字层（AGPL-3.0，许可说明见 README「致谢 / 第三方」）
+pillow     # 缩略图降采样（scripts/prepare_pdf.py）
+
+# ------------------------------------------------------------------
+# 下面两项不是 Python 包，pip 装不了，仅供对照：
+# · Node.js（可选）—— 只被 scripts/check_math.js（公式语法自检）用到，
+#   缺了时 run_all.py 会自动跳过这一步，其余功能不受影响。
+# · Chrome / Edge —— 无头体检与截图用；scripts/kitpath.py 按
+#   环境变量 KIT_BROWSER → PATH → 常见安装位置 自动探测。

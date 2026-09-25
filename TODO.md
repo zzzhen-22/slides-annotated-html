@@ -63,7 +63,7 @@
 > 站点 <https://zzzhen-22.github.io/slides-annotated-html/>，demo 落在 `/demo/`：
 > 实测 **HTTP 200 ｜ 1,238,803 字节 ｜ `text/html; charset=utf-8`**，8 页区块与 191 条公式均在线可用。
 
-### [ ] 3. 补 `requirements.txt` 和一条最短上手命令
+### [x] 3. 补 `requirements.txt` 和一条最短上手命令 ✅ **已完成**
 **为什么**：`kitpath.py` 会提示缺什么，但那要**先跑脚本才知道**。
 陌生人习惯先看 README 的安装段，现在那一段只有一句「需要 pymupdf、pillow」。
 
@@ -77,6 +77,17 @@
   ```
 
 **验收**：在一个全新的 venv 里照抄这三行，能直接跑到出产物
+
+> **实测记录（2026-09-25）**：`requirements.txt` 收 `pymupdf` + `pillow`，**不锁版本**——
+> 没验证过旧版本就不写版本下限，脚本用的都是稳定基础 API，装最新版即可。
+> 文件内注明 `node` 可选（仅 `check_math.js`）与浏览器的探测方式。
+> README「快速开始」顶部加「三步上手」块，环境表同步标注 Node.js（可选）。
+> **一处刻意的偏离**：README 第 ③ 步写成 `"<你的课件>.pdf"` 占位，而非本条原设计的
+> `examples/sample-lecture.pdf` —— 示例 PDF 属于第 4 条、当时还不存在，
+> README 不能指向不存在的文件；第 4 条落地后把占位符换成示例路径即可。
+> **验收过程**：Python 3.13 全新 venv 照抄三行（③ 用真课件 7 页替换占位符）→
+> pip 干净装上 `pymupdf 1.28.2` + `pillow 12.3.0`（走 pip 缓存，秒级）→
+> `kitpath.py` 四项全 ✔ 退出码 0 → `run_all.py` ①–⑧ 全绿、产物正常生成。
 
 ### [ ] 4. 放一份 3–6 页的示例 PDF 当测试素材
 **为什么**：`selftest.py` 会现造一份 PDF，但那是给程序用的，用户拿不到。
