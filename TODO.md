@@ -160,20 +160,18 @@ what it does / install / quick start / screenshots / limitations / license
 
 ## P2 · 提升「被发现」与「能贡献」
 
-### [ ] 9. 设置仓库 topics 和 homepage
+### [x] 9. 设置仓库 topics 和 homepage ✅ **已完成（topics + homepage 均已生效）**
 **为什么**：现在 topics 为空，GitHub 搜索 `pdf slides to html` 之类基本找不到。
 这是**成本最低、回报最高**的一条（点几下鼠标）。
 
-> **homepage 已完成**（`https://zzzhen-22.github.io/slides-annotated-html/demo/`），
-> **只剩 topics 待填**。一条 REST 请求即可：
-> ```bash
-> curl -X PUT -H "Authorization: Bearer $T" -H "Accept: application/vnd.github+json" \
->   https://api.github.com/repos/zzzhen-22/slides-annotated-html/topics \
->   -d '{"names":["pdf","slides","lecture-notes","katex","offline-first","html","annotation","courseware","python","agent-skill"]}'
-> ```
-
-建议 topics：`pdf` `slides` `lecture-notes` `katex` `offline-first` `html`
-`annotation` `courseware` `python` `agent-skill`
+> **homepage 已完成**（`https://zzzhen-22.github.io/slides-annotated-html/demo/`）。
+> **topics 已完成（2026-09-25）**：`pdf` `slides` `lecture-notes` `katex` `offline-first`
+> `html` `annotation` `courseware` `python` `agent-skill` 共 10 个，全部生效。
+>
+> **实测记录**：没走上面的 curl（token 是 GCM 里的 OAuth 凭据，抄进命令行有泄漏风险），
+> 而是写了个一次性脚本 `import push_via_api` 复用它的 `token_from_gcm()` + `Api` 类
+> （token 只在进程内流转、不落日志），GET 现状 → PUT 覆盖 → 回读核验一致。
+> PUT topics 是**覆盖式**不是追加，一次请求设全部 10 个。
 
 **验收**：仓库页右侧出现 topics 标签
 
