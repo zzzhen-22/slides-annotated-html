@@ -89,7 +89,7 @@
 > pip 干净装上 `pymupdf 1.28.2` + `pillow 12.3.0`（走 pip 缓存，秒级）→
 > `kitpath.py` 四项全 ✔ 退出码 0 → `run_all.py` ①–⑧ 全绿、产物正常生成。
 
-### [ ] 4. 放一份 3–6 页的示例 PDF 当测试素材
+### [x] 4. 放一份 3–6 页的示例 PDF 当测试素材 ✅ **已完成（8 页，见实测记录）**
 **为什么**：`selftest.py` 会现造一份 PDF，但那是给程序用的，用户拿不到。
 没有输入文件，「跑一遍看看」就无从谈起。
 
@@ -97,6 +97,14 @@
 最好包含**一个公式 + 一张图 + 一个表格**，把套件的能力全展示到
 
 **验收**：上面第 3 条那三行命令里的 `examples/sample-lecture.pdf` 真实存在且能跑通
+
+> **实测记录（2026-09-25）**：`examples/sample-lecture.pdf`，8 页 / 590 KB，
+> 节选自一份真实大学物理英文课件（横向 A4，含公式、插图与表格页），
+> 经课件持有者确认可作示例使用，故未另造自制内容。metadata 已清为中性值
+> （title=Sample Lecture (excerpt)，author/creator/producer 置空）。
+> 页序保持原课件顺序，节选页码：原 P1、P2、P5–P10。
+> README 快速开始 ③ 的占位符已同步换成 `examples/sample-lecture.pdf`（第 3 条留的尾巴闭环）。
+> 验收：照三行命令实跑，`run_all.py` ①–⑧ 全绿。
 
 ---
 

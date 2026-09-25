@@ -38,7 +38,7 @@
 ```bash
 pip install -r requirements.txt                        # ① 安装 Python 依赖（pymupdf、pillow）
 python scripts/kitpath.py                              # ② 自查：python / node / 浏览器 / 依赖
-python scripts/run_all.py "<你的课件>.pdf" --out demo   # ③ 一键跑完机械部分
+python scripts/run_all.py examples/sample-lecture.pdf --out demo   # ③ 一键跑通（8 页示例课件）
 ```
 
 - ② 打印四项检查，任何一项不是 ✔ 都会给出可直接照抄的解决办法；
@@ -106,7 +106,7 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 │   ├─ site.extra.css       ← 四类交互的追加样式
 │   └─ site.js              ← 全部交互逻辑，暴露 window.__doc 供无头测试
 ├─ templates/               ← 可复制的内容骨架 + 交付体检 + 截图 harness
-├─ examples/                ← 完整 config 样例、逐页区块模板
+├─ examples/                ← sample-lecture.pdf 示例课件（快速开始 ③ 的输入）、config 样例、逐页区块模板
 ├─ references/
 │   ├─ pitfalls.md          ← 踩坑清单（36 条，按「频率 × 隐蔽度」排序）
 │   └─ content-quality.md   ← 讲解内容的质量标准
