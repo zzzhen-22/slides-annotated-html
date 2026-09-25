@@ -11,7 +11,7 @@
 | 项目 | 现状 |
 |---|---|
 | 仓库 | 39 个文件 ｜ 489 KB ｜ 5 个提交 ｜ `main` 分支 |
-| 文档 | `README.md`（中文）、`SKILL.md`（410 行 / 27.5 KB，面向 Agent）、`TODO.md` |
+| 文档 | `README.md`（中文；2026-09-25 起主推「AI 代做」路径，手工为辅）、`SKILL.md`（面向 Agent，顶部已加人群分流声明）、`docs/workflow.md`（人类向流程）、`TODO.md` |
 | 图片资源 | ✅ **3 张**（`docs/images/`，hero / notes / overview，各约 230 KB） |
 | 示例产物 | ✅ **在线 demo 已上线**（`docs/demo/index.html`，1.18 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/> |
 | 依赖清单 | **无** `requirements.txt`（真实依赖：`pymupdf`、`pillow`；可选 `node`） |
@@ -153,6 +153,7 @@
 
 **怎么做**：中英双 README，顶部互加语言切换。英文版**精简**即可：
 what it does / install / quick start / screenshots / limitations / license
+**（2026-09-25 注：README 已改为「AI 代做为主、手工为辅」的双路径定位，英文版照此写。）**
 
 **验收**：一个只读英文的开发者，能凭 `README.en.md` 跑出 demo
 
@@ -195,7 +196,7 @@ what it does / install / quick start / screenshots / limitations / license
 
 **验收**：仓库出现 Releases 页；`CHANGELOG.md` 有 `0.1.0` 条目
 
-### [ ] 12. 把 `SKILL.md` 里「给人看」的部分拆到 `docs/`
+### [x] 12. 把 `SKILL.md` 里「给人看」的部分拆到 `docs/` ✅ **已完成（含定位调整）**
 **为什么**：`SKILL.md` 410 行 / 27.5 KB，**一半是写给 Agent 的指令**
 （"先问用户""逐页读图""等主人确认"）。人类读者照着一半内容走会迷路。
 
@@ -205,6 +206,19 @@ what it does / install / quick start / screenshots / limitations / license
 - `SKILL.md` 保持 Agent 指令，但在顶部声明「人类请先看 README 与 docs/」
 
 **验收**：人类读者不需要读 `SKILL.md` 也能完整走完流程
+
+> **实测记录（2026-09-25）**：`docs/workflow.md` 已建——一屏看懂流程图 + 四步展开 +
+> 「为什么是这个目录结构」（architecture 部分并入此节，不再单独建文件）+ 常见问题；
+> 规范细节**用指针指向 SKILL.md 与 references/**，不复制全文，避免双源维护改一处忘一处。
+> `SKILL.md` 顶部已加人群分流声明（人类 → README 与 workflow.md）。
+> 验收：仅凭 README + workflow.md 能走通全流程（README 三步 + workflow 的分步叙述与指针）。
+>
+> **同日更大的一步——定位调整（主人拍板）**：README 原表述「逐页看图写讲解这一步是留给人的」
+> 有误导性——目标用户要的是「丢给 agent 一轮对话拿完整产物」。README 已全量重写：
+> 主推「让 AI 替你做」（本仓库即 Agent Skill；WorkBuddy 安装方式 + 其他 agent 喂 SKILL.md +
+> 交付后抽查关键公式转述的建议），手工三步降为辅助路径并明确「同一套件的手工模式」；
+> 「五条铁律」改名「交付纪律（对人和 agent 同样有效）」；
+> 「关于运行环境」改写为「SKILL.md 说给 agent 听、README/workflow.md 说给人听」的分工说明。
 
 ---
 

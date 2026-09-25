@@ -15,6 +15,10 @@ agent_created: true
 
 # PDF / PPT 课件 → 逐页对照讲解单文件 HTML
 
+> **你是人类读者？** 请先看 [README.md](README.md)（含「让 AI 替你做」的使用方式）与
+> [docs/workflow.md](docs/workflow.md)（完整流程讲解）——不需要读本文件。
+> 本文件是给 AI agent 的执行指令：怎么问清需求、怎么逐页看图写讲解、怎么验证交付。
+
 把一份几十页的课件（PDF）变成「左看讲解、右对原文」的单文件 HTML。
 **默认产出**：一个自包含的 `.html`，断网可开，公式正常渲染，每页有原页缩略图与页码跳转。
 
