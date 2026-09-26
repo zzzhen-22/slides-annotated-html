@@ -5,11 +5,43 @@
 用法：
     python init_project.py <课件.pdf> [--out 项目目录]
         [--title 标题] [--group-size 8] [--group-by bookmarks|auto|flat]
+        [--outline _plan/outline.json]
         [--extras/--no-extras] [--embed-pdf/--no-embed-pdf] [--force]
 
+两种分段来源（第三条优先）：
+    ① 有书签大纲 -> 按书签切
+    ② 无书签 -> 按固定页数切（--group-size）
+    ③ **--outline 给了一份语义大纲 -> 完全按它切**（推荐；见下）
+
+什么是 outline.json
+    「先读整份课件、由内容语义决定分节」这条路线产出的中间产物。
+    它把「几段、每段叫什么、边界在第几页、每页标题是什么」显式写下来，
+    于是**脚本不再需要靠文字层去猜结构**——这正是「页标题抓到公式/人名、
+    四个部分被 8 页硬切成三段」这类问题的根源（见 pitfalls 第 40 条）。
+
+    结构（schema: outline/v1）：
+        {
+          "pdf": "...", "page_count": 17,
+          "source": "semantic", "confidence": 0.95, "confirmed": true,
+          "cover": {"course": "...", "title": "...", "subtitle": "...", "parts": [...]},
+          "warnings": ["..."],
+          "sections": [
+            {"key": "s1", "name": "物理问题的极值描述",
+             "pages": [4,5,6,7], "origin": "numbering", "part_index": 1,
+             "toc_label": "1 · 物理问题的极值描述（P4–P7）",
+             "page_titles": {"4": "...", "5": "..."}}
+          ],
+          "page_titles_all": {"1": "...", "2": "..."}
+        }
+    · sections 就是目录的一级分组，顺序即目录顺序；
+    · pages 必须覆盖 1..page_count（缺页会报错，防止漏贴）；
+    · toc_label 直接作为目录行文字，不再经任何启发式加工；
+    · page_titles / page_titles_all 直接作为页头标题，不再从文字层猜；
+    · cover.* 覆盖封面元信息（课程名 / 主标题 / 副标题 / 首页所列部分清单）。
+
 它会做这些事：
-    1. 读 PDF 大纲（书签）→ 自动切段，生成目录 groups（两级）
-    2. 每页取首个非空文本行当标题（供目录与页头用）
+    1. 决定分段：读 outline（若给了）／读 PDF 书签／按页数切
+    2. 决定每页标题：outline 给的就用，否则取首个非空文本行
     3. 生成 content/ 分片：00_intro（封面/使用说明/脉络/前置）+ 每段 概述卡 + 逐页骨架 + 90_outro
     4. 生成 config.json（字段齐全，可直接跑 build.py）
     5. 把套件自带的离线 KaTeX 复制进项目 _katex/（**不需要联网**）
@@ -48,6 +80,133 @@ OV_TPL = '10_overview.html'
 INTRO_TPL = '00_intro.html'
 OUTRO_TPL = '90_outro.html'
 # 注：config 不用模板文件 —— 本脚本用 json.dumps 直接生成（字段更可控、不会漏替换）
+
+
+# --------------------------------------------------------------------- 语义大纲
+def load_outline(path):
+    """读一份 outline.json 并做一致性校验。返回 dict 或 None。
+
+    校验是刻意严格的：outline 是「结构确认后即锁死」的东西，
+    宁可在这里报错，也不要让它带着漏洞进到骨架里（残缺的 pages
+    会在成品里表现为「某一页凭空消失」，非常难查）。
+    """
+    if not path:
+        return None
+    p = os.path.abspath(path)
+    if not os.path.exists(p):
+        raise SystemExit('找不到 outline: %s' % p)
+    try:
+        outline = json.load(open(p, encoding='utf-8'))
+    except json.JSONDecodeError as e:
+        raise SystemExit('outline 不是合法 JSON（%s）:\n  %s' % (p, e))
+
+    if not isinstance(outline.get('sections'), list) or not outline['sections']:
+        raise SystemExit('outline 缺少 sections[]，或为空: %s' % p)
+    outline['_path'] = p
+
+    # 页码覆盖性：sections 的 pages 并集必须是 1..page_count，不缺不重
+    seen = []
+    for i, sec in enumerate(outline['sections'], 1):
+        pages = sec.get('pages')
+        if not isinstance(pages, list) or not pages:
+            raise SystemExit('outline 第 %d 个 section 缺 pages[]: %s'
+                             % (i, sec.get('key') or sec.get('name')))
+        if pages != sorted(pages):
+            raise SystemExit('outline 第 %d 个 section 的 pages 未按升序: %s'
+                             % (i, pages))
+        seen.extend(pages)
+    dup = sorted({n for n in seen if seen.count(n) > 1})
+    if dup:
+        raise SystemExit('outline 里这些页被重复分配: %s' % dup)
+    return outline
+
+
+def check_outline_coverage(outline, n_pages):
+    """核对 outline 覆盖了全部页码（封面页除外），且与 PDF 实际页数一致。
+
+    封面页是特例：它由 00_intro.html 的封面卡承载，不进 sections，
+    所以允许它落在覆盖范围之外 —— 但也仅限「首页」，其余任何页都不许漏。
+    """
+    seen = sorted(n for sec in outline['sections'] for n in sec['pages'])
+    allow = set(outline.get('cover_pages') or [1])
+    want = [n for n in range(1, n_pages + 1) if n not in allow]
+    missing = [n for n in want if n not in seen]
+    extra = [n for n in seen if n not in range(1, n_pages + 1)]
+    if missing:
+        raise SystemExit('outline 漏了这些页（PDF 共 %d 页）: %s\n'
+                         '  除封面页 %s 外，每一页都必须归属于某个 section，\n'
+                         '  否则成品里会凭空少一页。'
+                         % (n_pages, missing, sorted(allow)))
+    if extra:
+        raise SystemExit('outline 多出这些页（PDF 只有 %d 页）: %s' % (n_pages, extra))
+    declared = outline.get('page_count')
+    if declared is not None and declared != n_pages:
+        print('  [warn] outline.page_count=%s 与 PDF 实际页数 %d 不符，以 PDF 为准'
+              % (declared, n_pages))
+
+
+def groups_from_outline(outline):
+    """把 outline.sections 转成 split_groups 的返回格式 [(组名, [页号...]), ...]。"""
+    return [(sec.get('name') or ('第 %d 段' % i), list(sec['pages']))
+            for i, sec in enumerate(outline['sections'], 1)]
+
+
+def titles_from_outline(outline, n_pages, doc):
+    """按 outline 决定每页标题：page_titles_all 优先，其次各 section 的 page_titles，
+    都没有就退回文字层启发式（page_titles）。返回长度 = n_pages 的列表。"""
+    fallback = None                      # 惰性调用，避免白白解析文字层
+    out = []
+    per_all = outline.get('page_titles_all') or {}
+    for n in range(1, n_pages + 1):
+        t = per_all.get(str(n))
+        if not t:
+            for sec in outline['sections']:
+                pt = sec.get('page_titles') or {}
+                if str(n) in pt:
+                    t = pt[str(n)]
+                    break
+        if not t:
+            if fallback is None:
+                fallback = page_titles(doc)
+            t = fallback[n - 1] if n - 1 < len(fallback) else ''
+            if not t:
+                print('  [warn] P%d 在 outline 里没有标题，且文字层也取不到' % n)
+        out.append(t or '')
+    return out
+
+
+def outline_label_of(outline, n):
+    """从 outline 里取第 n 页的标题（供 toc_label 的 raw 参数）。"""
+    per_all = outline.get('page_titles_all') or {}
+    if str(n) in per_all:
+        return per_all[str(n)]
+    for sec in outline['sections']:
+        pt = sec.get('page_titles') or {}
+        if str(n) in pt:
+            return pt[str(n)]
+    return ''
+
+
+def print_outline_report(outline, n_pages):
+    """把 outline 的结构摘要打出来 —— 让执行者与用户一眼看到「拿什么依据切段」。"""
+    print('  语义大纲: %s' % outline['_path'])
+    print('  依据: %s   置信度: %s   已确认: %s'
+          % (outline.get('source', '?'), outline.get('confidence', '?'),
+             '是' if outline.get('confirmed') else '否'))
+    if outline.get('warnings'):
+        for w in outline['warnings']:
+            print('  [note] %s' % w)
+    print('  分段:')
+    for i, sec in enumerate(outline['sections'], 1):
+        pages = sec['pages']
+        span = ('P%d' % pages[0] if len(pages) == 1
+                else 'P%d–P%d' % (pages[0], pages[-1]))
+        part = sec.get('part_index')
+        print('    %d) %-22s %-12s %s%s'
+              % (i, sec.get('name', '?'), span,
+                 ('（首页第 %s 部分）' % part) if part else '（非编号部分）',
+                 ('  ← %s' % sec['origin']) if sec.get('origin') else ''))
+    print('  合计 %d 段 / %d 页' % (len(outline['sections']), n_pages))
 
 
 # --------------------------------------------------------------------- 小工具
@@ -281,14 +440,25 @@ def roadmap_rows(groups):
     return '\n'.join(rows)
 
 
-def guess_meta(pdf_path, doc, titles):
+def guess_meta(pdf_path, doc, titles, outline=None):
+    """推定封面用的 (课程名/前缀, 主标题行)。
+
+    有 outline 时以 outline.cover 为准 —— 脚本从首页文字层取的「首个 ≥3 字的行」
+    在 PPT 上常常是课程名（往往在左上角）而不是课件名，且拿不到副标题。
+    """
     stem = os.path.splitext(os.path.basename(pdf_path))[0]
     first = ''
     try:
-        first = (doc[0].get_text() or '').strip().splitlines()
-        first = clean_title(next((x for x in first if len(x) >= 3), ''), 60)
+        lines = (doc[0].get_text() or '').strip().splitlines()
+        first = clean_title(next((x for x in lines if len(x) >= 3), ''), 60)
     except Exception:  # noqa: BLE001
         first = ''
+    if outline and outline.get('cover'):
+        cov = outline['cover']
+        title = clean_title(cov.get('title') or '', 60)
+        if title:
+            first = title
+        stem = clean_title(cov.get('course') or '', 60) or stem
     return stem, first
 
 
@@ -302,6 +472,9 @@ def main():
                     help='没有可用大纲时每段切多少页（默认 8）')
     ap.add_argument('--group-by', choices=['auto', 'bookmarks', 'flat'], default='auto',
                     help='auto=有大纲就用大纲，没有就按页数切；bookmarks=只用大纲；flat=只按页数切')
+    ap.add_argument('--outline', default=None,
+                    help='语义大纲 JSON（如 _plan/outline.json）；给了就完全按它切段与定页标题，'
+                         '忽略 --group-by / --group-size')
     ap.add_argument('--no-extras', action='store_true', help='不生成 primer / roadmap 这两张卡')
     ap.add_argument('--embed-pdf', action='store_true', help='把原 PDF base64 内嵌进产物')
     ap.add_argument('--no-embed-pdf', action='store_true', help='（默认）只写本机绝对路径深链')
@@ -329,16 +502,26 @@ def main():
 
     doc = pymupdf.open(pdf)
     n_pages = doc.page_count
-    titles = page_titles(doc)
-    stem_name, first_line = guess_meta(pdf, doc, titles)
-    groups = split_groups(doc, n_pages, titles, a.group_by, a.group_size)
+    outline = load_outline(a.outline)
+    if outline is not None:
+        check_outline_coverage(outline, n_pages)
+        print_outline_report(outline, n_pages)
+        titles = titles_from_outline(outline, n_pages, doc)
+        groups = groups_from_outline(outline)
+        src_desc = '语义大纲（%s）' % os.path.basename(outline['_path'])
+    else:
+        titles = page_titles(doc)
+        groups = split_groups(doc, n_pages, titles, a.group_by, a.group_size)
+        src_desc = ('来自 PDF 大纲' if a.group_by == 'bookmarks'
+                    else ('按页数切（每段 %d 页）' % a.group_size
+                          if a.group_by == 'flat' else '自动探测'))
+    stem_name, first_line = guess_meta(pdf, doc, titles, outline)
 
     title = a.title or ('%s · 逐页精解 — %d 页对照讲解' % (stem_name, n_pages))
     cover_h1 = stem_name
     cover_h2 = '逐页精解'
     print('项目目录: %s' % out_dir)
-    print('页数: %d   分段: %d 段（%s）' % (n_pages, len(groups),
-                                        '来自 PDF 大纲' if a.group_by != 'flat' else '按页数切'))
+    print('页数: %d   分段: %d 段（%s）' % (n_pages, len(groups), src_desc))
 
     # ---------- 分片 ----------
     shards = ['content/00_intro.html']
@@ -347,9 +530,12 @@ def main():
     intro_start = [['#cover', '封面与使用说明'], ['#roadmap', '全文脉络']]
     if not a.no_extras:
         intro_start.insert(1, ['#primer', '阅读前必读（补充）'])
+    cover_sub = '基于《%s》（%d 页课件）逐页编写' % (stem_name, n_pages)
+    if outline and outline.get('cover', {}).get('subtitle'):
+        cover_sub = clean_title(outline['cover']['subtitle'], 90)
     intro = fill(load(os.path.join(SKEL, INTRO_TPL)), {
         'cover_h1': cover_h1, 'cover_h2': cover_h2,
-        'cover_sub': '基于《%s》（%d 页课件）逐页编写' % (stem_name, n_pages),
+        'cover_sub': cover_sub,
         'pdf_name': os.path.basename(pdf), 'page_count': n_pages,
         'roadmap_rows': roadmap_rows(groups),
     })
@@ -368,6 +554,17 @@ def main():
 
     cfg_groups = [['开始', [[x[0], x[1]] for x in intro_start]]]
 
+    def label_for(n):
+        """一页在目录里那一行的文字。统一带「页码. 」前缀。
+
+        （曾试图让段首页改用 outline 的 toc_label 覆盖，结果那一行变成
+        「0 · 引子（P2–P3）」，与段内其它页的「3. xxx」格式割裂 ——
+        toc_label 是**段标签**语义，只该喂组名，不该占页标签的位置。）
+        """
+        if outline:
+            return toc_label(n, outline_label_of(outline, n))
+        return toc_label(n, titles[n - 1])
+
     for gi, (gname, nums) in enumerate(groups, 1):
         ov_id = 'ov%d' % gi
         shards.append('content/%d0_ov%d.html' % (gi, gi))
@@ -380,14 +577,21 @@ def main():
             fname = 'content/%d%d_p%02d_p%02d.html' % (gi, pi, piece[0], piece[-1])
             shards.append(fname)
             w(fname, page_blocks(piece, titles))
-            sub.append(['#p%02d' % piece[0], toc_label(piece[0], titles[piece[0] - 1])])
             # 目录里逐页列出（每页一条），方便跳转
             for n in piece:
-                if n != piece[0]:
-                    sub.append(['#p%02d' % n, toc_label(n, titles[n - 1])])
-        # 段名只在此处附加一次页码，避免与 split_groups 的段名重复
-        cfg_groups.append(['%d · %s（P%d–P%d）' % (gi, gname, nums[0], nums[-1]),
-                           [[('#%s' % ov_id), '本节概述']] + sub])
+                sub.append(['#p%02d' % n, label_for(n)])
+        # 段名：outline 给了 toc_label 就用它（语义标签，已含页码），
+        # 否则在此处附加一次页码，避免与 split_groups 的段名重复
+        sec_toc = ''
+        if outline and gi - 1 < len(outline['sections']):
+            sec_toc = (outline['sections'][gi - 1].get('toc_label') or '').strip()
+        if sec_toc:
+            gtitle = sec_toc
+        else:
+            parts = re.split(r'\s*（P\d+–P\d+）\s*$', gname)
+            gname_clean = parts[0] if parts and parts[0] else gname
+            gtitle = '%d · %s（P%d–P%d）' % (gi, gname_clean, nums[0], nums[-1])
+        cfg_groups.append([gtitle, [[('#%s' % ov_id), '本节概述']] + sub])
 
     shards.append('content/90_outro.html')
     w('content/90_outro.html', fill(load(os.path.join(SKEL, OUTRO_TPL)), {
@@ -420,6 +624,17 @@ def main():
             '讲解部分为本文档新增内容；公式、图示与知识点归属原作者。',
         ],
     }
+    if outline:
+        # 溯源：config 从哪份 outline 来的、依据是什么、确认过没有。
+        # 重建时若发现结构与 memory/负责人 记得的不一致，凭这三个字段就能定位。
+        cfg['outline'] = {
+            'path': os.path.relpath(outline['_path'], out_dir).replace('\\', '/')
+                    if outline['_path'].startswith(out_dir) else outline['_path'],
+            'source': outline.get('source', ''),
+            'confidence': outline.get('confidence'),
+            'confirmed': bool(outline.get('confirmed')),
+            'warnings': outline.get('warnings') or [],
+        }
     cfgtext = json.dumps(cfg, ensure_ascii=False, indent=2)
     w('config.json', cfgtext)
 
