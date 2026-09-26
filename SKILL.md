@@ -73,6 +73,8 @@ PY="$(command -v python || command -v python3)"
 3. `sections[].name` 改成语义段名，`sections[].toc_label` 填「N · 段名（P起–P止）」；
 4. 把 outline 拿给用户确认，确认后 `confirmed=true`、`confirmed_by` 填确认人；
 5. 结构一旦确认**不再轻改**，要改就整轮重跑（分片文件名、锚点全会变）。
+   **注意：带 `--force` 重建骨架会覆盖 `content/` 里已写好的讲解——动手前必须先备份 `content/`**，
+   迁移办法：从备份按 `<section class="pg" id="pNN">` 抽取各页讲解，填回新分片。
 
 ## ⚡ 换新课件入口（B 路线 / 结构简单时）
 
