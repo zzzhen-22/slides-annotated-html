@@ -441,10 +441,14 @@ def roadmap_rows(groups):
 
 
 def guess_meta(pdf_path, doc, titles, outline=None):
-    """推定封面用的 (课程名/前缀, 主标题行)。
+    """推定封面用的 (文档名, 主标题行, 课程名)。
 
-    有 outline 时以 outline.cover 为准 —— 脚本从首页文字层取的「首个 ≥3 字的行」
-    在 PPT 上常常是课程名（往往在左上角）而不是课件名，且拿不到副标题。
+    文档名 = 产物文件名 / 品牌名，一律取 PDF 文件名（`Lecture 19 变分的基础知识`），
+    它才是这份产物的身份。**不要用课程名覆盖它** —— 同一门课有几十讲，
+    全叫「分析力学-逐页精解.html」会互相盖掉，也看不出是哪一讲。
+
+    有 outline 时额外取 outline.cover.course 作为「课程名」kicker 单独返回；
+    title 供封面副标题/主标题使用。
     """
     stem = os.path.splitext(os.path.basename(pdf_path))[0]
     first = ''
@@ -453,13 +457,14 @@ def guess_meta(pdf_path, doc, titles, outline=None):
         first = clean_title(next((x for x in lines if len(x) >= 3), ''), 60)
     except Exception:  # noqa: BLE001
         first = ''
+    course = ''
     if outline and outline.get('cover'):
         cov = outline['cover']
+        course = clean_title(cov.get('course') or '', 60)
         title = clean_title(cov.get('title') or '', 60)
         if title:
             first = title
-        stem = clean_title(cov.get('course') or '', 60) or stem
-    return stem, first
+    return stem, first, course
 
 
 # --------------------------------------------------------------------- 主流程
@@ -515,13 +520,18 @@ def main():
         src_desc = ('来自 PDF 大纲' if a.group_by == 'bookmarks'
                     else ('按页数切（每段 %d 页）' % a.group_size
                           if a.group_by == 'flat' else '自动探测'))
-    stem_name, first_line = guess_meta(pdf, doc, titles, outline)
+    stem_name, first_line, course_name = guess_meta(pdf, doc, titles, outline)
 
     title = a.title or ('%s · 逐页精解 — %d 页对照讲解' % (stem_name, n_pages))
     cover_h1 = stem_name
     cover_h2 = '逐页精解'
+    # 封面 kicker：有课程名（outline.cover.course）就把它放上去，否则用默认文案。
+    # 课程名与文档名是两个独立字段 —— 课程名只进 kicker，绝不进 h1 / 文件名。
+    cover_kicker = ('%s · 逐页对照讲解' % course_name) if course_name else '逐页对照讲解 · 中文'
     print('项目目录: %s' % out_dir)
     print('页数: %d   分段: %d 段（%s）' % (n_pages, len(groups), src_desc))
+    if course_name:
+        print('课程: %s   文档名: %s' % (course_name, stem_name))
 
     # ---------- 分片 ----------
     shards = ['content/00_intro.html']
@@ -535,6 +545,7 @@ def main():
         cover_sub = clean_title(outline['cover']['subtitle'], 90)
     intro = fill(load(os.path.join(SKEL, INTRO_TPL)), {
         'cover_h1': cover_h1, 'cover_h2': cover_h2,
+        'cover_kicker': cover_kicker,
         'cover_sub': cover_sub,
         'pdf_name': os.path.basename(pdf), 'page_count': n_pages,
         'roadmap_rows': roadmap_rows(groups),
@@ -611,6 +622,7 @@ def main():
         'embed_pdf': bool(a.embed_pdf and not a.no_embed_pdf),
         'title': title,
         'brand': stem_name,
+        'course': course_name or '',
         'sidebar_title': ' 逐页精解',
         'topbar_title': '%s · 逐页精解' % stem_name,
         'shards': shards,

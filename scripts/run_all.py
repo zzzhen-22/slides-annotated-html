@@ -3,11 +3,20 @@
 """一键流水线：把「一个课件 PDF」跑到「能打开的成品 + 全绿体检」。
 
 用法：
-    python run_all.py <课件.pdf> [--out 项目目录] [--skip-init] [--skip-prepare]
+    python run_all.py <课件.pdf> [--out 项目目录] [--stage full|plan|check]
+                      [--outline _plan/outline.json] [--skip-init] [--skip-prepare]
                       [--no-shot] [--embed-pdf] [--thumb-width 860] [--thumb-quality 75]
+
+--stage 三种用法（默认 full）：
+    plan     只做「巡读准备」：渲染逐页图 + 跑 plan_outline.py 产出 outline 草案。
+             产物：_extract/page-NN.png、_plan/outline.json。**不建骨架、不构建。**
+             适合「先定结构」路线的第一步（见 SKILL.md「两条路线」）。
+    full     完整流水线 ①–⑧（默认）。
+    check    只复检：③ 构建 + ④–⑧ 体检，跳过 ①②。等价于 --skip-init --skip-prepare。
 
 流程（每一步都会打印 PASS / FAIL，最后给总结）：
     ① init_project.py   建骨架（config.json + content/ + _katex/）—— 已存在时用 --skip-init
+                        传 --outline 则按语义大纲建骨架（推荐，见 SKILL.md）
     ② prepare_pdf.py    逐页大图（供人/agent 逐页核对）+ 内嵌缩略图
     ③ build.py          组装单文件 HTML
     ④ check_math.js     公式语法 / CJK / 标签配对 / 目录锚点 / 数量一致性
@@ -111,6 +120,13 @@ def main():
     ap.add_argument('--out', default=None)
     ap.add_argument('--skip-init', action='store_true')
     ap.add_argument('--skip-prepare', action='store_true')
+    ap.add_argument('--stage', choices=['full', 'plan', 'check'], default='full',
+                    help='full=①–⑧ 全跑（默认）；plan=只渲染图+出 outline 草案（不建骨架）；'
+                         'check=只跑 ③–⑧ 复检（等价于 --skip-init --skip-prepare）')
+    ap.add_argument('--outline', default=None,
+                    help='语义大纲 JSON；给了就传给 init_project.py 按它建骨架')
+    ap.add_argument('--force-outline', action='store_true',
+                    help='--stage plan 时覆盖已存在的 outline 草案')
     ap.add_argument('--no-shot', action='store_true')
     ap.add_argument('--embed-pdf', action='store_true')
     ap.add_argument('--group-size', type=int, default=8, help='传给 init_project.py')
@@ -137,6 +153,30 @@ def main():
     print('python: %s' % py)
     print('node  : %s' % (node or '✘ 没找到（check_math.js 会跳过）'))
 
+    # --stage plan：只渲染逐页图 + 出 outline 草案，不建骨架、不构建
+    if a.stage == 'plan':
+        os.makedirs(os.path.join(out_dir, '_extract'), exist_ok=True)
+        R.step('② 渲染逐页图 prepare_pdf.py',
+               [py, os.path.join(HERE, 'prepare_pdf.py'), pdf,
+                os.path.join(out_dir, '_extract'),
+                str(a.thumb_width), str(a.thumb_quality)], fatal=True)
+        plan_cmd = [py, os.path.join(HERE, 'plan_outline.py'), pdf,
+                    '--out', os.path.join(out_dir, '_plan', 'outline.json'),
+                    '--pages', os.path.join(out_dir, '_extract')]
+        if a.force_outline:
+            plan_cmd.append('--force')
+        R.step('plan 巡读结构 plan_outline.py', plan_cmd, fatal=True)
+        print('\n' + '=' * 72)
+        print('结果：✔ 结构巡读完成（未建骨架）。')
+        print('  1) 打开 %s 逐页核对/补齐语义' % os.path.join(out_dir, '_plan', 'outline.json'))
+        print('  2) 定稿后按它建骨架：')
+        print('     python run_all.py "%s" --out "%s" --outline "%s"'
+              % (pdf, out_dir, os.path.join(out_dir, '_plan', 'outline.json')))
+        return
+
+    if a.stage == 'check':
+        a.skip_init = a.skip_prepare = True
+
     # ① 骨架
     if a.skip_init:
         if not os.path.exists(cfg_path):
@@ -147,6 +187,8 @@ def main():
                '--group-size', str(a.group_size), '--group-by', a.group_by]
         if a.embed_pdf:
             cmd.append('--embed-pdf')
+        if a.outline:
+            cmd += ['--outline', os.path.abspath(a.outline)]
         if a.force:
             cmd.append('--force')
         R.step('① 建项目骨架 init_project.py', cmd, fatal=True)
@@ -215,7 +257,6 @@ def main():
     print('      下一步：按 %s 的「待补清单」逐页写讲解，' % os.path.join(out_dir, 'README-项目.md'))
     print('      再跑一次本脚本（加 --skip-init --skip-prepare）复检。')
     print('      内容进度看 ⑦ 的「内容进度：待补页面」——目标是 0。')
-
 
 if __name__ == '__main__':
     main()
