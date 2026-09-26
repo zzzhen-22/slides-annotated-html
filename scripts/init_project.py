@@ -443,9 +443,9 @@ def roadmap_rows(groups):
 def guess_meta(pdf_path, doc, titles, outline=None):
     """推定封面用的 (文档名, 主标题行, 课程名)。
 
-    文档名 = 产物文件名 / 品牌名，一律取 PDF 文件名（`Lecture 19 变分的基础知识`），
+    文档名 = 产物文件名 / 品牌名，一律取 PDF 文件名（如「第 19 讲 变分法基础」），
     它才是这份产物的身份。**不要用课程名覆盖它** —— 同一门课有几十讲，
-    全叫「分析力学-逐页精解.html」会互相盖掉，也看不出是哪一讲。
+    全叫「课程名-逐页精解.html」会互相盖掉，也看不出是哪一讲。
 
     有 outline 时额外取 outline.cover.course 作为「课程名」kicker 单独返回；
     title 供封面副标题/主标题使用。
