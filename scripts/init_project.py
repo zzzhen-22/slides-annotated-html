@@ -28,6 +28,7 @@ import os
 import re
 import shutil
 import sys
+import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 KIT = os.path.dirname(HERE)
@@ -60,7 +61,33 @@ def fill(text, mapping):
     return text
 
 
+def norm_unicode(s):
+    """把 PDF 里常见的「形近异码」字符折回标准码位。
+
+    PPT 导出的 PDF 文字层里，汉字常来自数学/符号字体，导出后变成
+    康熙部首（CJK Radicals Supplement, U+2E80–U+2FDF）或全角形式，
+    肉眼与正常汉字一模一样、码位却不同。后果是：
+      · 目录与正文标题「看着是同一个字、其实不是」；
+      · 浏览器为两种码位回退到不同字体 -> 表现为「中文字体不统一」；
+      · 按标题做匹配/去重时对不上。
+    这里统一做 NFKC 归一化（会把 U+2F12 ⼒ 折成 U+529B 力 等），
+    另外把几个 NFKC 管不到的空白/连字符类字符也一并规整。
+    """
+    if not s:
+        return ''
+    s = unicodedata.normalize('NFKC', s)
+    # NFKC 不处理的零宽字符与各类不间断空格
+    s = s.replace('\u200b', '').replace('\ufeff', '')
+    s = re.sub(r'[\u00a0\u2000-\u200a\u202f\u205f\u3000]', ' ', s)
+    # 各种连字符统一成 ASCII 减号，避免视觉上的「字体不一致」
+    s = re.sub(r'[\u2010-\u2015\u2212\uff0d]', '-', s)
+    # 标题里的装饰性符号（PPT 常用的花饰/圆点标记）去掉，免得挤进目录
+    s = re.sub(r'^[\u2700-\u27bf\u2600-\u26ff\u2b00-\u2bff\u25a0-\u25ff\u2764\u2740\u2741]\s*', '', s)
+    return s
+
+
 def clean_title(s, maxlen=42):
+    s = norm_unicode(s)
     s = re.sub(r'\s+', ' ', (s or '')).strip()
     s = s.lstrip('•·-—–*0123456789.、 ').strip()
     if len(s) > maxlen:
@@ -68,16 +95,107 @@ def clean_title(s, maxlen=42):
     return s
 
 
+# 该行是否「像公式 / 像纯符号」，而不是一个正常的页面标题
+_FORMULA_HINT = re.compile(
+    r'[=＋+×÷^∑∫∮√≈≠≤≥∞∂∇]'          # 明显的数学运算符
+    r'|\b(?:sin|cos|tan|log|ln|exp|dx|dy|dt|max|min|const)\b'
+)
+def looks_like_formula(s):
+    """判断一行文本是不是公式/公式片段（用来避免把公式当成页面标题）。"""
+    if not s:
+        return True
+    body = s.strip()
+    # 以等号、运算符结尾 -> 几乎一定是被截断的公式
+    if re.search(r'[=+\-×÷^]\s*$', body):
+        return True
+    # 含数学运算符且不含中文 -> 视为公式
+    if _FORMULA_HINT.search(body) and not re.search(r'[\u4e00-\u9fff]', body):
+        return True
+    # 字母/数字/符号占比过高（中文少于 2 字）且长度很短 -> 不像标题
+    han = len(re.findall(r'[\u4e00-\u9fff]', body))
+    if han == 0 and len(body) <= 20:
+        return True
+    return False
+
+
+def strip_section_prefix(s):
+    """把页面标题里的「1. 」「2.1 」「一、」这类编号前缀去掉，便于当段名。"""
+    if not s:
+        return ''
+    s = re.sub(r'^\s*[\d一二三四五六七八九十]+(?:[.．]\d+)*\s*[.、．]?\s*', '', s)
+    return s.strip()
+
+
+def strip_english_parens(s):
+    """剥掉末尾的英文括号副标题，例如「泛函 (function of function)」。"""
+    return re.sub(r'\s*[（(][A-Za-z][^）)]*[）)]\s*$', '', s or '').strip()
+
+
+def tidy_punct(s):
+    """统一标点与空格观感：半角转全角、破折号规整、中英数之间补空格。
+
+    目录标签与段名共用这一套，避免两处规则不一致（曾出现段名里
+    留着半角「附录:作业」、而页面标签已是「附录：作业」的割裂）。
+    """
+    if not s:
+        return ''
+    s = s.replace(':', '：').replace(';', '；').replace(',', '，')
+    s = re.sub(r'\s*-\s*', ' — ', s)          # 「有限变量 - 有限变量」-> 「—」
+    s = re.sub(r'\s*：\s*', '：', s)           # 「例1 ： 斯涅尔」-> 「例1：斯涅尔」
+    s = re.sub(r'\s*—\s*', ' — ', s)
+    s = re.sub(r'\s{2,}', ' ', s).strip()
+    # 中文与数字/字母之间补一个空格（「例1：」-> 「例 1：」），读起来更整齐
+    s = re.sub(r'([\u4e00-\u9fff])(\d)', r'\1 \2', s)
+    s = re.sub(r'(\d)([\u4e00-\u9fff])', r'\1 \2', s)
+    return s
+
+
+def toc_label(n, raw):
+    """把一页的原始标题整理成目录里那一行标签。
+
+    处理三件事：
+      1. 剥离「English (副标题)」里的英文部分——中文目录里混一堆英文
+         括号内容既长又乱，且英文部分常是 PPT 的模板副标题；
+      2. 清掉公式碎片（前导的 =、运算符、孤立括号）；
+      3. 空标题兜底成「第 N 页」，绝不出现空标签。
+    """
+    s = clean_title(raw or '', 44)
+    s = strip_english_parens(s)
+    s = tidy_punct(s)
+    # 清掉首尾的公式碎片与孤立符号
+    s = re.sub(r'^[\s=+\-×÷^、,，。;；:：]+', '', s)
+    s = re.sub(r'[\s=+\-×÷^、,，;；:：]+$', '', s).strip()
+    # 括号不配对（被截断）时丢掉末尾这段
+    if s.count('（') != s.count('）'):
+        s = re.sub(r'[（(][^（()）]*$', '', s).strip()
+    if not s or looks_like_formula(s):
+        s = '第 %d 页' % n
+    return '%d. %s' % (n, s)
+
+
 def page_titles(doc):
-    """每页取首个够长的非空行当标题；返回 (标题, 是否纯图页)。"""
+    """每页取首个「像标题」的非空行；返回标题字符串列表。
+
+    原先的实现在「公式框浮在标题上方」的版式上会取错：它拿的是
+    「首个长度>=2 的非空行」，于是一页里最上面的公式（例如
+    ``F(x, y, y′) =``）会被当成标题。这里改为：跳过页码行、
+    跳过疑似公式行，取首个合格行；都取不到就返回空串（由调用方
+    显示「（待填标题）」提示人工补）。
+    """
     out = []
     for page in doc:
-        txt = page.get_text() or ''
+        txt = norm_unicode(page.get_text() or '')
         lines = [clean_title(x) for x in txt.splitlines()]
         lines = [x for x in lines if len(x) >= 2]
         # 跳过 PPT 常见的「第 n 页 / 页码 / 页眉」这类噪音行
         cand = [x for x in lines if not re.fullmatch(r'[\d\s/]+', x)]
-        out.append(cand[0] if cand else '')
+        # 再跳过疑似公式行，取第一个真正像标题的
+        title = ''
+        for x in cand:
+            if not looks_like_formula(x):
+                title = x
+                break
+        out.append(title)
     return out
 
 
@@ -109,10 +227,22 @@ def split_groups(doc, n_pages, titles, mode, size):
             if mode == 'bookmarks':
                 return [('全部页面（原文件未提供可用大纲）', list(range(1, n_pages + 1)))]
     # auto / flat：按固定页数切
+    # 段名只描述「第几段」，**不带页码**——页码由调用方统一附加一次。
+    # 历史上这里写成 '第 N 段（P#–P#）'，调用方又拼一遍页码，
+    # 于是目录里出现「1 · 第 1 段（P1–P8）（P1–P8）」这种重复。
+    # 另外：如果该段首页有可用的页面标题，就把标题并进段名，让目录一眼
+    # 能看出这一段在讲什么（「第 2 段 · 再看极值」优于光秃秃的「第 2 段」）。
     groups = []
     for i in range(0, n_pages, size):
         chunk = list(range(i + 1, min(i + size, n_pages) + 1))
-        name = '第 %d 段（P%d–P%d）' % (len(groups) + 1, chunk[0], chunk[-1])
+        name = '第 %d 段' % (len(groups) + 1)
+        head = ''
+        if titles and chunk[0] - 1 < len(titles):
+            head = strip_section_prefix(titles[chunk[0] - 1] or '')
+        if head:
+            # 段名也要过一遍标点/公式规整，否则会出现「附录:作业」这类半角混排
+            head = tidy_punct(strip_english_parens(head))
+            name = '%s · %s' % (name, head[:24])
         groups.append((name, chunk))
     return groups
 
@@ -250,13 +380,12 @@ def main():
             fname = 'content/%d%d_p%02d_p%02d.html' % (gi, pi, piece[0], piece[-1])
             shards.append(fname)
             w(fname, page_blocks(piece, titles))
-            sub.append(['#p%02d' % piece[0],
-                        '%d. %s' % (piece[0], titles[piece[0] - 1] or '（待填标题）')])
+            sub.append(['#p%02d' % piece[0], toc_label(piece[0], titles[piece[0] - 1])])
             # 目录里逐页列出（每页一条），方便跳转
             for n in piece:
-                lbl = titles[n - 1] or '（待填标题）'
                 if n != piece[0]:
-                    sub.append(['#p%02d' % n, '%d. %s' % (n, lbl)])
+                    sub.append(['#p%02d' % n, toc_label(n, titles[n - 1])])
+        # 段名只在此处附加一次页码，避免与 split_groups 的段名重复
         cfg_groups.append(['%d · %s（P%d–P%d）' % (gi, gname, nums[0], nums[-1]),
                            [[('#%s' % ov_id), '本节概述']] + sub])
 
