@@ -330,14 +330,14 @@ def build_draft(pdf, doc):
             src = 'fallback'
             size = 8
             idx = 0
-            for i in range(0, n_pages, size):
-                if i == 0:
-                    continue                      # 首页当封面
-                chunk = list(range(i + 1, min(i + size, n_pages) + 1))
+            start = 1                            # 从第 2 页起切（首页是封面）
+            while start < n_pages:
+                chunk = list(range(start + 1, min(start + size, n_pages) + 1))
                 idx += 1
                 sections.append({'key': 's%d' % idx,
                                  'name': '第 %d 段' % idx,
                                  'pages': chunk, 'origin': 'fallback'})
+                start += size
             warnings.append('未探测到书签，也未探测到章节编号 —— 已退化为「每 %d 页一段」，'
                             '**必须人工按语义重新分段**' % size)
 

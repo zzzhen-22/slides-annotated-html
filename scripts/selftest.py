@@ -17,6 +17,7 @@
 """
 import argparse
 import ctypes
+import json
 import os
 import re
 import shutil
@@ -152,6 +153,79 @@ def run_pipeline(cmd):
     return ''.join(buf), proc.poll()
 
 
+def semantic_path(base, pdf):
+    """语义路线：--stage plan → 校对 outline → 改写确认 → --outline 建骨架 → build → 三校验。
+
+    这是「先定结构、再写内容」路线的自测，与上面机械路线互补。synth 造的英文 PDF
+    没有书签/编号信号，plan_outline 会退化为 fallback（每 8 页一段），这里照单全收
+    再程序化把它改成「两段语义结构」——这一步模拟的正是 agent 填语义 + 用户确认。
+    """
+    sem = os.path.join(base, 'semantic')
+    os.makedirs(sem, exist_ok=True)
+    checks = []
+    outline_path = os.path.join(sem, '_plan', 'outline.json')
+
+    # ① --stage plan：只渲染逐页图 + 出 outline 草案，不建骨架、不构建
+    out, rc = run_pipeline([sys.executable, '-u', os.path.join(HERE, 'run_all.py'),
+                            pdf, '--out', sem, '--stage', 'plan'])
+    checks.append(('① --stage plan 退出码 0', rc == 0))
+    checks.append(('① 产出 outline 草案', os.path.exists(outline_path)))
+
+    # ② 校对 outline：结构、覆盖性、封面字段、草案状态
+    d = None
+    if os.path.exists(outline_path):
+        d = json.load(open(outline_path, encoding='utf-8'))
+        secs = d.get('sections') or []
+        seen = [n for s in secs for n in (s.get('pages') or [])]
+        checks.append(('② outline.schema=v1', d.get('schema') == 'outline/v1'))
+        checks.append(('② sections 非空', len(secs) >= 1))
+        checks.append(('② 页码覆盖 2..N 且不重复',
+                       sorted(seen) == list(range(2, len(PAGES) + 1))))
+        checks.append(('② cover 字段存在', isinstance(d.get('cover'), dict)))
+        checks.append(('② 草案未确认（confirmed=false）', d.get('confirmed') is False))
+
+    # ③ 程序化改写为「确认过的两段语义结构」，模拟 agent 填语义 + 用户确认
+    if d is not None:
+        d['source'] = 'semantic'
+        d['sections'] = [
+            {'key': 's1', 'name': 'Counting', 'pages': [2, 3], 'origin': 'semantic',
+             'part_index': 1, 'toc_label': '1 · Counting（P2–P3）'},
+            {'key': 's2', 'name': 'Smoothing and wrap-up', 'pages': [4, 5, 6],
+             'origin': 'semantic', 'part_index': 2,
+             'toc_label': '2 · Smoothing and wrap-up（P4–P6）'},
+        ]
+        d['confirmed'] = True
+        d['confirmed_by'] = 'selftest'
+        open(outline_path, 'w', encoding='utf-8').write(
+            json.dumps(d, ensure_ascii=False, indent=2) + '\n')
+    checks.append(('③ 改写 outline 为两段语义结构',
+                   d is not None and len(d.get('sections') or []) == 2))
+
+    # ④ --outline 建骨架 → build → 三校验（run_all --skip-init）
+    if d is not None:
+        _, rc2 = run_pipeline([sys.executable, '-u', os.path.join(HERE, 'init_project.py'),
+                               pdf, '--out', sem, '--outline', outline_path])
+        checks.append(('④ init --outline 建骨架退出码 0', rc2 == 0))
+        out3, rc3 = run_pipeline([sys.executable, '-u', os.path.join(HERE, 'run_all.py'),
+                                  pdf, '--out', sem, '--skip-init'])
+        checks.append(('④ build + 体检退出码 0', rc3 == 0))
+        cfg_path = os.path.join(sem, 'config.json')
+        if os.path.exists(cfg_path):
+            cfg = json.load(open(cfg_path, encoding='utf-8'))
+            checks.append(('④ config.outline.confirmed=true',
+                           bool((cfg.get('outline') or {}).get('confirmed'))))
+            seg_names = [g[0] for g in (cfg.get('groups') or [])]
+            checks.append(('④ 目录按语义切成 2 段',
+                           any(x.startswith('1 ·') for x in seg_names)
+                           and any(x.startswith('2 ·') for x in seg_names)))
+        checks.append(('④ 产物已生成', any(f.endswith('-逐页精解.html') for f in os.listdir(sem))))
+        checks.append(('④ check_ui ALL PASS', re.search(r'ALL PASS', out3) is not None))
+        checks.append(('④ probe_marks PASS', re.search(r'RESULT: PASS', out3) is not None))
+        checks.append(('④ probe_doc 报进度', re.search(r'内容进度', out3) is not None))
+        checks.append(('④ run_all 判定全绿', re.search(r'机械部分全绿', out3) is not None))
+    return checks
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--keep', action='store_true', help='保留生成的项目目录')
@@ -192,6 +266,13 @@ def main():
         ('probe_doc 报出了进度', has(r'内容进度')),
         ('run_all 判定全绿', has(r'机械部分全绿')),
     ]
+
+    # 语义路线：与上面的机械路线互补，两条都要能在本脚本里跑通
+    print('\n' + '=' * 72)
+    print('开始跑语义路线（--stage plan → 校对 outline → --outline → build → 三校验）：\n',
+          flush=True)
+    checks.extend(semantic_path(base, pdf))
+
     print('=' * 72)
     bad = 0
     for name, ok in checks:
