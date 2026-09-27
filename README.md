@@ -43,8 +43,9 @@
 1. 把本仓库放到 `~/.workbuddy/skills/pdf-slides-annotated-html/`
 2. 对话里直接说：**「把这份课件 PDF 做成逐页对照讲解」**，附上文件即可
 
-Agent 会自动完成：环境自查 → 一键流水线 → **逐页看图写讲解** → 复检至「待补页面 = 0」
-→ 三重校验 + 截图 → 交付，并显式报告它拿不准的页面与原稿本身的问题。
+Agent 会自动完成：环境自查 → 结构巡读出大纲草案 → **与你确认分节** → 按大纲建骨架
+→ 逐页看图写讲解 → 复检至「待补页面 = 0」→ 三重校验 + 截图 → 交付，
+并显式报告它拿不准的页面与原稿本身的问题。
 
 ### 其他 AI 编程助手
 
@@ -123,9 +124,10 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 ```
 ├─ SKILL.md                 ← 给 AI agent 的执行指令：完整工作流 + 铁律 + 改套件的纪律
 ├─ scripts/
-│   ├─ run_all.py           ← 主入口：一键流水线（①–⑧）
+│   ├─ run_all.py           ← 主入口：一键流水线（①–⑧）；--stage plan 先出大纲草案 / --stage check 只复检
 │   ├─ kitpath.py           ← 路径自查：python / node / 浏览器 / Python 依赖
-│   ├─ init_project.py      ← 只建骨架（--group-by 控制分段策略）
+│   ├─ plan_outline.py      ← 巡读 PDF 文字层，产出语义大纲草案 outline.json（「先定结构」路线第一步）
+│   ├─ init_project.py      ← 只建骨架（--group-by 控制分段策略；--outline 按语义大纲建）
 │   ├─ prepare_pdf.py       ← PDF → 逐页 png + 缩略图 + 文字层
 │   ├─ katex_offline.py     ← 制作离线 KaTeX（一次即可，可跨项目复用）
 │   ├─ build.py             ← 组装单文件（可用 0 命令行参数：python build.py config.json）
@@ -134,6 +136,7 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 │   ├─ probe.py             ← 无头跑探针 JS 并把结果读回来（读 DOM 靠它）
 │   ├─ probe_marks.js       ← 标记功能回归（跨格/跨段/跨公式/单段 + 重开恢复）
 │   ├─ glyph_probe.py       ← 正文符号探针：把非中文符号排成一页，肉眼查方框
+│   ├─ selftest.py          ← 自检：现造小 PDF 跑通机械 + 语义两条路线
 │   └─ shot.py              ← 无头截图（--script 可先触发交互再截）
 ├─ assets/                  ← 已验证的外壳与样式，build.py 自动内联
 │   ├─ shell.html           ← 页面骨架（改版式改这里，不要改 build.py）
@@ -143,7 +146,7 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 ├─ templates/               ← 可复制的内容骨架 + 交付体检 + 截图 harness
 ├─ examples/                ← sample-lecture.pdf 示例课件（三步上手 ③ 的输入）、config 样例、逐页区块模板
 ├─ references/
-│   ├─ pitfalls.md          ← 踩坑清单（36 条，按「频率 × 隐蔽度」排序）
+│   ├─ pitfalls.md          ← 踩坑清单（42 条，按「频率 × 隐蔽度」排序）
 │   └─ content-quality.md   ← 讲解内容的质量标准
 ├─ vendor/katex/            ← 离线 KaTeX（MIT，见下方致谢）
 ├─ docs/
@@ -172,7 +175,7 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 ### 自检
 
 ```bash
-python scripts/selftest.py        # 现造一份 6 页小 PDF，把整条流水线从零跑一遍，期望结尾「自检结果: PASS」
+python scripts/selftest.py        # 现造一份 6 页小 PDF，跑通「机械 + 语义」两条路线并断言关键产物，期望结尾「自检结果: PASS」
 ```
 
 ---
@@ -208,7 +211,7 @@ python scripts/selftest.py        # 现造一份 6 页小 PDF，把整条流水�
 - **不许写死本机路径**。校验：`grep -rn "/home/\|/Users/\|C:/Users/" scripts/ assets/ templates/` 应当无命中。
 - **模板注释里不许出现字面标签**。`build.py` 用非贪婪正则匹配整段区块，注释里的假 `<section>` 会让它提前收尾，症状是「图在文件里、但 DOM 里查不到」，极难排查。
 
-动笔前先扫一遍 `references/pitfalls.md`（36 条，每条都对应一个真实事故）。
+动笔前先扫一遍 `references/pitfalls.md`（42 条，每条都对应一个真实事故）。
 
 ---
 

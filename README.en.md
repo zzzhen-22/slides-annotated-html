@@ -31,7 +31,7 @@ Feed it a slide deck (a lecture PPT exported to PDF, a tech talk, training mater
 This repository *is* an Agent Skill: `SKILL.md` contains complete, executable instructions for an AI agent — how to clarify requirements, how to read each rendered page and write explanations, how to verify before delivery.
 
 **WorkBuddy**: drop the repo into `~/.workbuddy/skills/pdf-slides-annotated-html/`, then just ask: *"Turn this lecture PDF into an annotated HTML."*
-The agent will self-check the environment, run the pipeline, **read every rendered page and write the explanations**, re-check until "pending pages = 0", pass all validations and screenshots, then deliver — reporting any page it is unsure about and any problem found in the original deck.
+The agent will self-check the environment, draft a section outline from the deck, **confirm the structure with you**, build the skeleton from that outline, **read every rendered page and write the explanations**, re-check until "pending pages = 0", pass all validations and screenshots, then deliver — reporting any page it is unsure about and any problem found in the original deck.
 
 **Other AI coding assistants**: clone the repo and hand `SKILL.md` to your agent as the task brief (Claude Code and similar tools that support the SKILL.md format can install it as a skill directly).
 
@@ -96,7 +96,7 @@ Every deliverable must pass all of these — mechanical checks catch what screen
 | `probe.py` + probe scripts | structural damage invisible in screenshots (e.g. block elements inside `<mark>`), via real-UI selection & assertion |
 | `shot.py` | looks and real interaction states |
 
-Self-test: `python scripts/selftest.py` — builds a synthetic 6-page PDF and runs the entire pipeline from scratch; expect the final line `自检结果: PASS`.
+Self-test: `python scripts/selftest.py` — builds a synthetic 6-page PDF and exercises both routes (mechanical pipeline + semantic outline path); expect the final line `自检结果: PASS`.
 
 ---
 

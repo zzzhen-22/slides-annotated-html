@@ -2,7 +2,7 @@
 
 > 给想理解这套流程的人看——无论接下来动手的是你还是 AI agent。
 > 可照抄的完整命令与 Agent 执行规范在 `SKILL.md`；写讲解的质量标准在 `references/content-quality.md`；
-> 36 条真实踩坑记录在 `references/pitfalls.md`。
+> 42 条真实踩坑记录在 `references/pitfalls.md`。
 
 ## 一屏看懂
 
@@ -12,6 +12,8 @@
    ▼
 ① 环境自查 + 机械部分        run_all.py 一条命令：建骨架 → 渲染逐页图 → 组装 → 报进度
    │                          （产出 _extract/page-NN.png —— 后面一切的原料）
+   │                          （语义路线把这一步拆成两半：先 --stage plan 出大纲草案，
+   │                            与你确认后 --outline 建骨架 —— 见下节「两条路线」）
    ▼
 ② 逐页看图写讲解             唯一需要「智能」的一步：看每一页的渲染图，写出左侧讲解
    │                          （agent 代做 = 你什么都不用写；手工 = 你自己写）

@@ -165,7 +165,8 @@ def semantic_path(base, pdf):
     checks = []
     outline_path = os.path.join(sem, '_plan', 'outline.json')
 
-    # ① --stage plan：只渲染逐页图 + 出 outline 草案，不建骨架、不构建
+    # ① --stage plan：只抽文字层出 outline 草案（默认不渲染图），不建骨架、不构建；
+    #    逐页图在 ④ 的 run_all --skip-init 里照常渲染（该次没传 --skip-prepare）
     out, rc = run_pipeline([sys.executable, '-u', os.path.join(HERE, 'run_all.py'),
                             pdf, '--out', sem, '--stage', 'plan'])
     checks.append(('① --stage plan 退出码 0', rc == 0))

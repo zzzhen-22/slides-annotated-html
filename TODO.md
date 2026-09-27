@@ -6,19 +6,19 @@
 > 每条都写了「为什么值得做」和「怎么算做完」，可以直接当 issue 用。
 > 优先级按「拦不拦人」排，不按「技术含量」排。
 
-## 当前基线（2026-09-24 审计）
+## 当前基线（2026-09-27 复审；初版为 2026-09-24 审计）
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 39 个文件 ｜ 489 KB ｜ 5 个提交 ｜ `main` 分支 |
+| 仓库 | 45 个文件 ｜ ≈4.9 MB ｜ 9 个提交 ｜ `main` 分支 |
 | 文档 | `README.md`（中文；2026-09-25 起主推「AI 代做」路径，手工为辅）、`README.en.md`（英文精简版，同定位）、`SKILL.md`（面向 Agent，顶部已加人群分流声明）、`docs/workflow.md`（人类向流程）、`TODO.md` |
 | 图片资源 | ✅ **3 张**（`docs/images/`，hero / notes / overview，各约 230 KB） |
 | 示例产物 | ✅ **在线 demo 已上线**（`docs/demo/index.html`，1.18 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.18 MB，讲解与界面全英文）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/> |
-| 依赖清单 | **无** `requirements.txt`（真实依赖：`pymupdf`、`pillow`；可选 `node`） |
+| 依赖清单 | ✅ `requirements.txt`（`pymupdf` + `pillow`，不锁版本；可选 `node`） |
 | CI | **无** |
-| topics | **仍为空** —— GitHub 搜索里很难被找到（homepage 已填好） |
+| topics | ✅ **10 个已生效**（2026-09-25 设置，见第 9 条） |
 | 跨平台 | 代码里已有 macOS / Linux 分支，但**从未在真机验证** |
-| 版本号 | 无 tag、无 CHANGELOG |
+| 版本号 | ✅ **tag `v2.0.0` + GitHub Release 已建**（2026-09-27，annotated tag）；`CHANGELOG.md` 仍无（见第 11 条） |
 
 ---
 
@@ -207,13 +207,18 @@ what it does / install / quick start / screenshots / limitations / license
 
 **验收**：打开 New Issue 时能看到模板
 
-### [ ] 11. `CHANGELOG.md` + 语义化版本 tag
+### [ ] 11. `CHANGELOG.md` + 语义化版本 tag（部分完成：tag/Release 已建，CHANGELOG 仍缺）
 **为什么**：仓库没有版本号。用户无法判断「我手上这份是不是最新」「该不该更新」，
 而且技能类项目会被反复迭代，没有版本号就没法追溯。
 
 **怎么做**：定 `0.1.0`，打 git tag + Release，`CHANGELOG.md` 按 Keep a Changelog 格式
 
 **验收**：仓库出现 Releases 页；`CHANGELOG.md` 有 `0.1.0` 条目
+
+> **进展（2026-09-27）**：版本化已完成一半 —— **tag `v2.0.0`（annotated）+ GitHub Release 已建**，
+> release notes 采用「新增 / 变更 / 兼容性」三段式，对应语义驱动架构（结构先于内容确定）上线。
+> 开发期标签（step 系列）与发布标签（SemVer）从此分离。**剩余**：补 `CHANGELOG.md`
+> （把 v2.0.0 的 release notes 收编进去即可），并把版本号约定从本条原定的 `0.1.0` 更正为 SemVer。
 
 ### [x] 12. 把 `SKILL.md` 里「给人看」的部分拆到 `docs/` ✅ **已完成（含定位调整）**
 **为什么**：`SKILL.md` 410 行 / 27.5 KB，**一半是写给 Agent 的指令**
