@@ -8,9 +8,9 @@
                       [--no-shot] [--embed-pdf] [--thumb-width 860] [--thumb-quality 75]
 
 --stage 三种用法（默认 full）：
-    plan     只做「巡读准备」：渲染逐页图 + 跑 plan_outline.py 产出 outline 草案。
-             产物：_extract/page-NN.png、_plan/outline.json。**不建骨架、不构建。**
-             适合「先定结构」路线的第一步（见 SKILL.md「两条路线」）。
+    plan     只做「巡读结构」：跑 plan_outline.py 产出 outline 草案。
+             默认**只抽文字层、不渲染图**（省时间/磁盘）；加 --render 才顺带渲染逐页图。
+             **不建骨架、不构建。** 适合「先定结构」路线的第一步（见 SKILL.md「两条路线」）。
     full     完整流水线 ①–⑧（默认）。
     check    只复检：③ 构建 + ④–⑧ 体检，跳过 ①②。等价于 --skip-init --skip-prepare。
 
@@ -121,12 +121,14 @@ def main():
     ap.add_argument('--skip-init', action='store_true')
     ap.add_argument('--skip-prepare', action='store_true')
     ap.add_argument('--stage', choices=['full', 'plan', 'check'], default='full',
-                    help='full=①–⑧ 全跑（默认）；plan=只渲染图+出 outline 草案（不建骨架）；'
+                    help='full=①–⑧ 全跑（默认）；plan=只出 outline 草案（默认不渲染图）；'
                          'check=只跑 ③–⑧ 复检（等价于 --skip-init --skip-prepare）')
     ap.add_argument('--outline', default=None,
                     help='语义大纲 JSON；给了就传给 init_project.py 按它建骨架')
     ap.add_argument('--force-outline', action='store_true',
                     help='--stage plan 时覆盖已存在的 outline 草案')
+    ap.add_argument('--render', action='store_true',
+                    help='--stage plan 时顺带渲染逐页图（默认只抽文字层，省资源）')
     ap.add_argument('--no-shot', action='store_true')
     ap.add_argument('--embed-pdf', action='store_true')
     ap.add_argument('--group-size', type=int, default=8, help='传给 init_project.py')
@@ -153,24 +155,31 @@ def main():
     print('python: %s' % py)
     print('node  : %s' % (node or '✘ 没找到（check_math.js 会跳过）'))
 
-    # --stage plan：只渲染逐页图 + 出 outline 草案，不建骨架、不构建
+    # --stage plan：出 outline 草案，不建骨架、不构建。
+    # 默认只抽文字层（省时间/磁盘）；加 --render 才顺带渲染逐页图（供第②步逐页看图）。
     if a.stage == 'plan':
-        os.makedirs(os.path.join(out_dir, '_extract'), exist_ok=True)
-        R.step('② 渲染逐页图 prepare_pdf.py',
-               [py, os.path.join(HERE, 'prepare_pdf.py'), pdf,
-                os.path.join(out_dir, '_extract'),
-                str(a.thumb_width), str(a.thumb_quality)], fatal=True)
+        if a.render:
+            os.makedirs(os.path.join(out_dir, '_extract'), exist_ok=True)
+            R.step('渲染逐页图 prepare_pdf.py（--render）',
+                   [py, os.path.join(HERE, 'prepare_pdf.py'), pdf,
+                    os.path.join(out_dir, '_extract'),
+                    str(a.thumb_width), str(a.thumb_quality)], fatal=True)
         plan_cmd = [py, os.path.join(HERE, 'plan_outline.py'), pdf,
-                    '--out', os.path.join(out_dir, '_plan', 'outline.json'),
-                    '--pages', os.path.join(out_dir, '_extract')]
+                    '--out', os.path.join(out_dir, '_plan', 'outline.json')]
+        if a.render:
+            plan_cmd += ['--pages', os.path.join(out_dir, '_extract')]
         if a.force_outline:
             plan_cmd.append('--force')
         R.step('plan 巡读结构 plan_outline.py', plan_cmd, fatal=True)
         print('\n' + '=' * 72)
         print('结果：✔ 结构巡读完成（未建骨架）。')
-        print('  1) 打开 %s 逐页核对/补齐语义' % os.path.join(out_dir, '_plan', 'outline.json'))
-        print('  2) 定稿后按它建骨架：')
-        print('     python run_all.py "%s" --out "%s" --outline "%s"'
+        print('  草案: %s' % os.path.join(out_dir, '_plan', 'outline.json'))
+        if not a.render:
+            print('  未渲染逐页图 —— 逐页看图前先跑：')
+            print('    python prepare_pdf.py "%s" "%s" 860 75'
+                  % (pdf, os.path.join(out_dir, '_extract')))
+        print('  定稿后按它建骨架：')
+        print('    python run_all.py "%s" --out "%s" --outline "%s"'
               % (pdf, out_dir, os.path.join(out_dir, '_plan', 'outline.json')))
         return
 

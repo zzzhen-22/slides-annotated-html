@@ -55,11 +55,12 @@ agent_created: true
 KIT="$(cd "$(dirname "$0")" && pwd)"
 PY="$(command -v python || command -v python3)"
 
-# ① 巡读结构：渲染逐页图 + 产出 outline 草案（不建骨架、不构建）
+# ① 巡读结构：只抽文字层，秒出 outline 草案（不渲染图、不建骨架）
 "$PY" "$KIT/scripts/run_all.py" "<课件.pdf>" --out "<项目目录>" --stage plan
 
-# ② 【agent】逐页看图 + 填语义 + 给用户确认（硬闸门，见下）
-#    —— 编辑 <项目目录>/_plan/outline.json，把 _todo 项全部填掉
+# ② 【agent】渲染逐页图 → 逐页看图 → 填语义 → 给用户确认（硬闸门，见下）
+"$PY" "$KIT/scripts/prepare_pdf.py" "<课件.pdf>" "<项目目录>/_extract" 860 75
+#    —— 然后编辑 <项目目录>/_plan/outline.json，把 _todo 项全部填掉
 
 # ③ 按确认过的结构建骨架 + 跑完整流水线
 "$PY" "$KIT/scripts/init_project.py" "<课件.pdf>" --out "<项目目录>" \
@@ -68,7 +69,8 @@ PY="$(command -v python || command -v python3)"
 ```
 
 **② 是硬闸门，不许跳过：**
-1. 逐页 Read `_extract/page-NN.png`（`--stage plan` 已渲染好）；
+1. 先渲染逐页图（`prepare_pdf.py`，见上一步命令），再逐页 Read `_extract/page-NN.png`；
+   （① 为省资源默认不渲染图——但**看图这一步不能省**，文字层顺序 ≠ 视觉顺序，见 pitfalls §40）
 2. 逐条处理 outline 里的 `warnings`——存疑页**必须**看图复核，不许当噪音忽略；
 3. `sections[].name` 改成语义段名，`sections[].toc_label` 填「N · 段名（P起–P止）」；
 4. 把 outline 拿给用户确认，确认后 `confirmed=true`、`confirmed_by` 填确认人；
