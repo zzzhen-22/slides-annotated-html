@@ -12,7 +12,7 @@
     ④ 标记与笔记：抽屉 DOM、选择工具条依赖的样式、localStorage 命名空间是否注入
     ⑤ 正文字号调节：A−/A＋ 按钮、--fs 缩放变量、max-width 反向补偿、localStorage 键
 
-浏览器失灵时（见 references/pitfalls.md 第 13 条）用它兜底，
+浏览器失灵时（见 references/pitfalls.md 第 29 条）用它兜底，
 能覆盖"结构对不对"，覆盖不了"长得对不对"。
 """
 import os

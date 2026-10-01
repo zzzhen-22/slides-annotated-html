@@ -71,7 +71,7 @@ if (bodyEnd < 0) bodyEnd = html.indexOf('<div class="lightbox"');   // 兼容旧
 let body = (bodyStart >= 0 && bodyEnd > bodyStart) ? html.slice(bodyStart, bodyEnd) : html;
 // 关键：先挖掉 HTML 注释再数标签。注释里常出现字面标签（例如
 // 「缩略图会插到 </section> 之前」），不排除就会造成假性不平衡，
-// 把人引向根本不存在的结构问题（见 references/pitfalls.md 第 30 条）。
+// 把人引向根本不存在的结构问题（见 references/pitfalls.md 第 18 条）。
 const comments = [];
 body = body.replace(/<!--[\s\S]*?-->/g, (m) => { comments.push(m); return ''; });
 const tags = ['section', 'div', 'p', 'table', 'thead', 'tbody', 'tr', 'td', 'th',
@@ -128,7 +128,7 @@ console.log(`⑥ 缩略图 ${thumbs} / 逐页区块 ${pgSections} / PDF深链 ${
    实测最常踩的就是拿 U+20D7（COMBINING RIGHT ARROW ABOVE）当矢量符号写
    「J⃗」「v⃗」——在 KaTeX 公式里没问题（公式走 KaTeX 自己的字体），
    一旦写进正文就变方框。
-   **正文里表示矢量请用 <b class="vec">J</b> 加粗**（见 references/pitfalls.md 第 34 条）。
+   **正文里表示矢量请用 <b class="vec">J</b> 加粗**（见 references/pitfalls.md 第 16 条）。
    这个检查会先挖掉 math/tex 区块，只看正文。 */
 const noMath = html.replace(/<script type="math\/tex[^"]*">[\s\S]*?<\/script>/g, '');
 const combining = noMath.match(/[\u20d0-\u20ff]/g) || [];

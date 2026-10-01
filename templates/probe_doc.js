@@ -22,7 +22,7 @@ function run() {
   try {
     var pg = $$('section.pg');
     // 缩略图只数「逐页区块内部的」——灯箱里那张大图也是 <img>，
-    // 用全局 figure.thumb 在不同模板下会数错，所以按区块内查（见 pitfalls 第 30 条）。
+    // 用全局 figure.thumb 在不同模板下会数错，所以按区块内查（见 pitfalls 第 18 条）。
     var thumbs = $$('section.pg figure.thumb img');
     var links = $$('a.pdf-link');
     T('逐页区块 / 缩略图 / 深链', pg.length + ' / ' + thumbs.length + ' / ' + links.length +
@@ -53,7 +53,7 @@ function run() {
        ① script —— probe.py 把本文件注入成页面的 <script>，**本文件自己的注释里
           就写着 TODO**（以及 &oiint; 这类例子），不跳过就会自己命中自己；
        ② 内嵌 PDF 的 base64 —— 随机字符里完全可能碰巧拼出 TODO。
-       第一版用 documentElement.innerHTML 扫，结果永远报「6 处」，见 pitfalls 第 34 条。 */
+       第一版用 documentElement.innerHTML 扫，结果永远报「6 处」，见 pitfalls 第 16 条。 */
     var tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode: function (n) {
         if (n.parentNode && n.parentNode.closest &&
@@ -74,7 +74,7 @@ function run() {
     /* ---------- 正文符号体检（两类，都是「体检看不到、用户一眼就看到」的错） ----------
        ① 组合符号 U+20D0–U+20FF（典型是拿 U+20D7 当矢量符号写「J⃗」）：
           中文字体栈普遍没有这些字形 → 渲染成方框（tofu）。
-          正文里表示矢量请用 <b class="vec">J</b> 加粗。见 pitfalls 第 34 条。
+          正文里表示矢量请用 <b class="vec">J</b> 加粗。见 pitfalls 第 16 条。
        ② 非法命名实体（如 &oiint; &iint; &iiint; —— 它们存在于 MathML/LaTeX，
           **不在 HTML5 实体表里**）：浏览器不解码，原样显示成「&oiint;」这串字面文本。
           判定办法最可靠：把这段字面文本塞进 innerHTML 试一次，
@@ -100,7 +100,7 @@ function run() {
     /* 只扫「用户看得见的文字节点」：
        —— 必须跳过 script / style：probe.py 是把本文件注入成页面的 <script> 的，
           **本文件的注释里就写着 &oiint; 这些例子**，不跳过就会自己命中自己
-          （第一版就是这么误报的，见 pitfalls 第 34 条）。
+          （第一版就是这么误报的，见 pitfalls 第 16 条）。
        —— 必须跳过 .katex-mathml / annotation：公式只要用 \oiint \iint
           这类算子，KaTeX 的 MathML 副本里就会出现字面实体（且不可见）。 */
     var ew = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {

@@ -12,7 +12,7 @@
 
 约定：探针脚本自己在结束时把页面清空，只留
       <pre id="__r">要回传的文本</pre>
-      （直接改 document.head/body 的 innerHTML 即可，见 references/pitfalls.md 第 26 条）。
+      （直接改 document.head/body 的 innerHTML 即可，见 references/pitfalls.md 第 30 条）。
 
 为什么需要它：截图只能看「长得对不对」，看不了「结构有没有被改坏」（例如
 划线把 <td> 搬进 <mark>、表格 tr/td 数量变化）。DOM 断言必须靠这个。

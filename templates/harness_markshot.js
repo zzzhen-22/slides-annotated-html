@@ -8,7 +8,7 @@
 
    为什么必须走真实入口：造 Range → selection.addRange → 派发 mouseup →
    点浮出的「✎ 标记」。直接调 window.__doc.addNote() 会绕过 selbar/captureSelection，
-   历史上正是「测试入口与真实入口走了不同分支」而漏掉过必现 bug（见 pitfalls 第 23 条）。
+   历史上正是「测试入口与真实入口走了不同分支」而漏掉过必现 bug（见 pitfalls 第 32 条）。
    ========================================================================== */
 window.addEventListener('load', function () {
   setTimeout(function () {
@@ -79,7 +79,7 @@ window.addEventListener('load', function () {
     d.openDrawer();
     /* 留一条自检信息（仅供人工查看：本元素带 style 属性，probe.py 靠字面
        <pre id="__r"> 匹配，因此读不到它 —— 要跑探针请用 body.innerHTML 写法，
-       见 references/pitfalls.md 第 36 条）。 */
+       见 references/pitfalls.md 第 23 条）。 */
     var pre = document.createElement('pre');
     pre.id = '__r';
     pre.style.display = 'none';

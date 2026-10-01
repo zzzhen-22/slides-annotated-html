@@ -46,7 +46,7 @@ HARD_LIMIT = 900     # 秒：整体硬超时 → kill 并说明停在哪一步
 
 def long_path(p):
     """展开 8.3 短路径。tempfile.gettempdir() 在本机返回 SHENYU~1，
-    Chromium 在短路径下会静默失败（见 references/pitfalls.md 第 18 条）。"""
+    Chromium 在短路径下会静默失败（见 references/pitfalls.md 第 29 条）。"""
     if os.name != 'nt':
         return p
     try:
@@ -142,7 +142,7 @@ def run_pipeline(cmd):
             warned.add(step)
             print('\n⚠ 已 %d 秒没有新输出 —— 当前停在：%s\n'
                   '  （真卡住的话多半是这一步的浏览器/探针没退，'
-                  '见 references/pitfalls.md 第 18、21 条）\n' % (int(idle), step), flush=True)
+                  '见 references/pitfalls.md 第 29、36 条）\n' % (int(idle), step), flush=True)
         if time.time() - t0 > HARD_LIMIT:
             proc.kill()
             print('\n✘ 流水线超过 %d 秒仍未结束，已终止。最后停在：%s\n' % (HARD_LIMIT, step),

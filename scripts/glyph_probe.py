@@ -17,7 +17,7 @@ KaTeX 公式在自己的字体里画符号，永远不会缺；而正文走的�
 
 判定标准：**表格里凡显示为方框者，就是本机字体栈缺字**，必须改写：
 矢量 → `<b class="vec">J</b>` 加粗；其它符号 → 换成有字形的等价写法或放进 KaTeX 公式。
-详见 references/pitfalls.md 第 34 条。
+详见 references/pitfalls.md 第 16 条。
 """
 import argparse
 import os
@@ -115,7 +115,7 @@ def main():
     if risky:
         print('⚠ 其中 %d 种属于组合附加记号 U+20D0–U+20FF（中文 UI 字体普遍缺字形）：%s'
               % (len(risky), ' '.join('U+%04X' % ord(c) for c in risky)))
-        print('  正文里表示矢量请改用 <b class="vec">J</b>，见 references/pitfalls.md 第 34 条。')
+        print('  正文里表示矢量请改用 <b class="vec">J</b>，见 references/pitfalls.md 第 16 条。')
     else:
         print('✔ 没有组合附加记号（U+20D0–U+20FF）——这一类缺字风险已排除。')
     print('下一步（渲染出来肉眼扫一遍）：\n'

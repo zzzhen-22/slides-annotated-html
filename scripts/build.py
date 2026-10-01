@@ -190,7 +190,7 @@ def main():
     # 先把 HTML 注释整体挖走，再匹配区块 —— 否则注释里一旦出现字面 </section>
     # （很常见：「缩略图会插到 </section> 之前」这类说明），非贪婪 .*? 会提前收尾，
     # 缩略图被塞进注释内部、注释损坏、真收尾标签变游离标签。
-    # 症状极隐蔽：产物里图片“在”，但 DOM 里查不到。见 references/pitfalls.md 第 30 条。
+    # 症状极隐蔽：产物里图片“在”，但 DOM 里查不到。见 references/pitfalls.md 第 18 条。
     _comments = []
 
     def _mask(m):
