@@ -5,11 +5,12 @@
 用法：
     python check_ui.py <输出.html>
 
-检查四项交互功能的"接线"是否正确：
+检查五项交互功能的"接线"是否正确：
     ① 目录逐级折叠：分组/按钮/计数徽标数量、各小节标题是否都在
     ② 本节概述：overview 卡数量与其锚点是否进目录
     ③ 侧栏收起：navToggle/thumbToggle 是否存在、收起后缩略图列宽是否真的变大
     ④ 标记与笔记：抽屉 DOM、选择工具条依赖的样式、localStorage 命名空间是否注入
+    ⑤ 正文字号调节：A−/A＋ 按钮、--fs 缩放变量、max-width 反向补偿、localStorage 键
 
 浏览器失灵时（见 references/pitfalls.md 第 13 条）用它兜底，
 能覆盖"结构对不对"，覆盖不了"长得对不对"。
@@ -149,6 +150,19 @@ def main():
         '.ni-loc' in css and 'text-overflow:ellipsis' in css)
     chk('JS 导出 Markdown 用位置标签当小标题', 'locTip(sec, locOf(sec))' in js)
     chk('JS 把 locOf 暴露给探针', 'locOf: function (pid)' in js)
+
+    print()
+    print('=== ⑩ 正文字号调节（A−/A＋，存浏览器）===')
+    # 功能：顶栏 A−/A＋ 按钮整体等比缩放正文（.wrap），档位写 localStorage。
+    # 关键在「max-width 反向补偿」——只 zoom 不放宽 max-width 会导致放大字号时内容区变窄。
+    chk('存在字号减小/增大按钮', 'id="fontMinus"' in html and 'id="fontPlus"' in html)
+    chk('存在字号档位显示标签', 'id="fontSizeLabel"' in html)
+    chk('CSS 定义了 --fs 缩放变量', '--fs:' in css)
+    chk('CSS 正文容器应用 zoom 缩放', 'zoom:var(--fs)' in css or 'zoom: var(--fs)' in css)
+    chk('CSS max-width 反向补偿（放大字号不缩窄）', 'calc(1000px / var(--fs))' in css)
+    chk('JS 有字号存储键 FS_KEY', 'FS_KEY' in js and "'font-size'" in js)
+    chk('JS 字号档位存 localStorage', 'LS.set(FS_KEY' in js)
+    chk('JS 字号模块暴露给探针', 'font: Font' in js)
 
     print()
     print('=== ⑥ 内嵌原文件（embed_pdf）===')

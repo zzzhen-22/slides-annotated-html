@@ -22,6 +22,7 @@
     ④ check_math.js     公式语法 / CJK / 标签配对 / 目录锚点 / 数量一致性
     ⑤ check_ui.py       四类交互的接线（含标记上色的结构安全、笔记位置标签）
     ⑥ probe_marks.js    标记功能行为回归（真实入口 + DOM 结构断言）
+    ⑥b probe_font.js    正文字号调节回归（档位 / localStorage / MIN·MAX 钳制）
     ⑦ probe_doc.js      交付体检（内容进度 / 缩略图一致性 / 断链）
     ⑧ shot.py ×3        首屏 / 首段概述卡 / 侧栏收起（截图失败只告警，不算失败）
 
@@ -104,7 +105,9 @@ def parse_probe(out):
         # 「正文缺字风险 / 非法命名实体 / TODO 残留」三项就是这样被吞掉的）。
         if s.startswith(('RESULT', '结构指纹', '重开后', '逐页区块', '公式（', '内容进度',
                          '目录条目', '标记回归', '缺缩略图的页', '抽屉里的',
-                         '正文缺字风险', '非法命名实体', 'TODO 残留')):
+                         '正文缺字风险', '非法命名实体', 'TODO 残留',
+                         '初始档位', '放大到', 'localStorage', 'init 从', 'MAX', 'MIN',
+                         '重开恢复', '固定到')):
             m.append(s)
     # 探针的判定行（PASS/FAIL）务必透传，否则上游脚本没法据此判绿。
     if not any(x.startswith('RESULT') for x in m):
@@ -230,6 +233,10 @@ def main():
            parse=parse_check_ui, fatal=True)
     R.step('⑥ 标记功能回归 probe_marks.js',
            [py, os.path.join(HERE, 'probe.py'), html, os.path.join(HERE, 'probe_marks.js')],
+           parse=parse_probe, fatal=True)
+    R.step('⑥b 字号调节回归 probe_font.js',
+           [py, os.path.join(HERE, 'probe.py'), html,
+            os.path.join(KIT, 'templates', 'probe_font.js')],
            parse=parse_probe, fatal=True)
     R.step('⑦ 交付体检 probe_doc.js',
            [py, os.path.join(HERE, 'probe.py'), html,

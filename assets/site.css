@@ -9,6 +9,7 @@
   --green:#1a6b52; --green-soft:#eefaf5; --green-line:#bfe6d5;
   --shadow:0 1px 2px rgba(20,30,60,.05),0 6px 22px rgba(20,30,60,.06);
   --radius:14px;
+  --fs:1;  /* 正文字号缩放系数，site.js 的 Font 模块读写（默认 1 = 100%） */
   --sans:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC","Noto Sans CJK SC",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace;
   --serif:Georgia,"Times New Roman","Songti SC",serif;
@@ -66,7 +67,9 @@ body{
 
 /* ---------------- 主区 ---------------- */
 main{margin-left:296px;padding:0 0 90px}
-.wrap{max-width:1000px;margin:0 auto;padding:0 34px}
+/* 正文字号缩放：zoom 整体等比缩放（文字/公式/缩略图/表格比例不变），
+   max-width 反向除以同一系数，避免放大字号时内容区反而变窄。 */
+.wrap{max-width:calc(1000px / var(--fs));margin:0 auto;padding:0 34px;zoom:var(--fs)}
 .topbar{
   position:sticky;top:0;z-index:30;background:rgba(242,244,249,.9);
   backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);

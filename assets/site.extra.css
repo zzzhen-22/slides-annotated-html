@@ -20,6 +20,12 @@
 }
 .tb-count.zero{background:#cbd5e1;color:#475569}
 .topbar .tb-sep{width:1px;height:18px;background:var(--line);flex:0 0 1px}
+/* 正文字号调节（A− / 100% / A＋），状态存 localStorage */
+.tb-font{display:inline-flex;align-items:center;gap:3px}
+.tb-font .tb-btn{width:30px;justify-content:center;padding:5px 0;font-weight:700}
+.tb-font .tb-btn:disabled{opacity:.38;cursor:default}
+.tb-font .tb-btn:disabled:hover{border-color:var(--line);color:var(--text2);background:var(--surface)}
+.tb-fsize{min-width:46px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted);user-select:none}
 
 /* ---------------------------------------------------------------------------
    目录：逐级折叠

@@ -86,6 +86,14 @@ Sigmoid 公式里必然是减号，因为 \(\frac{1}{1+\exp(+v)}\) 不可能把�
 
 `assets/site.js` 会遍历它们并调 `katex.render` 替换成 `<span>`。
 
+**反面提醒（2026-09-28 实测，一次踩了 16 处）**：「按原始文本解析」是双刃剑——
+**HTML 实体也不被解码**。在 script 里写 `&gt;` / `&lt;`，KaTeX 收到的就是字面的
+`&gt;`，报 `Expected 'EOF', got '&'`；正文 HTML 里写实体没问题，唯独 script 里不行。
+要表达 <、> 就写裸字符（写 `<0` 也不会截断，因为截断只认 `</script`）。
+批量修复脚本：正则定位 `(<script type="math/tex[^"]*">)([\s\S]*?)</script>`，
+在捕获组里把 `&gt;→>`、`&lt;→<`、`&amp;→&`。写讲解时养成习惯：
+**公式里一律裸字符，实体只出现在普通 HTML 文本里**。
+
 ---
 
 ## 三、构建与体积类
@@ -1055,3 +1063,33 @@ continue（首页当封面）——当 n_pages ≤ size 时循环只剩 i=0，�
    让循环结构本身保证至少跑一次。
 2. 空集合的 default 值（min(..., default=n+1) / max(..., default=1）会让后续区间判断
    [head/tail] 退化为「全部命中」，写这种补齐逻辑时先想清楚「上游可能为空」。
+
+---
+
+### 43. 一批「体检抓出来」的公式/标签坑（2026-09-30，一份 80 页 SVM 课件）
+
+这次一次性写完 80 页，人工扫描没抓全，全靠 check_math.js / probe_doc.js 兜住。三类：
+
+**① `type` 属性笔误 → KaTeX 静默失败。**
+`type="math\tex"`（反斜杠）或 `type="math"`（漏 `/tex`）都**不会报错**——site.js 用
+`script[type^="math/tex"]` 前缀匹配，匹配不上就跳过，公式以原始源码形式残留，
+probe_doc 报「未渲染的 script 残留」。批量修复：正则把 `math\tex`→`math/tex`、
+`type="math"`→`type="math/tex"`。写完习惯性扫一遍有没有 `math\` 反斜杠。
+
+**② 全角括号（（））也算 CJK。**
+KaTeX 无 CJK 字形，中文（含全角标点）进公式都会渲染成空白。容易漏的是
+`\text{（Gram matrix）}` 这种**全角括号**——人工扫描通常只查汉字、漏掉全角符号，
+但 check_math.js 的 CJK 检测会抓到（它把 U+FF08 等全角也算 CJK）。
+统一：中文注释放公式外 `<span class="gloss">`，公式内只用半角 ASCII。
+
+**③ 别用 `<script class="...">` 当普通占位标签。**
+浏览器见到 `<script>`（无论 type/class）就按脚本开始标签解析，吞掉后面内容直到
+下一个 `</script>`，整段正文会凭空消失。非公式的占位/强调一律用普通 `<b>`/`<div>`。
+
+**④ 高亮只能用 `<mark class="hl">`。**
+`hl-blue`/`hl-red` 这类「看着像会生效」的类名其实没在 CSS 里定义，mark 会退化成
+浏览器默认黄色甚至无样式。动手前先 `grep` 一遍 site.css / site.extra.css 确认类名存在。
+
+**通用教训**：公式和标签这类「静默失效」问题，肉眼核对 80 页根本靠不住，
+必须让 check_math.js（语法 + CJK + 标签配对）和 probe_doc.js（script 残留）跑一遍，
+只认它们的绿灯。

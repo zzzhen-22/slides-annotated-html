@@ -25,6 +25,7 @@
   var COLLAPSED_KEY = NS + 'toc-collapsed';
   var NAVHIDDEN_KEY = NS + 'nav-hidden';
   var HIDETHUMB_KEY = NS + 'hide-thumb';
+  var FS_KEY = NS + 'font-size';
 
   /* ======================= 1. KaTeX 渲染 ======================= */
   function renderMath() {
@@ -249,6 +250,40 @@
       });
     }
   }
+
+  /* ======================= 4b. 正文字号调节 =======================
+     A− / A＋ 按钮把正文（.wrap）整体等比缩放，档位存 localStorage。
+     缩放系数写进 CSS 变量 --fs（site.css 的 .wrap 用 zoom:var(--fs)），
+     max-width 反向除以同一系数，故放大字号时内容区不会变窄。 */
+  var Font = {
+    MIN: 0.9, MAX: 1.4, STEP: 0.1,
+    cur: 1,
+    init: function () {
+      var saved = LS.get(FS_KEY, 1);
+      this.cur = (typeof saved === 'number' && isFinite(saved) &&
+        saved >= this.MIN && saved <= this.MAX) ? saved : 1;
+      this.apply();
+      var minus = $('#fontMinus'), plus = $('#fontPlus');
+      if (minus) minus.addEventListener('click', function () { Font.step(-1); });
+      if (plus) plus.addEventListener('click', function () { Font.step(1); });
+    },
+    apply: function () {
+      document.documentElement.style.setProperty('--fs', String(this.cur));
+      var lbl = $('#fontSizeLabel');
+      if (lbl) lbl.textContent = Math.round(this.cur * 100) + '%';
+      var minus = $('#fontMinus'), plus = $('#fontPlus');
+      if (minus) minus.disabled = this.cur <= this.MIN;
+      if (plus) plus.disabled = this.cur >= this.MAX;
+    },
+    step: function (dir) {
+      var next = Math.round((this.cur + dir * this.STEP) * 10) / 10;
+      next = Math.min(this.MAX, Math.max(this.MIN, next));
+      if (next === this.cur) return;
+      this.cur = next;
+      LS.set(FS_KEY, this.cur);
+      this.apply();
+    }
+  };
 
   /* ======================= 5. 灯箱 ======================= */
   var LB = {
@@ -1204,6 +1239,7 @@
     Toc.init();
     initSpy();
     initLayout();
+    Font.init();
     LB.init();
     Notes.load();
     buildSelBar();
@@ -1220,7 +1256,7 @@
 
   /* 无头测试入口 */
   window.__doc = {
-    notes: Notes, toc: Toc,
+    notes: Notes, toc: Toc, font: Font,
     markSelection: markSelection,
     openEmbeddedPdf: openEmbeddedPdf,
     pdfBlob: pdfBlob,
