@@ -5,7 +5,8 @@
 
    它回答五个问题（都是静态检查回答不了的）：
      1. 内容进度：还有多少页是「待补」占位（TODO 卡）、多少 TODO 注释没清
-     2. 结构一致性：逐页区块数 = 缩略图数 = 深链数；目录锚点是否都能落到元素上
+     2. 结构一致性：逐页区块数 = 缩略图数 = 深链数（深链含活链 <a> 与停用 <span> 两种形态）；
+        目录锚点是否都能落到元素上
      3. 公式与目录：KaTeX 渲染后的公式块数量、目录条目数
      4. 交互健康：标记一次跨块选区，检查有没有把块级元素吞进 <mark>（结构被改坏）
      5. 正文符号：缺字风险（组合符号 U+20D0–U+20FF 会渲染成方框）、
@@ -24,9 +25,24 @@ function run() {
     // 缩略图只数「逐页区块内部的」——灯箱里那张大图也是 <img>，
     // 用全局 figure.thumb 在不同模板下会数错，所以按区块内查（见 pitfalls 第 18 条）。
     var thumbs = $$('section.pg figure.thumb img');
-    var links = $$('a.pdf-link');
-    T('逐页区块 / 缩略图 / 深链', pg.length + ' / ' + thumbs.length + ' / ' + links.length +
-      (pg.length === thumbs.length && pg.length === links.length ? '  ✔ 一致' : '  ✘ 不一致'));
+    // 深链要数**两种形态**（见 pitfalls 第 44 条）：
+    //   a.pdf-link         活链 —— 内嵌模式或指向本机原文件
+    //   span.pdf-link      停用 —— config 未提供原文件时 build.py 主动降级生成，不可点
+    // 早先只查 'a.pdf-link'，于是「未提供原文件」的文档（本仓库的在线 demo 就是）
+    // 一条都数不到，报成「15 / 15 / 0 ✘ 不一致」—— 把配置选择当成了缺陷。
+    var linksA = $$('a.pdf-link');
+    var linksOff = $$('span.pdf-link[aria-disabled]');
+    var linksAll = $$('.pdf-link');
+    var bad = pg.filter(function (s) {
+      return !s.querySelector('figure.thumb img') || !s.querySelector('.pdf-link');
+    });
+    T('逐页区块 / 缩略图 / 深链', pg.length + ' / ' + thumbs.length + ' / ' + linksAll.length +
+      '（活链 ' + linksA.length + ' + 停用 ' + linksOff.length + '）' +
+      (pg.length === thumbs.length && pg.length === linksAll.length
+        ? (linksOff.length && !linksA.length ? '  ✔ 一致（本产物未含原文件）' : '  ✔ 一致')
+        : '  ✘ 不一致'));
+    T('形态混用（同页既有活链又有停用）', (linksA.length && linksOff.length) ? '有，疑似降级没做干净' : '无');
+    T('缺缩略图或缺深链的页', bad.length ? bad.map(function (s) { return s.id; }).join(',') : '0');
 
     var missingThumb = pg.filter(function (s) { return !s.querySelector('figure.thumb img'); });
     T('缺缩略图的页', missingThumb.length ? missingThumb.map(function (s) { return s.id; }).join(',') : '0');

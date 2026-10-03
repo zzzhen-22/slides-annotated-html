@@ -152,19 +152,6 @@ def main():
     chk('JS 把 locOf 暴露给探针', 'locOf: function (pid)' in js)
 
     print()
-    print('=== ⑩ 正文字号调节（A−/A＋，存浏览器）===')
-    # 功能：顶栏 A−/A＋ 按钮整体等比缩放正文（.wrap），档位写 localStorage。
-    # 关键在「max-width 反向补偿」——只 zoom 不放宽 max-width 会导致放大字号时内容区变窄。
-    chk('存在字号减小/增大按钮', 'id="fontMinus"' in html and 'id="fontPlus"' in html)
-    chk('存在字号档位显示标签', 'id="fontSizeLabel"' in html)
-    chk('CSS 定义了 --fs 缩放变量', '--fs:' in css)
-    chk('CSS 正文容器应用 zoom 缩放', 'zoom:var(--fs)' in css or 'zoom: var(--fs)' in css)
-    chk('CSS max-width 反向补偿（放大字号不缩窄）', 'calc(1000px / var(--fs))' in css)
-    chk('JS 有字号存储键 FS_KEY', 'FS_KEY' in js and "'font-size'" in js)
-    chk('JS 字号档位存 localStorage', 'LS.set(FS_KEY' in js)
-    chk('JS 字号模块暴露给探针', 'font: Font' in js)
-
-    print()
     print('=== ⑥ 内嵌原文件（embed_pdf）===')
     # 注意：#pdfB64 容器在两种模式下都存在（非内嵌时内容为空串），
     # 所以不能拿「容器存在」当「已启用内嵌」的判据 —— 那会把默认模式误判成 4 项 FAIL。
@@ -183,13 +170,29 @@ def main():
         chk('存在「另存原 PDF」按钮', 'id="savePdf"' in html)
         chk('JS 有内嵌打开逻辑', 'function openEmbeddedPdf' in js and 'URL.createObjectURL' in js)
     else:
-        # 默认模式（只写本机绝对路径深链）：这里只做「有没有写对」的正面检查，
-        # 不再报「没内嵌」为失败 —— 那是配置选择，不是缺陷。
-        chk('深链指向本机原文件（file:///#page=N）',
-            'file:///' in html and '#page=' in html)
-        chk('未内嵌时不留 data-embed-page（模式一致）', 'data-embed-page=' not in html)
+        # 非内嵌模式。这里有**两种合法形态**，不能一刀切要求 file:///：
+        #   A. config 给了 pdf → 深链指向本机原文件（file:///#page=N）
+        #   B. config 没给 pdf → 深链是**停用态**（<span class="pdf-link" aria-disabled>，
+        #      由 build.py 主动降级生成，见 pitfalls 第 44 条）。本仓库的在线 demo 就是这一类：
+        #      原始课件因版权不入库，所以产物里根本没有可跳的原文件。
+        # 早先这里硬性要求 'file:///' in html，于是 B 类文档必然报 FAIL——
+        # 而这不是缺陷，是配置选择。现在按形态分别断言。
+        n_disabled = len(re.findall(r'<span class="pdf-link" aria-disabled', html))
+        n_filelink = len(re.findall(r'<a class="pdf-link"', html))
+        if n_disabled:
+            chk('未提供原文件：深链已全部置为停用态', n_disabled and not n_filelink,
+                '%d 处停用 / %d 处仍是<a>' % (n_disabled, n_filelink))
+            chk('停用态不残留悬空<a class="pdf-link">（无 href 点不动）',
+                'class="pdf-link" data-page=' not in html)
+            chk('停用态有 aria-disabled 与 title 说明',
+                html.count('aria-disabled="true"') >= n_disabled)
+            print('  （config 未提供原文件：按「停用态」口径检查，不要求 file:/// 深链）')
+        else:
+            chk('深链指向本机原文件（file:///#page=N）',
+                'file:///' in html and '#page=' in html)
+            chk('未内嵌时不留 data-embed-page（模式一致）', 'data-embed-page=' not in html)
+            print('  （embed_pdf=false：跳过硬性内嵌项）')
         chk('未内嵌时 pdfB64 容器为空', payload == '')
-        print('  （embed_pdf=false：跳过硬性内嵌项）')
 
     print()
     print('=== ⑦ 目录滚动：长章节不能被整体钉住 ===')
@@ -206,11 +209,34 @@ def main():
         "nav.querySelector(':scope > .toc-group > .toc-head')" in js)
 
     print()
+    print('=== ⑩ 正文字号调节（A−/A＋，存浏览器）===')
+    # 功能：顶栏 A−/A＋ 按钮整体等比缩放正文（.wrap），档位写 localStorage。
+    # 关键在「max-width 反向补偿」——只 zoom 不放宽 max-width 会导致放大字号时内容区变窄。
+    # 这一组原本排在 ⑨ 之后、⑥ 之前，输出读起来「⑨→⑩→⑥」跳来跳去（TODO 第 11 条）。
+    # 注意：**只搬顺序不改编号** —— 编号是历史形成的，⑤ 之后新增的组都插在 ⑨ 之后，
+    # 重新编号会让「⑤ 之后是 ⑥」这个文档里的说法失效，得不偿失。
+    chk('存在字号减小/增大按钮', 'id="fontMinus"' in html and 'id="fontPlus"' in html)
+    chk('存在字号档位显示标签', 'id="fontSizeLabel"' in html)
+    chk('CSS 定义了 --fs 缩放变量', '--fs:' in css)
+    chk('CSS 正文容器应用 zoom 缩放', 'zoom:var(--fs)' in css or 'zoom: var(--fs)' in css)
+    chk('CSS max-width 反向补偿（放大字号不缩窄）', 'calc(1000px / var(--fs))' in css)
+    chk('JS 有字号存储键 FS_KEY', 'FS_KEY' in js and "'font-size'" in js)
+    chk('JS 字号档位存 localStorage', 'LS.set(FS_KEY' in js)
+    chk('JS 字号模块暴露给探针', 'font: Font' in js)
+
+    print()
     print('=== 数量一致性 ===')
     pg = html.count('<section class="pg"')
     th = html.count('class="thumb"')
-    pl = html.count('class="pdf-link"')
-    chk('逐页区块 = 缩略图 = PDF深链', pg == th == pl and pg > 0, '%d / %d / %d' % (pg, th, pl))
+    # 深链计数要**按标签分别数**，不能只数 class="pdf-link" 字符串。
+    # 早先用字符串计数，把停用态的 <span> 和活链 <a> 混在一起算——数字对上了，
+    # 却掩盖了「一个是死链一个是活链」这个本质差别（见 pitfalls 第 44 条）。
+    pl_a = len(re.findall(r'<a class="pdf-link"', html))
+    pl_span = len(re.findall(r'<span class="pdf-link"', html))
+    chk('逐页区块 = 缩略图 = 深链总数', pg == th == pl_a + pl_span and pg > 0,
+        '%d / %d / %d（活链 %d + 停用 %d）' % (pg, th, pl_a + pl_span, pl_a, pl_span))
+    chk('不会同时存在活链与停用态（降级要么全做要么不做）', not (pl_a and pl_span),
+        '' if not (pl_a and pl_span) else '两种形态并存')
     chk('目录链接数与页数不矛盾', len(re.findall(r'<a href="#', nav)) >= pg,
         '%d 条 / %d 页' % (len(re.findall(r'<a href="#', nav)), pg))
     print('  文件大小: %.2f MB' % (os.path.getsize(path) / 1048576))

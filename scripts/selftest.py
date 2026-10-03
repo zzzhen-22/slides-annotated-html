@@ -10,6 +10,13 @@
 然后调用 run_all.py 走完 建骨架 → 渲染 → 构建 → 四项体检 → 截图，
 最后按输出里的关键词判定 PASS/FAIL。
 
+**三条自查线**（互相独立，缺一条就少一类保障）：
+    ① 机械路线：现造 PDF → 全流水线
+    ② 语义路线：--stage plan → 校对 outline → --outline → build → 体检
+    ③ 文档口径：跑 check_docs.py 查套件自己的文档与实现是否还对得上
+       （这一条与前两条无关——前两条查「产物对不对」，这条查「说明书准不准」，
+        两者都会因为「改了代码忘了改另一处」而失效）
+
 预期：机械部分全绿；「待补页面 6/6」是**正常**的 —— 讲解内容本来就是留给人/agent 写的。
 
 输出：**实时透传**子进程日志（不再跑完才打印，避免「看着像卡死」）。
@@ -273,6 +280,16 @@ def main():
     print('开始跑语义路线（--stage plan → 校对 outline → --outline → build → 三校验）：\n',
           flush=True)
     checks.extend(semantic_path(base, pdf))
+
+    # 套件自身的文档口径：不属于「产物对不对」，但属于「套件健康吗」。
+    # 接在这里而不是 run_all.py —— run_all 是给用户跑课件的流水线，
+    # 让每个用户都体检一遍套件文档没有意义；selftest 才是「套件自己体检自己」。
+    print('\n' + '=' * 72)
+    print('开始体检套件自身的文档口径（check_docs.py）：\n', flush=True)
+    out_docs, rc_docs = run_pipeline([sys.executable, '-u',
+                                      os.path.join(HERE, 'check_docs.py')])
+    checks.append(('check_docs 文档口径 ALL PASS',
+                   rc_docs == 0 and re.search(r'ALL PASS', out_docs) is not None))
 
     print('=' * 72)
     bad = 0

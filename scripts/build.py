@@ -234,6 +234,20 @@ def main():
                       lambda m: '<a class="pdf-link" href="%s#page=%s" target="_blank" '
                                 'rel="noopener">%s</a>' % (pdf_url, m.group(1), m.group(2)),
                       body)
+    else:
+        # config 没给 pdf（例如本仓库的在线 demo：原始课件因版权不入库）。
+        # 此时模板里的 <a class="pdf-link" data-page="N"> 会**原样留下**——它是个没有 href
+        # 的悬空链接，点了没反应，看起来像坏了。**主动换成停用态 span**，
+        # 让「这里本来就没有原文件可跳」变成明示，而不是让体检把它当成缺陷报出来。
+        # 参见 references/pitfalls.md 第 44 条。
+        body, n_disabled = re.subn(
+            r'<a class="pdf-link" data-page="(\d+)">(.*?)</a>',
+            lambda m: '<span class="pdf-link" aria-disabled="true" '
+                      'title="本产物未包含原文件，无法跳转到对应页">%s</span>' % m.group(2),
+            body)
+        if n_disabled:
+            print('[build] config 未给 pdf —— %d 处「打开原 PDF 该页」已置为停用态'
+                  % n_disabled)
 
     # ---------- 命名空间：file:// 下所有本地页面共享同一 localStorage 域，
     #            必须按文档隔离，否则不同讲解文档的笔记会串在一起 ----------
