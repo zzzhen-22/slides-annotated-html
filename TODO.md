@@ -1,303 +1,401 @@
 # TODO — 让陌生人能用起来
 
-> 这份清单只服务于一个目标：**一个不认识作者的人，从点进这个仓库到跑出第一份产物，
+> 这份清单只服务于一个目标：**一个不认识作者的人，从点进这个仓库到跑出第一份产物，  
 > 需要多久、会不会半路放弃。**
 >
-> 每条都写了「为什么值得做」和「怎么算做完」，可以直接当 issue 用。
+> 每条都写了「为什么值得做」和「怎么算做完」，可以直接当 issue 用。  
 > 优先级按「拦不拦人」排，不按「技术含量」排。
+>
+> **已完成条目已从正文移除**（不再跟踪），只留在文末「已完成索引」一行。  
+> 基线数据是 2026-10-03 实测，不是估算。
 
-## 当前基线（2026-09-27 复审；初版为 2026-09-24 审计）
+## 当前基线（2026-10-04 实测）
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 45 个文件 ｜ ≈4.9 MB ｜ 9 个提交 ｜ `main` 分支 |
-| 文档 | `README.md`（中文；2026-09-25 起主推「AI 代做」路径，手工为辅）、`README.en.md`（英文精简版，同定位）、`SKILL.md`（面向 Agent，顶部已加人群分流声明）、`docs/workflow.md`（人类向流程）、`TODO.md` |
-| 图片资源 | ✅ **3 张**（`docs/images/`，hero / notes / overview，各约 230 KB） |
-| 示例产物 | ✅ **在线 demo 已上线**（`docs/demo/index.html`，1.18 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.18 MB，讲解与界面全英文）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/> |
-| 依赖清单 | ✅ `requirements.txt`（`pymupdf` + `pillow`，不锁版本；可选 `node`） |
-| CI | **无** |
-| topics | ✅ **10 个已生效**（2026-09-25 设置，见第 9 条） |
-| 跨平台 | 代码里已有 macOS / Linux 分支，但**从未在真机验证** |
-| 版本号 | ✅ **tag `v2.0.0` + GitHub Release 已建**（2026-09-27，annotated tag）；`CHANGELOG.md` 仍无（见第 11 条） |
+| 仓库 | 47 个受版本控制的文件 ｜ 5.0 MB（不含 `.git`） ｜ 25 个提交 ｜ `main` 领先 `origin/main` 3 个提交（待推） |
+| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**45 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md` |
+| 图片资源 | ✅ 3 张（`docs/images/`，hero / notes / overview，各约 230 KB） |
+| 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.19 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.19 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。两份均已按 v2.1.0 重建 |
+| 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` |
+| 依赖清单 | ✅ `requirements.txt`（`pymupdf` + `pillow`，不锁版本；`node` 与浏览器为可选/外部） |
+| 自检体系 | ✅ 三条线：`selftest.py` = 机械路线 + 语义路线 + **文档口径**（`check_docs.py`，6 组断言）；已接进 `selftest.py`，CI 待建（第 3 条） |
+| CI | ❌ **无**（无 `.github/` 目录，Issue 模板也没有） |
+| 版本号 | ✅ `v2.1.0`（annotated tag + GitHub Release）；❌ `CHANGELOG.md` 仍无（见第 6 条） |
+| tag 状况 | 8 个 tag，其中 4 个是开发期 step 标签（`v2.0-semantic-outline-step3/4/5/6`），会干扰 Releases 页（见第 12 条） |
+| 跨平台 | 代码里有 macOS / Linux 分支，**从未在真机验证**（见第 7 条） |
+| 文档口径 | ✅ 无已知漂移（第 1、13 条已完成，`check_docs.py` 常驻把关） |
 
 ---
 
-## P0 · 拦在门口：不做这三件，陌生人根本走不到"试用"
+## P0 · 拦在门口
 
-### [x] 1. README 加效果截图（至少 3 张）✅ **已完成**
-**为什么**：原来 README 全是文字。陌生人无法判断产物长什么样，也就没有理由去装
-`pymupdf` + 浏览器这一串依赖。**开源项目的第一转化率来自截图，不是特性列表。**
-
-**怎么做**
-- 用一份示例课件跑一遍，截三张最具说服力的：
-  ① 首屏（目录 + 概览卡）② 逐页对照（左边讲解 + 右边原页缩略图）③ 划词标记 + 笔记抽屉
-- 存 `docs/images/`，单张压到 300 KB 以内（WebP 更好）
-- README 顶部放一张主图，特性段落里再插两张
-
-**验收**：README 打开即有图；`git clone` 后离线看 README 图片也能显示（用相对路径，别用外链图床）
-
-> **实测记录**：三张图放在 `docs/images/`，各约 230 KB（1500 px PNG，`optimize=True`）。
-> 一个反直觉的点：**降采样到 1200 px 反而更大**（240 KB → 380 KB）—— 插值在大片纯色区域造出渐变，
-> PNG 压缩率变差。UI 截图保持原始像素宽度即可。
-> README 顶部放 hero（逐页对照），特性段落后并排放概述卡与笔记抽屉两张。
-
-### [x] 2. 提供一份可直接打开的示例产物（demo）✅ **已完成（Pages 已上线，链接可点）**
-**为什么**：截图能看，但摸不到。真正的「啊，这东西有用」发生在**自己点一下目录、划一句话**的时候。
-
-**怎么做**
-- 做一份 6–10 页的示例课件（内容自造或用公有领域材料），跑出产物
-- 体积控制：不内嵌原 PDF 的话约 1–3 MB，适合直接放进仓库
-- 放到 GitHub Pages（`docs/` 目录）或 Releases，README 给一个「点这里在线试」的链接
-
-**验收**：README 里有一个可点击的在线预览链接，移动端也能打开
-
-> **实测记录**：`docs/demo/index.html`，**1.18 MB 单文件**，从《逻辑回归 · 逐页精解》63 页里节选 **P1–P8**，
-> 含封面、demo 说明卡、前置知识折叠卡、本节概述卡、8 页正文、速查表与术语表。
-> 构建走套件自己的 `build.py`（不是手改 HTML），前置做了三件事：
-> ① 把每页的「打开原 PDF 该页」换成**停用态 span**（删掉会让 `check_math` 的区块/深链计数对不上）；
-> ② 中和 **60 个**指向未包含页面的死链；
-> ③ 统一清洗隐私 —— 本机盘符路径（源文件路径里带微信 ID）、第三方个人邮箱。
-> 出厂自检：无 `file:///`、无盘符路径、无 `wxid`、无邮箱；`check_math` 全绿（8 页 / 8 缩略图 / 8 按钮）。
+>✅ **两条 P0 全部完成（2026-10-03 / 2026-10-04）**。本节转为**归档记录**——
+> 留着是为了记住「这两类问题长什么样」，它们不会再次发生：
+> 第 1 条由 `check_docs.py` 常驻把关，第 2 条的根因（build.py 缺降级分支）已从源头修掉。
 >
-> **✅ Pages 已开启并验证**：来源 `main` / `/docs`，`GET /repos/.../pages` 返回 `status: built`（HTTPS 已强制）。
-> 站点 <https://zzzhen-22.github.io/slides-annotated-html/>，demo 落在 `/demo/`：
-> 实测 **HTTP 200 ｜ 1,238,803 字节 ｜ `text/html; charset=utf-8`**，8 页区块与 191 条公式均在线可用。
->
-> **✅ 英文版 demo（2026-09-25 补）**：`docs/demo-en/index.html`（1.18 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。
-> 同一构建管线（build.py，不手改 HTML），五处不同：① content 五个分片由 agent 逐片英译
-> （锚点/公式/结构一字不动，公式 192 条语法失败 0）；② config 全英文（标题/目录标签/搜索占位/footer）；
- ③ 产物后处理翻译 UI——shell 静态文案 24 处 + site.js 面向用户的字符串行 42 行
-> （按**整行**映射替换而非片段替换，避免「第 N 页」这类拼接串在不同上下文互相冲突）；
-> ④ build.py 注入的缩略图 alt/figcaption 一并英文化；
-> ⑤ 出厂自检升级：隐私/盘符/8 停用链接之外，新增 **CJK 残留扫描**——
-> 可见文本 0 字符 + JS 字符串字面量 0 条（JS 注释里的中文刻意保留，访客不可见）。
-> 双 README 的 demo 链接各自指向对应语言版本。
+> **现在真正的门槛在 P1 第 3 条（CI）** —— 上面两条都靠手动跑验证，
+> 而「一个会误报的体检比没有体检更糟」这条只有强制跑才能兜住。
 
-### [x] 3. 补 `requirements.txt` 和一条最短上手命令 ✅ **已完成**
-**为什么**：`kitpath.py` 会提示缺什么，但那要**先跑脚本才知道**。
-陌生人习惯先看 README 的安装段，现在那一段只有一句「需要 pymupdf、pillow」。
+### [x] 1. 修文档口径漂移：「四类交互」→「五类交互」+ 英文 README 补字号 ✅ **已完成（2026-10-03）**
+
+**为什么**：这是**上一轮加字号功能时漏掉的**。陌生人打开 README，看到的第一段 bullet  
+写着「五类交互」，往下翻到三重校验表又写「四类交互的接线是否完好」——他会以为 README 自相矛盾，  
+进而怀疑整个项目的可信度。英文 README 更糟：它连字号功能都没有，还写着 "Four interactions"，  
+等于**英文用户拿到的是上一个版本的说明书**。
+
+**改动前的漂移点（`grep -rn "四类交互"` 实测，共 6 处，已全部修掉）**
+
+| 文件:行                    | 改前                           | 改后                   |
+| ----------------------- | ---------------------------- | -------------------- |
+| `README.md:111`         | `# 四类交互的「接线」是否完好`            | 五类交互                 |
+| `README.md:135`         | `← 四类交互的 DOM 与 CSS/JS 是否对齐`  | 五类交互                 |
+| `README.md:144`         | `← 四类交互的追加样式`                | 五类交互                 |
+| `docs/workflow.md:96`   | 四类交互                         | 五类交互                 |
+| `SKILL.md:142`          | `# 四类交互接线`                   | 五类交互接线               |
+| `scripts/run_all.py:23` | `⑤ check_ui.py  四类交互的接线（含…）` | 五类交互，**并补上「正文字号调节」** |
+
+**顺带补齐的四处漏项**（同属口径不一致，只改「四→五」不够）
+
+- `README.md` 分步命令块：补 `probe.py templates/probe_font.js` 一行（原来只有 marks / doc 两个探针）
+- `README.md` 目录树：`templates/` 原来只有一行概括，现展开列出 `content-skeleton/`、`probe_doc.js`、  
+  `probe_font.js`、两个 harness；`docs/` 补 `demo-en/`
+- `README.en.md` "Four interactions" → "Five interactions: … / **A− / A＋ to adjust body text size  
+  (level saved in your browser)**"
+- `README.en.md` 校验表拆开 `probe.py` 一行，拆成 `probe_marks.js` / `probe_font.js` / `probe_doc.js` 三行；  
+  **中英两边的校验表现在逐行对称**（原来英文只有 2 行泛指、中文有 4 行）
+
+**刻意没改的两处**（改了就错）
+
+- `README.en.md:10` hero 图 alt 里的 "four card types" —— 指的是**四种提示卡**（绿=直觉/蓝=补充推导/  
+  红=原稿问题/灰=原文引用），与「N类交互」不是同一个概念
+- `README.en.md:56` "a four-item check" —— 指 `kitpath.py` 的四项环境自查，不是交互数
+
+**验收（已过）**
+
+- `grep -rn "四类交互" --include=*.md --include=*.py` → 除本TODO.md 的历史记录外**清零**
+- `grep -rn "four|Four" README.en.md` → 只剩上述两处刻意保留的
+- `SKILL.md` 手动复检命令块新增 `probe_font.js` 一行，与 `run_all.py ⑥b` 一致
+- `python scripts/run_all.py examples/sample-lecture.pdf` 全流水线①–⑧ 实跑通过（文档改动无副作用）
+
+> **但根因没解决**：口径散在 6 个文件、没有单一真源，靠人记必然漏。  
+> **对策是第 13 条的 `check_docs.py`**——让机器查口径。本条只修了这一次的破损，  
+> 没修「还会再破」这件事。
+
+> **教训（值得写进 pitfalls）**：加功能时改了 `check_ui.py` 的 docstring 和 README 顶部 bullet，  
+> 却漏了 README 中段三处 + SKILL.md + workflow.md + run_all.py 的注释。  
+> 根因是「文档口径」散在 6 个文件里、没有单一真源。  
+> **对策**：第 13 条的 `check_docs.py` 就是为这条准备的——让机器查口径，而不是靠人记。
+
+### [x] 2. `check_ui.py` / `probe_doc.js` 在「无原 PDF」文档上必然报 FAIL ✅ **已完成（2026-10-04）**
+
+**为什么**：这是**做 demo 时实测撞出来的**，当时判为「demo 固有设计，不修」，
+但它影响的不只是 demo——**任何不内嵌原 PDF、且原文件不可得的文档都会撞上**。
+一个工具在其它检查全绿的情况下硬报 FAIL，使用者第一反应是「工具坏了」，而不是「配置不同」。
+
+**根因比原判断更深一层**（原判断只看到体检这一侧，漏了 build.py 那一侧）
+- `scripts/build.py:227-235` —— **只处理两种形态**：内嵌（`data-embed-page`）与
+  `config` 给了 `pdf`（`file:///…#page=N`）。**`config` 没给 `pdf` 时两个分支都不命中**，
+  模板里的 `<a class="pdf-link" data-page="N">` 原样留下，成了**没有 `href` 的悬空链接**。
+  demo 之所以「能用」，是因为当初手工把它改成了 `<span aria-disabled>` —— **等于把缺陷藏起来了**
+- `scripts/check_ui.py` ⑥ 组 —— 非内嵌分支硬性要求 `'file:///' in html and '#page=' in html`
+- `scripts/check_ui.py` 「数量一致性」组 —— `pl = html.count('class="pdf-link"')` 是**字符串计数**，
+  `<a>` 与 `<span>` 混在一起算，**数字对上了，于是掩盖了「一个是死链一个是活链」这个本质差别**
+- `templates/probe_doc.js:27` —— `$$('a.pdf-link')` 是**标签选择器**，停用的 `<span>` 一条都不算，
+  于是「逐页区块 15 / 缩略图 15 / 深链 0」→ 报「✘ 不一致」
+
+**实际改法（四处，缺一不可）**
+- `build.py` 补**第三个分支**：`config` 无 `pdf` 时主动降级成
+  `<span class="pdf-link" aria-disabled="true" title="本产物未包含原文件…">`，
+  并打印「N 处已置为停用态」。**把「本来就没有原文件可跳」变成明示，不再留悬空链接**
+- `check_ui.py` ⑥ 组按**形态分别断言**：检测到停用态就查「是否全停用 / 是否残留悬空 `<a>` /
+  是否有 `aria-disabled` + `title`」；没有停用态才要求 `file:///`
+- `check_ui.py` 数量组改为**按标签分别数**活链与停用态，并断言**两者不并存**
+  （并存 = 降级做了一半，是真 bug）
+- `probe_doc.js`：`a.pdf-link` → `.pdf-link`，另外单独报「活链 N / 停用 M」与
+  「形态混用」，并把「只有停用态」标为 `✔ 一致（本产物未含原文件）`——**合法形态单列，不混进不一致**
+- `references/pitfalls.md` 新增**第 44 条**（I 组「体检脚本自身的失效」）记录根因与处理法
+
+**验收（已过，含「不能放水」那一半）**
+- `docs/demo/index.html`（8 页、无 pdf）→ `check_ui.py` ALL PASS，
+  ⑥ 组报「8 处停用 / 0 处仍是 `<a>`」、数量组报「8 / 8 / 8（活链 0 + 停用 8）」
+- **正常产物（8 页、给了 pdf）→ 全流水线 ①–⑧ 全绿**，数量组报「活链 8 + 停用 0」。
+  **这一步是必须的反向验证**——只测停用态通过，等于可能把断言改成永远 PASS
+
+> **普适教训**（已写进第 44 条）：断言不能问「是不是我期望的样子」，
+> 要问「**是不是我无法接受的样子**」。前者遇到未覆盖的合法形态就误报，
+> 后者天然容纳新形态。
+
+
+### [ ] 3. 加 GitHub Actions，跑 `selftest.py`
+
+**为什么**：项目的质量承诺是「机械部分全绿」，但**没有任何自动化回归保障**。  
+贡献者改了 `site.js` 或 `build.py`，没人拦得住。CI 是「这个项目还活着」的信号。  
+本轮加字号功能时，`check_ui.py` 静态接线 + `probe_font.js` 运行时行为 + `run_all.py ⑥b`  
+三层验证全是**手动跑的**——下一次就未必有人记得跑。
 
 **怎么做**
-- 加 `requirements.txt`（`pymupdf`、`pillow`；注明 `node` 是可选、仅 `check_math.js` 用）
-- README 开头给三步：
-  ```bash
-  pip install -r requirements.txt
-  python scripts/kitpath.py          # 自查：python / node / 浏览器 / 依赖
-  python scripts/run_all.py examples/sample-lecture.pdf --out demo
-  ```
 
-**验收**：在一个全新的 venv 里照抄这三行，能直接跑到出产物
-
-> **实测记录（2026-09-25）**：`requirements.txt` 收 `pymupdf` + `pillow`，**不锁版本**——
-> 没验证过旧版本就不写版本下限，脚本用的都是稳定基础 API，装最新版即可。
-> 文件内注明 `node` 可选（仅 `check_math.js`）与浏览器的探测方式。
-> README「快速开始」顶部加「三步上手」块，环境表同步标注 Node.js（可选）。
-> **一处刻意的偏离**：README 第 ③ 步写成 `"<你的课件>.pdf"` 占位，而非本条原设计的
-> `examples/sample-lecture.pdf` —— 示例 PDF 属于第 4 条、当时还不存在，
-> README 不能指向不存在的文件；第 4 条落地后把占位符换成示例路径即可。
-> **验收过程**：Python 3.13 全新 venv 照抄三行（③ 用真课件 7 页替换占位符）→
-> pip 干净装上 `pymupdf 1.28.2` + `pillow 12.3.0`（走 pip 缓存，秒级）→
-> `kitpath.py` 四项全 ✔ 退出码 0 → `run_all.py` ①–⑧ 全绿、产物正常生成。
-
-### [x] 4. 放一份 3–6 页的示例 PDF 当测试素材 ✅ **已完成（8 页，见实测记录）**
-**为什么**：`selftest.py` 会现造一份 PDF，但那是给程序用的，用户拿不到。
-没有输入文件，「跑一遍看看」就无从谈起。
-
-**怎么做**：`examples/sample-lecture.pdf`，自制内容（避免版权问题），3–6 页就够，
-最好包含**一个公式 + 一张图 + 一个表格**，把套件的能力全展示到
-
-**验收**：上面第 3 条那三行命令里的 `examples/sample-lecture.pdf` 真实存在且能跑通
-
-> **实测记录（2026-09-25）**：`examples/sample-lecture.pdf`，8 页 / 590 KB，
-> 节选自一份真实大学物理英文课件（横向 A4，含公式、插图与表格页），
-> 经课件持有者确认可作示例使用，故未另造自制内容。metadata 已清为中性值
-> （title=Sample Lecture (excerpt)，author/creator/producer 置空）。
-> 页序保持原课件顺序，节选页码：原 P1、P2、P5–P10。
-> README 快速开始 ③ 的占位符已同步换成 `examples/sample-lecture.pdf`（第 3 条留的尾巴闭环）。
-> 验收：照三行命令实跑，`run_all.py` ①–⑧ 全绿。
-
----
-
-## P1 · 决定「用不用得下去」
-
-### [ ] 5. 加 GitHub Actions，跑 `selftest.py`
-**为什么**：项目的质量承诺是「机械部分全绿」，但**没有任何自动化的回归保障**。
-贡献者改了 `site.js` 或 `build.py`，没人拦得住。CI 是「这个项目还活着」的信号。
-
-**怎么做**
 - `.github/workflows/selftest.yml`，矩阵 `ubuntu-latest` + `windows-latest`
-- 装依赖：`pip install pymupdf pillow`、`setup-node`
+- 装依赖：`pip install -r requirements.txt`、`setup-node`（装 Node 才能跑 `check_math.js` 与  
+  `probe_*.js`；注意 `probe.py` 用的是浏览器 `--dump-dom`，**不依赖 node**，只有 `check_math.js` 真依赖）
 - **ubuntu 上要装中日韩字体**（`fonts-noto-cjk`），否则缺字体检项会误报
-- 无头浏览器：ubuntu runner 自带 chromium，用 `KIT_BROWSER` 指过去；
-  或先只跑不需要浏览器的部分（`run_all.py --no-shot`）
+- 浏览器：ubuntu runner 用 `KIT_BROWSER` 指向自带的 chromium；或先只跑 `--no-shot` 部分
+- 顺带在 workflow 里加一步 `check_docs.py`（第 13 条），让口径漂移也进 CI
 
 **验收**：PR 上出现绿色 check；**顺带证明了 Linux 可用**（一举两得）
 
-### [ ] 6. 在 macOS / Linux 上真机实测并写明支持矩阵
-**为什么**：`kitpath.py` 里已经写了 `/Applications/Google Chrome.app/...`、
-`/usr/bin/chromium` 这些分支，但**从来没有在真机上验证过**，
-「代码里写了」和「能跑」是两件事。
+### [ ] 4. `CONTRIBUTING.md` + Issue / PR 模板
 
-**怎么做**：至少跑一次 Ubuntu（WSL 也算）；有条件再跑一次 macOS。
-把结果写进 README 的支持矩阵表。
-
-**验收**：README 有一张表，明确写出「已验证 / 未验证」的平台
-
-### [x] 7. README 加「已知限制」章节 ✅ **已完成**
-**为什么**：诚实标注限制比夸大能力更能建立信任，也能减少无效 issue。
-这个项目有几条**必须提前说清**的约束，否则用户会认为是 bug。
-
-**要写的（都是真实的）**
-- 输入**只支持 PDF**；PPTX/Keynote 请先自行导出（不引入 LibreOffice 依赖是刻意的）
-- **PDF 文字层不可靠**，所以流程图、公式必须逐页看图核对 —— 套件不替你判断内容对错
-- 机械部分自动，**「逐页写讲解」这一步是留给人的**，套件只告诉你还差几页
-- 内嵌原 PDF 时产物 ≈ 原 PDF × 1.34 + 缩略图，几十页课件可能到 20 MB+
-- 默认产物是**中文排版优化**的（正文字体栈、标点挤压），英文内容也能用但排版不专门优化
-
-**验收**：README 有独立小节，读完知道什么情况不该用这个工具
-
-> **实测记录（2026-09-25）**：中文 README 新增「已知限制」节（放三重校验与交付纪律之间），
-> 六条照抄本清单（「留给人的」一条按当日定位调整改写为「由 agent（或你）完成」）；
-> 英文版 Limitations 节同步（见第 8 条）。中英结构对称。
-
-### [x] 8. 英文 README（`README.en.md`）✅ **已完成**
-**为什么**：工具本身与语言无关（能处理任何语言的 PDF），但文档全中文，
-国际用户 30 秒内就会关掉。这直接决定了仓库能不能被非中文社区用起来。
-
-**怎么做**：中英双 README，顶部互加语言切换。英文版**精简**即可：
-what it does / install / quick start / screenshots / limitations / license
-**（2026-09-25 注：README 已改为「AI 代做为主、手工为辅」的双路径定位，英文版照此写。）**
-
-**验收**：一个只读英文的开发者，能凭 `README.en.md` 跑出 demo
-
-> **实测记录（2026-09-25）**：`README.en.md` 已建，结构对齐中文版（含同日定位调整）：
-> demo 链接 + 截图 + "Let an AI do it (recommended)" + "Run it yourself" 三步命令 +
-> Known limitations + Verification + License & third-party（PyMuPDF 的 AGPL 组合约束
-> 是许可层面的关键事实，英文版完整保留）。顶部 `English ｜ 简体中文` 互链。
-> 验收：只读英文的开发者照 Quick start 三行即可跑出 `examples/sample-lecture.pdf` 的产物。
-
----
-
-## P2 · 提升「被发现」与「能贡献」
-
-### [x] 9. 设置仓库 topics 和 homepage ✅ **已完成（topics + homepage 均已生效）**
-**为什么**：现在 topics 为空，GitHub 搜索 `pdf slides to html` 之类基本找不到。
-这是**成本最低、回报最高**的一条（点几下鼠标）。
-
-> **homepage 已完成**（`https://zzzhen-22.github.io/slides-annotated-html/demo/`）。
-> **topics 已完成（2026-09-25）**：`pdf` `slides` `lecture-notes` `katex` `offline-first`
-> `html` `annotation` `courseware` `python` `agent-skill` 共 10 个，全部生效。
->
-> **实测记录**：没走上面的 curl（token 是 GCM 里的 OAuth 凭据，抄进命令行有泄漏风险），
-> 而是写了个一次性脚本 `import push_via_api` 复用它的 `token_from_gcm()` + `Api` 类
-> （token 只在进程内流转、不落日志），GET 现状 → PUT 覆盖 → 回读核验一致。
-> PUT topics 是**覆盖式**不是追加，一次请求设全部 10 个。
-
-**验收**：仓库页右侧出现 topics 标签
-
-### [ ] 10. `CONTRIBUTING.md` + Issue / PR 模板
-**为什么**：项目里其实有一套很成熟的「改套件的五条纪律」，
+**为什么**：项目里其实有一套很成熟的「改套件的五条纪律」，  
 但它埋在 `SKILL.md` 第 400 行附近，**贡献者根本看不到**。
 
 **怎么做**
-- 把纪律抽成 `CONTRIBUTING.md`（含：先看 mtime、改完必须重建+三校验+截图、
+
+- 把纪律抽成 `CONTRIBUTING.md`（含：先看 mtime、改完必须重建 + 体检 + 截图、  
   资产耦合、不许写死本机路径、模板注释里不许出现字面标签）
+- 明确写出**改完必须同步哪些文档**——本轮第 1 条的漂移就是这条缺失的直接后果
 - `.github/ISSUE_TEMPLATE/bug_report.md`：要求附 `python scripts/kitpath.py` 的输出
 - `.github/ISSUE_TEMPLATE/feature_request.md`
 
 **验收**：打开 New Issue 时能看到模板
 
-### [ ] 11. `CHANGELOG.md` + 语义化版本 tag（部分完成：tag/Release 已建，CHANGELOG 仍缺）
-**为什么**：仓库没有版本号。用户无法判断「我手上这份是不是最新」「该不该更新」，
-而且技能类项目会被反复迭代，没有版本号就没法追溯。
+### [ ] 5. `init_project.py` 生成的 `README-项目.md` 写死套件绝对路径
 
-**怎么做**：定 `0.1.0`，打 git tag + Release，`CHANGELOG.md` 按 Keep a Changelog 格式
-
-**验收**：仓库出现 Releases 页；`CHANGELOG.md` 有 `0.1.0` 条目
-
-> **进展（2026-09-27）**：版本化已完成一半 —— **tag `v2.0.0`（annotated）+ GitHub Release 已建**，
-> release notes 采用「新增 / 变更 / 兼容性」三段式，对应语义驱动架构（结构先于内容确定）上线。
-> 开发期标签（step 系列）与发布标签（SemVer）从此分离。**剩余**：补 `CHANGELOG.md`
-> （把 v2.0.0 的 release notes 收编进去即可），并把版本号约定从本条原定的 `0.1.0` 更正为 SemVer。
-
-### [x] 12. 把 `SKILL.md` 里「给人看」的部分拆到 `docs/` ✅ **已完成（含定位调整）**
-**为什么**：`SKILL.md` 410 行 / 27.5 KB，**一半是写给 Agent 的指令**
-（"先问用户""逐页读图""等主人确认"）。人类读者照着一半内容走会迷路。
+**为什么**：`init_project.py:676` 现在还在写 `KIT="C:/Users/<用户名>/.workbuddy/skills/..."`。  
+套件一旦被拷到别的机器、或者项目目录被单独拷走，README 里的所有重建命令**全部失效**，  
+而这是新人**最依赖的一份文件**（第 3 条在 README 里留过同样的尾巴，最后靠占位符闭环解决）。
 
 **怎么做**
-- `docs/workflow.md` —— 人类向：完整工作流、每步在干什么、为什么这一步不能省
-- `docs/architecture.md` —— 为什么是这个目录结构、四类交互怎么协作
-- `SKILL.md` 保持 Agent 指令，但在顶部声明「人类请先看 README 与 docs/」
 
-**验收**：人类读者不需要读 `SKILL.md` 也能完整走完流程
+- 改成相对路径（README 与脚本同深，用 `../../` 相对定位），或运行时探测（复用 `kitpath.py`）
+- 至少在 README 顶部写明「套件搬家了？改这一行」
 
-> **实测记录（2026-09-25）**：`docs/workflow.md` 已建——一屏看懂流程图 + 四步展开 +
-> 「为什么是这个目录结构」（architecture 部分并入此节，不再单独建文件）+ 常见问题；
-> 规范细节**用指针指向 SKILL.md 与 references/**，不复制全文，避免双源维护改一处忘一处。
-> `SKILL.md` 顶部已加人群分流声明（人类 → README 与 workflow.md）。
-> 验收：仅凭 README + workflow.md 能走通全流程（README 三步 + workflow 的分步叙述与指针）。
->
-> **同日更大的一步——定位调整（主人拍板）**：README 原表述「逐页看图写讲解这一步是留给人的」
-> 有误导性——目标用户要的是「丢给 agent 一轮对话拿完整产物」。README 已全量重写：
-> 主推「让 AI 替你做」（本仓库即 Agent Skill；WorkBuddy 安装方式 + 其他 agent 喂 SKILL.md +
-> 交付后抽查关键公式转述的建议），手工三步降为辅助路径并明确「同一套件的手工模式」；
-> 「五条铁律」改名「交付纪律（对人和 agent 同样有效）」；
-> 「关于运行环境」改写为「SKILL.md 说给 agent 听、README/workflow.md 说给人听」的分工说明。
+**验收**：把项目目录和套件分别拷到两个不同位置，README 里的命令照抄仍能跑
+
+### [ ] 6. `CHANGELOG.md`
+
+**为什么**：tag `v2.0.0` / `v2.1.0` 已建，Release notes 只存在于 GitHub 上，  
+**仓库里没有任何一份可离线读的变更记录**。技能类项目会被反复迭代，没有 changelog 就没法追溯。
+
+**怎么做**
+
+- 按 Keep a Changelog 格式建 `CHANGELOG.md`
+- 把 v2.0.0（语义驱动架构：结构先于内容确定）与 v2.1.0（正文字号调节、pitfalls 重构）的  
+  release notes 收编进去；两者之间的 step tag 不必逐条收，只在「开发期标签」一节说明
+- 版本号约定从 `0.1.0` 更正为 SemVer（这条在第 11 条里就写明了，一直没落地）
+
+**验收**：`CHANGELOG.md` 有 v2.0.0 与 v2.1.0 两条，且与 GitHub Release 内容一致
+
+---
+
+## P2 · 提升「被发现」与「能贡献」
+
+### [ ] 7. 在 macOS / Linux 上真机实测并写明支持矩阵
+
+**为什么**：`kitpath.py` 里已经写了 `/Applications/Google Chrome.app/...`、  
+`/usr/bin/chromium` 这些分支，但**从来没有在真机上验证过**，  
+「代码里写了」和「能跑」是两件事。第 3 条的 CI 会顺带覆盖 Linux，macOS 仍需手动。
+
+**怎么做**：至少跑一次 Ubuntu（WSL 也算）；有条件再跑一次 macOS。把结果写进 README 的支持矩阵表。
+
+**验收**：README 有一张表，明确写出「已验证 / 未验证」的平台
+
+### [ ] 8. 补 `argparse`，并统一致命错误格式
+
+**为什么**：脚本已经有一半用了 argparse（`init_project` / `plan_outline` / `probe` / `run_all` /  
+`selftest` / `shot` / `glyph_probe`），但 `build.py` / `prepare_pdf.py` / `kitpath.py` /  
+`check_ui.py` / `katex_offline.py` 还在裸读 `sys.argv`，没有 `--help`，  
+也没有像样的错误信息。**同一套件里两种风格**，是「专业度」最容易漏的地方。
+
+**怎么做**
+
+- 剩下 5 个脚本补 argparse（注意 `prepare_pdf.py` 的位置参数是 `pdf outdir [thumb_w] [quality]`，  
+  补 argparse 时别把位置参数顺序改了，那是 `init_project.py` 生成命令依赖的）
+- `run_all.py` 缺 `pdf` 参数时别甩 argparse 原文，改成打印「三步上手」
+- 统一致命错误为三段式：**问题 + 原因 + 可直接照抄的解决命令**（`kitpath.require_deps` 已是这个风格）
+
+**验收**：`python scripts/build.py --help` 等 5 个都有可用帮助；故意传错参数时给出的是人话不是 traceback
+
+### [ ] 9. 评估去掉 Node 依赖
+
+**为什么**：这是**门槛最实质**的一条。重新核过依赖面：`node` 的唯一用途是 `check_math.js`  
+（KaTeX 语法自检）——`probe.py` 走的是浏览器 `--dump-dom`，**不需要 node**。  
+也就是说砍掉 node 的代价，仅限于「离线校验公式语法」这一项能力。
+
+**怎么做**
+
+- 方案 A：用 Python 直接调 `vendor/katex/katex.min.js`（需要一个 JS 引擎，又多一个依赖，不划算）
+- 方案 B：把公式语法自检也搬进浏览器探针（复用 `probe.py` 的 `--dump-dom` 机制，  
+  在页面里注入 katex 后逐条 `renderToString`），这样 `check_math.js` 可以整个删掉
+- 方案 C：诚实降级——在 README 里写清「不装 Node 会失去公式语法自检」，并让 `check_ui.py`  
+  的静态检查补上「公式标签配对、括号闭合」等**不需要渲染**就能查的部分
+
+**建议先做方案 C 的前半（降级说明 + 静态兜底），再评估 B**——B 的实现量不小，  
+但它能把「Python + 浏览器」变成**唯一的两项依赖**，对新人门槛是数量级的下降。
+
+**验收**：`check_math.js` 要么被删掉，要么 README 明确写出「没有它会少什么、怎么补」
+
+### [ ] 10. demo 的生成脚本入库
+
+**为什么**：`docs/demo/` 和 `docs/demo-en/` 是仓库里唯二**无法重建**的产物——  
+原始课件 PDF 已因版权移除，重建只能靠「从单文件产物反解 content 分片 + 缩略图 + config」。  
+本轮验证过这条路可行（重建后 DOC_NS 变化、8 页区块与公式全绿），但脚本是一次性的，  
+**没进仓库**。半年后想改 demo，只能重新摸索一遍。
+
+**怎么做**：把脱敏后的反解 + 重建流程写成 `docs/demo/build_demo.py`，参数化成  
+「源产物 → 输出 demo」一步命令，并写清它依赖 build.py 的注入是确定性的（缩略图插在  
+`</section>` 前、pdf-link 只改写 `<a>` 形式）。
+
+**验收**：从任一在线 demo 反解并重建，得到字节级可复现的产物
 
 ---
 
 ## P3 · 细节打磨
 
-- [ ] **13.** 给 `build.py` / `prepare_pdf.py` / `kitpath.py` 补 `argparse`（现在没有 `--help`）
-- [ ] **14.** `run_all.py` 缺 `pdf` 参数时，别甩 argparse 原文，改成打印「三步上手」
-- [ ] **15.** 统一所有脚本的致命错误格式为三段式：**问题 + 原因 + 可直接照抄的解决命令**
-      （`kitpath.require_deps` 已经是这个风格，其它脚本对齐它）
-- [ ] **16.** README 加一张「原 PDF 大小 → 产物大小」换算表，让用户提前知道内嵌 PDF 的代价
-- [ ] **17.** 评估**去掉 Node 依赖**：`node` 唯一用途是跑 KaTeX 语法自检。
-      若能用 Python 直接调 `vendor/katex`，整条链就只剩「Python + 浏览器」两个依赖，
-      对新人的门槛是实质性的下降
-- [ ] **18.** `init_project.py` 生成的 `README-项目.md` 里写的是套件绝对路径，迁移后失效 ——
-      改成相对路径或运行时探测
-- [ ] **19.** `.gitignore` 补 `*.log`、`.pytest_cache/`（若以后加前端再加 `node_modules/`）
-- [ ] **20.** 各脚本头部加 SPDX 标识（GPL 的 "How to Apply" 建议这么做，但会让 diff 变吵，
-      可等版本稳定后一次性做）
-- [ ] **21.** **`check_ui.py` / `templates/probe_doc.js` 假定文档一定有原文件深链** ——
-      前者在非内嵌模式下硬性要求存在 `file:///#page=N`，后者按「深链数 == 逐页区块数」比对。
-      于是**不提供 PDF 的文档（例如本仓库的 demo）必然报 FAIL**，尽管其它检查全绿。
-      建议：config 未给 `pdf` 时跳过这两项，或在输出里写明「本次未提供原文件，深链检查已跳过」。
-      *（这一条是做 demo 时实测撞出来的，不是推测。）*
-- [ ] **22.** demo 的生成脚本没进仓库（含作者本机路径与素材位置）。
-      若希望 demo 可重建，把它脱敏后放进 `docs/`，参数化成「源项目目录 → 输出 demo」的一步命令
-- [x] **23.** 在线 demo 地址已写进仓库 **homepage** 字段
-      （`https://zzzhen-22.github.io/slides-annotated-html/demo/`）。
-      徽章**不做** —— README 顶部已经有醒目的「▶ 点这里在线试一下」，比徽章显眼得多；
-      再挂一排徽章只会让首屏变吵
+- [x] **11.** `check_ui.py` 的分组输出顺序 ✅ **部分完成（2026-10-04）**
+      - ~~原状：`⑧ → ⑨ → ⑩ → ⑥ → ⑦`，⑩ 插在 ⑨ 之后、⑥ 之前~~ → **现状：`⑤ → ⑧ → ⑨ → ⑥ → ⑦ → ⑩`**
+      - 已把 ⑩（字号调节）移到末尾，读输出不再「跳回去」。**编号一律保留原样，不重排**
+      - **有意留下的**：⑧⑨ 仍在 ⑤ 之后、⑥ 之前。这两组是历史上依次插在 ⑤ 后面的老组，
+        重编号会让文档里「⑤ 之后是 ⑥」的说法失效，**收益 < 风险**，所以不动
+      - 血泪教训见 `references/pitfalls.md` 第 45 条：**别用脚本按行号搬移源码块**
+        （本轮试过，把 `def main()` 之前的文件头全吞了，靠 `git checkout` 还原）
+- [ ] **12.** 清理开发期 tag：8 个 tag 里 4 个是 `v2.0-semantic-outline-step3/4/5/6`。  
+      要么删掉，要么在 `CHANGELOG.md` 里说明「step 标签是开发快照，Releases 页只看 SemVer tag」。  
+      现在 Releases 页会把这 4 个和 `v2.0.0` / `v2.1.0` 平级列出，容易让人误以为是正式发布  
+      **建议与第 6 条（CHANGELOG）一起做**——写CHANGELOG 时顺手说明标签约定，一次改两件事
+- [x] **13.** **加 `check_docs.py`：文档口径的机器化体检** ✅ **已完成（2026-10-04）**
+      - 断言文档里提到的**带路径文件**真实存在（删了没改文档）
+      - 断言「N类交互」在 `check_ui.py` docstring（**单一真源**）与 README / SKILL.md /
+        workflow.md / run_all.py / README.en.md 之间一致
+      - 断言每项交互的**功能名**在中文文档里都找得到（自动取稳定双字词，不维护别名表）
+      - 断言 `run_all.py` docstring 里 ④–⑧ 各步引用的脚本，README 中英校验表都列了
+      - 断言 `references/pitfalls.md` 编号 1..N **连续无空洞**，且全仓库「第 N 条」引用不越界
+      - 断言 README 目录树列出的文件都存在，且 `scripts/` `templates/` 下新增的 `.py/.js` 没漏列
+      - 成本约 260 行 Python（含注释），接进 **`selftest.py`**（不是 `run_all.py`），CI 待建（第 3 条）
+
+  > **为什么真源选 `check_ui.py` 的 docstring**：它离实现最近、必然先改，
+  > 所以「忘了改别人」的假设在它身上不成立。口径类事实应指定唯一出处，其余位置引用它。
+  >
+  > **为什么不接 `run_all.py`**：那条流水线是给用户跑课件的，
+  > 让每个用户都体检一遍套件文档没意义；`selftest.py` 才是「套件自己体检自己」。
+  >
+  > **实测记录（反向测试比正向全绿重要）**：正向全绿只说明「现在没漂移」，
+  > 不能说明「它抓得住」。故意注入三种漂移验证：
+  > ① 在 `check_ui.py` 加第 ⑥ 项交互「全局搜索面板」→ **8 项 FAIL**，
+  >    精确指出「真源说 6、5 处文档仍写 5」+「三份中文文档都没有『面板』」；
+  > ② 从 README 校验表删掉 `probe_font.js` 一行 → ④ 组立刻 FAIL；
+  > ③ 把 `pitfalls.md` 第 12 条改成 `12bis` → ⑤ 组报「缺 12」并给出实际编号序列。
+  > 三次全部命中后已还原（`git diff scripts/check_ui.py` 为空）。
+  >
+  > **设计原则：宁可漏报，不可误报。** 第一版① 组把裸文件名（`README.en.md`、`Node.js`、
+  > `config.json`…）也纳入校验 → 34 处误报。**一个会误报的体检比没有体检更糟**，
+  > 会被直接关掉。改成只校验带路径分隔符的引用，裸文件名交给 ⑥ 组覆盖。
+  > ③ 组第一版取功能名前两字，「本节概述」在 workflow.md 里写作「每节概述卡」→ 误报；
+  > 改为取后两字（中文功能名后缀比前缀稳定）后消除。
+  >
+  > **顺带产出**：`references/pitfalls.md` 新增第 43 条（H 组「文档与口径」），
+  > 把这次的根因与处理法记下来——这类漂移会再犯，得留记录。
+
+- [ ] **14.** README 加一张「原 PDF 大小 → 产物大小」换算表（现在只有「≈ × 1.34」一行文字，  
+  藏在「已知限制」里）。让用户提前知道内嵌 PDF 的代价，而不是做完才发现 20 MB
+- [ ] **15.** 缩略图支持 WebP：`prepare_pdf.py` 只出 PNG（`grep webp` 零命中）。  
+  demo 的 1.19 MB 里缩略图占大头，WebP 通常能省 30–50%。顺带记一条实测陷阱：  
+  **PNG 降采样反而更大**（已在第 1 条截图的实测记录里踩过：1200 px → 380 KB vs 原始 240 KB，  
+  插值在大片纯色区造出渐变，压缩率变差）
+- [ ] **16.** `scripts/` 与 `templates/` 的 probe 文件放得不一致：`probe_marks.js` 在  
+  `scripts/`，`probe_doc.js` / `probe_font.js` 在 `templates/`。统一到一处，或在 README 的  
+  目录树里说清分工
+- [ ] **17.** `.gitignore` 补 `*.log`、`.pytest_cache/`（若以后加前端再加 `node_modules/`）。  
+  现有条目已覆盖 `__pycache__/`、`.venv/`、编辑器与系统文件
+- [ ] **18.** 各脚本头部加 SPDX 标识（GPL 的 "How to Apply" 建议这么做，但会让 diff 变吵，  
+  可等版本稳定后一次性做）
+- [ ] **19.** `TODO.md` 的基线表容易过期（本次已从 45 文件 / 9 提交 / 4.9 MB 更新到
+      46 / 25 / 5.0 MB）。**故意不做自动化**：强制 agent 同步提交数会被绕过，
+      「提示而非失败」才有效——`check_docs.py` 的定位是「抓事实矛盾」，不是「抓数字过期」
 
 ---
 
 ## 不建议做（看起来诱人，其实会伤害这个项目）
 
-**不要打包成 pip 包 / 做成一条 CLI 命令。**
+**不要打包成 pip 包 / 做成一条 CLI 命令。**  
 这个工具的价值在「产出高质量讲解」，不在「自动转换」。包装成 `pip install xxx && xxx file.pdf`
-会给人「一键转换」的错误预期 —— 而它的设计恰恰是**机械部分自动、判断部分留给人**。
+
+
+会给人「一键转换」的错误预期 —— 而它的设计恰恰是**机械部分自动、判断部分留给人**。  
 预期错了，收到的差评会比现在多。
 
-**不要做 Docker 镜像。**
-依赖里含无头浏览器，镜像会到 GB 级；而目标用户多数在本地跑自己的课件。
+**不要做 Docker 镜像。**  
+依赖里含无头浏览器，镜像会到 GB 级；而目标用户多数在本地跑自己的课件。  
 收益远低于维护成本。
 
-**不要为了「直接读 PPTX」引入 LibreOffice 依赖。**
-让用户自己导一次 PDF 更省事、更可控（导出时字体和版式由他决定），
+**不要为了「直接读 PPTX」引入 LibreOffice 依赖。**  
+让用户自己导一次 PDF 更省事、更可控（导出时字体和版式由他决定），  
 引入一个几百 MB 的 Office 套件只为省一次导出，不划算。
 
-**不要做在线服务 / SaaS 版本。**
-「离线、本地、课件不出自己电脑」是这个工具最实在的卖点之一。
+**不要做在线服务 / SaaS 版本。**  
+「离线、本地、课件不出自己电脑」是这个工具最实在的卖点之一。  
 上传课件到别人的服务器，恰好破坏了它。
 
 ---
 
 ## 如果只做一件事
 
-**做第 1 条：放截图。**
-成本最低（跑一次就有），收益最大（决定陌生人要不要继续往下读）。
-第 2 条紧跟其后 —— 截图 + 在线 demo 之后，这个仓库才算「可以被别人评估」。
+**做第 3 条：加 GitHub Actions。**
+
+P0 已经清空了，但**现在所有验证都靠人手动跑**——这轮的三条自查线（机械 / 语义 / 文档口径）
+一次要 5 分半钟，没有谁会天天跑。所以它们随时可能悄悄失效，而失效方式是**没人发现**。
+
+第 3 条特殊在：**它一举两得**。① PR 上出现绿色 check = 「这个项目还活着」的信号，
+顺带让贡献者放心；② ubuntu runner 自带 chromium + `fonts-noto-cjk`，
+**等于把第 7 条（macOS / Linux 真机验证）白送**。
+
+第 6 条（`CHANGELOG.md`）紧跟其后——它和第 12 条（清理开发期 tag）合起来做更划算，
+写 CHANGELOG 时顺手把标签约定说清，一次改两件事。
+
+---
+
+## 已完成索引（2026-09-24 ~ 2026-10-04，不再跟踪）
+
+正文里已勾掉的条目不再重复列出。这里记的是**没有对应 TODO 条目、但确实做掉的事**：
+
+| 事项 | 完成于 |
+|---|---|
+| README 加效果截图（3 张） | 2026-09-25 |
+| 在线 demo（中文 + 英文，Pages 已上线） | 2026-09-25；2026-10-03 按 v2.1.0 重建 |
+| `requirements.txt` + 三步上手命令 | 2026-09-25 |
+| 示例 PDF（`examples/sample-lecture.pdf`，8 页） | 2026-09-25 |
+| README「已知限制」章节（中英对称） | 2026-09-25 |
+| 英文 README `README.en.md` | 2026-09-25 |
+| 仓库 topics（10 个）+ homepage 字段 | 2026-09-25 |
+| `SKILL.md` 人类向内容拆到 `docs/workflow.md` + 定位调整 | 2026-09-25 |
+| 在线 demo 地址写进 homepage 字段（徽章不做） | 2026-09-27 |
+| 语义驱动架构（`--stage plan/check`、`--outline`、结构先于内容） | 2026-09-25 起逐步落地 |
+| 版本化：`v2.0.0` + `v2.1.0` annotated tag 与 GitHub Release | 2026-09-27 / 2026-10-01 |
+| 顶栏 A−/A＋ 调节正文字号（存 localStorage） | 2026-10-01（v2.1.0） |
+| `pitfalls.md` 重构：1095 → 271 行、三段式、按对象分组 | 2026-10-02 |
+| 文档口径漂移修复（6 处「四类交互」+ 英文 README 补字号） | 2026-10-03（第 1 条） |
+| `check_docs.py`：文档口径机器化体检 + 接进 `selftest.py` | 2026-10-04（第 13 条） |
+| `build.py` 无 pdf 降级分支（原先留悬空 `<a>`） | 2026-10-04（第 2 条） |
+| `check_ui.py` 深链按形态断言 + 按标签分别计数 | 2026-10-04（第 2 条） |
+| `probe_doc.js` 深链两种形态分别统计 | 2026-10-04（第 2 条） |
+| `pitfalls.md` 新增第 43/44/45 条（43 → 45 条，分组扩到 A–I） | 2026-10-03 ~ 04 |
+
+已完成条目的**实测记录**没有丢：README 相关截图与体积实测在 `README.md`，
+构建纪律在 `SKILL.md`，具体踩坑（含反向测试的记录）在 `references/pitfalls.md`。
+
+---
+
+## 这三轮学到的一件事（比上面任何一条清单都重要）
+
+**「改了实现忘了改另一处」不是人的问题，是结构问题。**
+
+三次漂移（6 处「四类交互」、英文 README 落后一版、`pitfalls.md` 重排后 15 处交叉引用要跟着改）
+看着像粗心，实则同源：**同一句事实被抄在多个文件里，没有唯一出处**。
+
+有效的解法都不是「更仔细一点」，而是**改结构**：
+- 口径类事实**指定唯一真源**（本项目是 `check_ui.py` docstring），其余位置引用它 → `check_docs.py`
+- 重排编号这种会连锁的事，**先 grep 出全部引用、建映射表再动手**，别边改边发现
+
+推论：**下一个类似的动作是给「版本号 / 文件数」也指定真源**，但故意不做自动化
+（见第 19 条）——「提示而非失败」才有效，强制维护会被绕过。
