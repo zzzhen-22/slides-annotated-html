@@ -139,8 +139,9 @@ PY="$(command -v python || command -v python3)"
 
 ```bash
 node  "$KIT/scripts/check_math.js" "输出.html" "_katex/katex.min.js"     # 公式/标签配对/目录锚点/缺字/TODO
-"$PY" "$KIT/scripts/check_ui.py"   "输出.html"                             # 四类交互接线
+"$PY" "$KIT/scripts/check_ui.py"   "输出.html"                             # 五类交互接线
 "$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/scripts/probe_marks.js"  # 标记回归（DOM 断言）
+"$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_font.js"  # 字号调节回归（档位 / localStorage）
 "$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_doc.js"  # 待补页面=0、断链、缺字
 "$PY" "$KIT/scripts/shot.py"       "输出.html" "_extract/shot.png"          # 截图看长相
 ```

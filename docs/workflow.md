@@ -93,9 +93,14 @@ python scripts/run_all.py "<课件>.pdf" --out <同一目录> --skip-init --skip
 | 校验 | 抓什么问题 |
 |---|---|
 | `check_math.js` | 公式能不能渲染、中文有没有混进公式、标签配对、缺字 |
-| `check_ui.py` | 四类交互的「接线」是否完好 |
-| `probe.py` + 探针 | **结构有没有被改坏**（截图看不出 `<mark>` 里混进了块级元素这种事） |
+| `check_ui.py` | 五类交互的「接线」是否完好（静态，不开浏览器） |
+| `probe.py` + `probe_marks.js` | 划词标记**有没有把DOM 结构改坏**（截图看不出 `<mark>` 里混进块级元素这种事） |
+| `probe.py` + `probe_font.js` | 字号调节的档位 / localStorage / 边界钳制是否正常 |
+| `probe.py` + `probe_doc.js` | 交付体检：待补页面 N/M、缺缩略图、目录断链、缺字 |
 | `shot.py` | 长相与真实交互状态 |
+
+上表`check_ui.py` 说的「五类交互」是：目录逐级折叠、每节概述卡、侧栏收起（缩略图自动放大）、
+划词标记 → 笔记抽屉、正文字号 A−/A＋ 调节。五项都在 README 顶部特性列表里列了。
 
 ## 为什么是这个目录结构
 

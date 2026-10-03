@@ -20,7 +20,7 @@
     ② prepare_pdf.py    逐页大图（供人/agent 逐页核对）+ 内嵌缩略图
     ③ build.py          组装单文件 HTML
     ④ check_math.js     公式语法 / CJK / 标签配对 / 目录锚点 / 数量一致性
-    ⑤ check_ui.py       四类交互的接线（含标记上色的结构安全、笔记位置标签）
+    ⑤ check_ui.py       五类交互的接线（含标记上色的结构安全、笔记位置标签、正文字号调节）
     ⑥ probe_marks.js    标记功能行为回归（真实入口 + DOM 结构断言）
     ⑥b probe_font.js    正文字号调节回归（档位 / localStorage / MIN·MAX 钳制）
     ⑦ probe_doc.js      交付体检（内容进度 / 缩略图一致性 / 断链）

@@ -108,8 +108,9 @@ python scripts/prepare_pdf.py "<课件.pdf>" "_extract" 860 75   # 逐页图 + �
 #   ↓ 逐页看 _extract/page-NN.png，写 content/*.html
 python scripts/build.py config.json                             # 组装单文件
 node   scripts/check_math.js "<输出.html>" "_katex/katex.min.js" # 公式语法 + 标签/锚点/数量
-python scripts/check_ui.py   "<输出.html>"                      # 四类交互的「接线」是否完好
+python scripts/check_ui.py   "<输出.html>"                      # 五类交互的「接线」是否完好
 python scripts/probe.py      "<输出.html>" scripts/probe_marks.js
+python scripts/probe.py      "<输出.html>" templates/probe_font.js
 python scripts/probe.py      "<输出.html>" templates/probe_doc.js
 python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看长相
 ```
@@ -132,7 +133,8 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 │   ├─ katex_offline.py     ← 制作离线 KaTeX（一次即可，可跨项目复用）
 │   ├─ build.py             ← 组装单文件（可用 0 命令行参数：python build.py config.json）
 │   ├─ check_math.js        ← 公式语法、标签配对、目录锚点、正文缺字体检
-│   ├─ check_ui.py          ← 四类交互的 DOM 与 CSS/JS 是否对齐
+│   ├─ check_ui.py          ← 五类交互的 DOM 与 CSS/JS 是否对齐
+│   ├─ check_docs.py        ← 套件自身的文档口径体检（改完文档/加新功能后跑）
 │   ├─ probe.py             ← 无头跑探针 JS 并把结果读回来（读 DOM 靠它）
 │   ├─ probe_marks.js       ← 标记功能回归（跨格/跨段/跨公式/单段 + 重开恢复）
 │   ├─ glyph_probe.py       ← 正文符号探针：把非中文符号排成一页，肉眼查方框
@@ -141,9 +143,14 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 ├─ assets/                  ← 已验证的外壳与样式，build.py 自动内联
 │   ├─ shell.html           ← 页面骨架（改版式改这里，不要改 build.py）
 │   ├─ site.css             ← 基础版式
-│   ├─ site.extra.css       ← 四类交互的追加样式
+│   ├─ site.extra.css       ← 五类交互的追加样式
 │   └─ site.js              ← 全部交互逻辑，暴露 window.__doc 供无头测试
-├─ templates/               ← 可复制的内容骨架 + 交付体检 + 截图 harness
+├─ templates/               ← 可复制的内容骨架 + 交付体检探针 + 截图 harness
+│   ├─ content-skeleton/    ← init_project.py 复制的逐页区块骨架
+│   ├─ probe_doc.js         ← 交付体检：待补页面 N/M、缺缩略图、目录断链、缺字
+│   ├─ probe_font.js        ← 字号调节回归（--profile 跑两遍验跨会话持久化）
+│   ├─ harness_nav.js       ← 截图 harness：先触发目录交互再截
+│   └─ harness_markshot.js  ← 截图 harness：先划词标记再截
 ├─ examples/                ← sample-lecture.pdf 示例课件（三步上手 ③ 的输入）、config 样例、逐页区块模板
 ├─ references/
 │   ├─ pitfalls.md          ← 踩坑清单（42 条，按「频率 × 隐蔽度」排序）
@@ -151,7 +158,8 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 ├─ vendor/katex/            ← 离线 KaTeX（MIT，见下方致谢）
 ├─ docs/
 │   ├─ workflow.md          ← 人类向完整流程：每步做什么、为什么不能省
-│   ├─ demo/                ← 在线 demo：节选 8 页的可交互产物（单文件）
+│   ├─ demo/                ← 在线 demo（中文）：节选 8 页的可交互产物（单文件）
+│   ├─ demo-en/             ← 在线 demo（英文）：同一产物的全英文版
 │   └─ images/              ← README 里那几张截图
 └─ TODO.md                  ← 路线图：让它对陌生人更好用的待办清单
 ```
@@ -169,14 +177,21 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 | `check_ui.py` | 五类交互的 DOM 与 CSS/JS 是否对齐（分组数与按钮数相等、收起后列宽真的变大、抽屉元素齐全、`DOC_NS` 已注入、字号调节的 `--fs`/反向补偿/localStorage 键、标记上色的结构安全） | 长相、实际行为 |
 | `probe.py` + `probe_marks.js` | **结构有没有被改坏**：自动找跨格/跨段/跨公式/单段四种选区，用**真实入口**标记后断言「块级元素数、可见文本、表格 tr/td 一字不变、无块级元素进 mark、无零宽 mark」，再拆掉全部 mark 重新定位一遍复查 | 长相 |
 | `probe.py` + `probe_font.js` | **正文字号调节**：初始 100%、`step()` 后 `--fs`/标签/localStorage 三者一致、`Font.init()` 重读恢复、MIN(0.9)/MAX(1.4) 钳制与按钮禁用；加 `--profile` 跑两遍可验跨进程持久化 | 长相 |
+| `probe.py` + `probe_doc.js` | **内容写完了没有**：待补页面 N/M、缺缩略图的页、目录断链、KaTeX 残留 script、TODO 注释、正文缺字风险 | 讲解写得对不对 |
 | `shot.py` | 长相与真实交互状态 | 细节正确性 |
 
 **截图看不出结构被改坏**，所以只要动了标记相关代码，`probe.py` 这一行不能省。
 
+> 上表六行查的是**产物**。另有一条查**套件自己**：`check_docs.py` 断言「几类交互」这类口径
+> 在五份文档与 `check_ui.py` 之间是否一致、README 目录树有没有漏列新文件、
+> `pitfalls.md` 编号是否连续。**改功能而忘了改文档**，靠的就是这条拦。
+> 它不进 `run_all.py`（那条流水线是给用户跑课件的），由 `selftest.py` 顺带跑。
+
 ### 自检
 
 ```bash
-python scripts/selftest.py        # 现造一份 6 页小 PDF，跑通「机械 + 语义」两条路线并断言关键产物，期望结尾「自检结果: PASS」
+python scripts/selftest.py        # 现造一份 6 页小 PDF，跑通「机械 + 语义」两条路线，并体检套件自身文档口径，期望结尾「自检结果: PASS」
+python scripts/check_docs.py      # 只跑文档口径体检（改了 README / SKILL.md / 交互功能之后跑这一条就够，秒级）
 ```
 
 ---
