@@ -13,8 +13,8 @@
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 48 个受版本控制的文件 ｜ 4.9 MB（不含 `.git`） ｜ 32 个提交 ｜ 与 `origin/main` 逐字节一致 |
-| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**45 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md` |
+| 仓库 | 49 个受版本控制的文件 ｜ 4.9 MB（不含 `.git`） ｜ 34 个提交 ｜ 与 `origin/main` 逐字节一致 |
+| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**45 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md`、`CHANGELOG.md` |
 | 图片资源 | ✅ 3 张（`docs/images/`，hero / notes / overview，各约 230 KB） |
 | 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.19 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.19 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。两份均已按 v2.1.0 重建 |
 | 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` |
@@ -22,7 +22,7 @@
 | 自检体系 | ✅ 三条线：`selftest.py` = 机械路线 + 语义路线 + **文档口径**（`check_docs.py`，6 组断言）；已接进 `selftest.py`，**CI 已建**（第 3 条） |
 | CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（三条线） |
 | 版本号 | ✅ `v2.1.1`（annotated tag + GitHub Release）+ `CHANGELOG.md`（第 6 条已完成） |
-| tag 状况 | 8 个 tag，其中 4 个是开发期 step 标签（`v2.0-semantic-outline-step3/4/5/6`），会干扰 Releases 页（见第 12 条） |
+| tag 状况 | 9 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
 | 跨平台 | 代码里有 macOS / Linux 分支；**Linux 已由 CI 覆盖**（ubuntu runner 装 `fonts-noto-cjk`），macOS 仍未真机验证（见第 7 条） |
 | 文档口径 | ✅ 无已知漂移；`check_docs.py` 新增「pitfalls 裸计数」断言（第 1、13 条完成，`check_docs.py` 常驻把关） |
 
