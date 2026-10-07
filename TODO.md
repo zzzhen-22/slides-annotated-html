@@ -155,6 +155,11 @@
   时间上限 30 分钟（本地实测 5m34s，留足余量）；`fail-fast: false`，一个平台挂不取消另一个。
 - **不做发布**：`GITHUB_TOKEN` 只读，8 个 tag 里 4 个是开发快照，任何 push/release 都不进 CI。
 - 顺带白送第 7 条的 Linux 半边：装了 `fonts-noto-cjk` 后，缺字体检在非 Windows 平台也跑得通。
+- **首跑就抓到真 bug**：Windows runner（英文地区，stdout=cp1252）跑 `kitpath.py` 时 `print` 中文
+  直接 `UnicodeEncodeError`，且它一挂、后面的 `check_docs` / `selftest` 因默认 `if: success()` 被跳过，
+  ubuntu 侧全绿。修法两处缺一不可：① 全脚本顶部强制 `stdout/stderr` 走 UTF-8（`reconfigure`）；
+  ② workflow 加 `PYTHONUTF8=1` 兜住子进程链。**这就是 CI 的价值——「中文地区 Windows 用 cp936
+  能编码中文所以没事、英文地区就炸」这种 bug，手动跑永远发现不了。**
 
 ### [ ] 4. `CONTRIBUTING.md` + Issue / PR 模板
 

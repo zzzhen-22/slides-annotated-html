@@ -25,6 +25,13 @@ import re
 import sys
 import unicodedata
 
+# 强制 stdout/stderr 走 UTF-8：英文地区 Windows 默认编码 cp1252，print 中文会
+# UnicodeEncodeError（GitHub Windows runner 上实测踩到，2026-10-07）。
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 # 先挖掉所有 script（含 KaTeX 源码与内嵌 base64），再看剩下的可见文本
 SCRIPT_RE = re.compile(r'<script[\s\S]*?</script>', re.I)
 TAG_RE = re.compile(r'<[^>]*>')

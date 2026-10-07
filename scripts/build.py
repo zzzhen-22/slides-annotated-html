@@ -28,6 +28,13 @@ import re
 import sys
 import urllib.parse
 
+# 强制 stdout/stderr 走 UTF-8：英文地区 Windows 默认编码 cp1252，print 中文会
+# UnicodeEncodeError（GitHub Windows runner 上实测踩到，2026-10-07）。
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, '..', 'assets')
 

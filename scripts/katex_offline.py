@@ -20,6 +20,13 @@ import subprocess
 import sys
 import tarfile
 
+# 强制 stdout/stderr 走 UTF-8：英文地区 Windows 默认编码 cp1252，print 中文会
+# UnicodeEncodeError（GitHub Windows runner 上实测踩到，2026-10-07）。
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 MIRRORS = [
     'https://registry.npmmirror.com/katex/-/katex-%s.tgz',
     'https://registry.npmjs.org/katex/-/katex-%s.tgz',

@@ -37,6 +37,9 @@ jobs:
 
     env:
       PYTHONUNBUFFERED: "1"
+      # 英文地区 Windows 的 stdout 默认 cp1252，print 中文会 UnicodeEncodeError。
+      # UTF-8 mode 让整条链（含各脚本 spawn 的子进程）都走 UTF-8。
+      PYTHONUTF8: "1"
       KIT_BROWSER: ${{ matrix.browser }}
 
     steps:
