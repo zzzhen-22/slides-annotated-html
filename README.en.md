@@ -107,6 +107,8 @@ Every deliverable must pass all of these — mechanical checks catch what screen
 Self-test: `python scripts/selftest.py` — builds a synthetic 6-page PDF and exercises both routes (mechanical pipeline + semantic outline path), then checks the suite's own doc/code consistency; expect the final line `自检结果: PASS`.
 To check only the docs (fast — run this after editing README / SKILL.md or adding an interaction): `python scripts/check_docs.py`.
 
+These run automatically in CI: `.github/workflows/selftest.yml` runs the full `selftest.py` (all three checks) on every push to `main` and every PR, on both Ubuntu and Windows runners.
+
 ---
 
 ## License & third-party

@@ -21,7 +21,7 @@
 | 依赖清单 | ✅ `requirements.txt`（`pymupdf` + `pillow`，不锁版本；`node` 与浏览器为可选/外部） |
 | 自检体系 | ✅ 三条线：`selftest.py` = 机械路线 + 语义路线 + **文档口径**（`check_docs.py`，6 组断言）；已接进 `selftest.py`，**CI 已建**（第 3 条） |
 | CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（三条线） |
-| 版本号 | ✅ `v2.1.0`（annotated tag + GitHub Release）；❌ `CHANGELOG.md` 仍无（见第 6 条） |
+| 版本号 | ✅ `v2.1.1`（annotated tag + GitHub Release）+ `CHANGELOG.md`（第 6 条已完成） |
 | tag 状况 | 8 个 tag，其中 4 个是开发期 step 标签（`v2.0-semantic-outline-step3/4/5/6`），会干扰 Releases 页（见第 12 条） |
 | 跨平台 | 代码里有 macOS / Linux 分支；**Linux 已由 CI 覆盖**（ubuntu runner 装 `fonts-noto-cjk`），macOS 仍未真机验证（见第 7 条） |
 | 文档口径 | ✅ 无已知漂移；`check_docs.py` 新增「pitfalls 裸计数」断言（第 1、13 条完成，`check_docs.py` 常驻把关） |
@@ -189,7 +189,7 @@
 
 **验收**：把项目目录和套件分别拷到两个不同位置，README 里的命令照抄仍能跑
 
-### [ ] 6. `CHANGELOG.md`
+### [x] 6. `CHANGELOG.md` ✅ **已完成（2026-10-07，随 v2.1.1 发布）**
 
 **为什么**：tag `v2.0.0` / `v2.1.0` 已建，Release notes 只存在于 GitHub 上，  
 **仓库里没有任何一份可离线读的变更记录**。技能类项目会被反复迭代，没有 changelog 就没法追溯。
@@ -202,6 +202,10 @@
 - 版本号约定从 `0.1.0` 更正为 SemVer（这条在第 11 条里就写明了，一直没落地）
 
 **验收**：`CHANGELOG.md` 有 v2.0.0 与 v2.1.0 两条，且与 GitHub Release 内容一致
+
+**落地记录**：建了 `CHANGELOG.md`，收编 v2.0.0 / v2.1.0 / v2.1.1 三条，顶部写明
+「Releases 页只看 SemVer tag，step tag 是开发快照」的标签约定（顺带覆盖第 12 条要说明的那半）。
+第 12 条的「删 tag」这半仍未做（远端破坏性操作，需另行确认）。
 
 ---
 
@@ -400,6 +404,9 @@ P0 已经清空了，但**现在所有验证都靠人手动跑**——这轮的�
 | `.gitignore` 补 `*.log` / `.pytest_cache/` | 2026-10-07（第 17 条） |
 | 文档口径漂移修复：「42 条踩坑」→「45 条」（README ×2 + workflow ×1） | 2026-10-07 |
 | `check_docs.py` ⑤ 补「pitfalls 裸计数」断言（曾漏拦 42→45 漂移） | 2026-10-07 |
+| Windows cp1252 编码修复（全脚本 stdout UTF-8 + CI `PYTHONUTF8=1`） | 2026-10-07 |
+| `CHANGELOG.md`（Keep a Changelog，收编 v2.0.0/v2.1.0/v2.1.1 + 标签约定） | 2026-10-07（第 6 条） |
+| 发布 `v2.1.1`（annotated tag + GitHub Release） | 2026-10-07 |
 
 已完成条目的**实测记录**没有丢：README 相关截图与体积实测在 `README.md`，
 构建纪律在 `SKILL.md`，具体踩坑（含反向测试的记录）在 `references/pitfalls.md`。
