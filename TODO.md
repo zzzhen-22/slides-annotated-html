@@ -9,22 +9,22 @@
 > **已完成条目已从正文移除**（不再跟踪），只留在文末「已完成索引」一行。  
 > 基线数据是 2026-10-03 实测，不是估算。
 
-## 当前基线（2026-10-04 实测）
+## 当前基线（2026-10-07 实测）
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 47 个受版本控制的文件 ｜ 5.0 MB（不含 `.git`） ｜ 25 个提交 ｜ `main` 领先 `origin/main` 3 个提交（待推） |
+| 仓库 | 48 个受版本控制的文件 ｜ 4.9 MB（不含 `.git`） ｜ 32 个提交 ｜ 与 `origin/main` 逐字节一致 |
 | 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**45 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md` |
 | 图片资源 | ✅ 3 张（`docs/images/`，hero / notes / overview，各约 230 KB） |
 | 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.19 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.19 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。两份均已按 v2.1.0 重建 |
 | 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` |
 | 依赖清单 | ✅ `requirements.txt`（`pymupdf` + `pillow`，不锁版本；`node` 与浏览器为可选/外部） |
-| 自检体系 | ✅ 三条线：`selftest.py` = 机械路线 + 语义路线 + **文档口径**（`check_docs.py`，6 组断言）；已接进 `selftest.py`，CI 待建（第 3 条） |
-| CI | ❌ **无**（无 `.github/` 目录，Issue 模板也没有） |
+| 自检体系 | ✅ 三条线：`selftest.py` = 机械路线 + 语义路线 + **文档口径**（`check_docs.py`，6 组断言）；已接进 `selftest.py`，**CI 已建**（第 3 条） |
+| CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（三条线） |
 | 版本号 | ✅ `v2.1.0`（annotated tag + GitHub Release）；❌ `CHANGELOG.md` 仍无（见第 6 条） |
 | tag 状况 | 8 个 tag，其中 4 个是开发期 step 标签（`v2.0-semantic-outline-step3/4/5/6`），会干扰 Releases 页（见第 12 条） |
-| 跨平台 | 代码里有 macOS / Linux 分支，**从未在真机验证**（见第 7 条） |
-| 文档口径 | ✅ 无已知漂移（第 1、13 条已完成，`check_docs.py` 常驻把关） |
+| 跨平台 | 代码里有 macOS / Linux 分支；**Linux 已由 CI 覆盖**（ubuntu runner 装 `fonts-noto-cjk`），macOS 仍未真机验证（见第 7 条） |
+| 文档口径 | ✅ 无已知漂移；`check_docs.py` 新增「pitfalls 裸计数」断言（第 1、13 条完成，`check_docs.py` 常驻把关） |
 
 ---
 
@@ -127,7 +127,7 @@
 > 后者天然容纳新形态。
 
 
-### [ ] 3. 加 GitHub Actions，跑 `selftest.py`
+### [x] 3. 加 GitHub Actions，跑 `selftest.py` ✅ **已完成（2026-10-07）**
 
 **为什么**：项目的质量承诺是「机械部分全绿」，但**没有任何自动化回归保障**。  
 贡献者改了 `site.js` 或 `build.py`，没人拦得住。CI 是「这个项目还活着」的信号。  
@@ -144,6 +144,17 @@
 - 顺带在 workflow 里加一步 `check_docs.py`（第 13 条），让口径漂移也进 CI
 
 **验收**：PR 上出现绿色 check；**顺带证明了 Linux 可用**（一举两得）
+
+**实测落地（与草案的两处出入）**
+
+- 浏览器**没用** `--no-shot`：截图本来在 `run_all.py` 里就是 `fatal=False`，跑全套不添风险。
+- 草案写「runner 自带 chromium」**不准确**——ubuntu-24.04 runner 预装的是 **Google Chrome**
+  （`/usr/bin/google-chrome`），chromium 在 24.04 是 snap-only、apt 装不了。所以 Linux 显式
+  `KIT_BROWSER=/usr/bin/google-chrome`，Windows 留空交给 `kitpath` 自动找 Edge/Chrome。
+- workflow 结构：`kitpath.py` 环境自查 → `check_docs.py` 秒级快速失败 → `selftest.py` 完整三条线。
+  时间上限 30 分钟（本地实测 5m34s，留足余量）；`fail-fast: false`，一个平台挂不取消另一个。
+- **不做发布**：`GITHUB_TOKEN` 只读，8 个 tag 里 4 个是开发快照，任何 push/release 都不进 CI。
+- 顺带白送第 7 条的 Linux 半边：装了 `fonts-noto-cjk` 后，缺字体检在非 Windows 平台也跑得通。
 
 ### [ ] 4. `CONTRIBUTING.md` + Issue / PR 模板
 
@@ -306,8 +317,8 @@
 - [ ] **16.** `scripts/` 与 `templates/` 的 probe 文件放得不一致：`probe_marks.js` 在  
   `scripts/`，`probe_doc.js` / `probe_font.js` 在 `templates/`。统一到一处，或在 README 的  
   目录树里说清分工
-- [ ] **17.** `.gitignore` 补 `*.log`、`.pytest_cache/`（若以后加前端再加 `node_modules/`）。  
-  现有条目已覆盖 `__pycache__/`、`.venv/`、编辑器与系统文件
+- [x] **17.** `.gitignore` 补 `*.log`、`.pytest_cache/`（若以后加前端再加 `node_modules/`）。  
+  现有条目已覆盖 `__pycache__/`、`.venv/`、编辑器与系统文件 ✅ **已完成（2026-10-07）**
 - [ ] **18.** 各脚本头部加 SPDX 标识（GPL 的 "How to Apply" 建议这么做，但会让 diff 变吵，  
   可等版本稳定后一次性做）
 - [ ] **19.** `TODO.md` 的基线表容易过期（本次已从 45 文件 / 9 提交 / 4.9 MB 更新到
@@ -341,21 +352,21 @@
 
 ## 如果只做一件事
 
-**做第 3 条：加 GitHub Actions。**
+~~**做第 3 条：加 GitHub Actions。**~~ ✅ **已完成（2026-10-07）**
 
 P0 已经清空了，但**现在所有验证都靠人手动跑**——这轮的三条自查线（机械 / 语义 / 文档口径）
 一次要 5 分半钟，没有谁会天天跑。所以它们随时可能悄悄失效，而失效方式是**没人发现**。
 
 第 3 条特殊在：**它一举两得**。① PR 上出现绿色 check = 「这个项目还活着」的信号，
-顺带让贡献者放心；② ubuntu runner 自带 chromium + `fonts-noto-cjk`，
-**等于把第 7 条（macOS / Linux 真机验证）白送**。
+顺带让贡献者放心；② ubuntu runner 自带 Chrome + `fonts-noto-cjk`，
+**等于把第 7 条（macOS / Linux 真机验证）白送**（Linux 半边已落地）。
 
-第 6 条（`CHANGELOG.md`）紧跟其后——它和第 12 条（清理开发期 tag）合起来做更划算，
+**下一步做第 6 条（`CHANGELOG.md`）**——它和第 12 条（清理开发期 tag）合起来做更划算，
 写 CHANGELOG 时顺手把标签约定说清，一次改两件事。
 
 ---
 
-## 已完成索引（2026-09-24 ~ 2026-10-04，不再跟踪）
+## 已完成索引（2026-09-24 ~ 2026-10-07，不再跟踪）
 
 正文里已勾掉的条目不再重复列出。这里记的是**没有对应 TODO 条目、但确实做掉的事**：
 
@@ -380,6 +391,10 @@ P0 已经清空了，但**现在所有验证都靠人手动跑**——这轮的�
 | `check_ui.py` 深链按形态断言 + 按标签分别计数 | 2026-10-04（第 2 条） |
 | `probe_doc.js` 深链两种形态分别统计 | 2026-10-04（第 2 条） |
 | `pitfalls.md` 新增第 43/44/45 条（43 → 45 条，分组扩到 A–I） | 2026-10-03 ~ 04 |
+| GitHub Actions CI（`selftest.yml`，ubuntu + windows 跑三条线） | 2026-10-07（第 3 条） |
+| `.gitignore` 补 `*.log` / `.pytest_cache/` | 2026-10-07（第 17 条） |
+| 文档口径漂移修复：「42 条踩坑」→「45 条」（README ×2 + workflow ×1） | 2026-10-07 |
+| `check_docs.py` ⑤ 补「pitfalls 裸计数」断言（曾漏拦 42→45 漂移） | 2026-10-07 |
 
 已完成条目的**实测记录**没有丢：README 相关截图与体积实测在 `README.md`，
 构建纪律在 `SKILL.md`，具体踩坑（含反向测试的记录）在 `references/pitfalls.md`。

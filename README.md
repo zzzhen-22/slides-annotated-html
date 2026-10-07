@@ -153,7 +153,7 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 │   └─ harness_markshot.js  ← 截图 harness：先划词标记再截
 ├─ examples/                ← sample-lecture.pdf 示例课件（三步上手 ③ 的输入）、config 样例、逐页区块模板
 ├─ references/
-│   ├─ pitfalls.md          ← 踩坑清单（42 条，按「频率 × 隐蔽度」排序）
+│   ├─ pitfalls.md          ← 踩坑清单（45 条，按「频率 × 隐蔽度」排序）
 │   └─ content-quality.md   ← 讲解内容的质量标准
 ├─ vendor/katex/            ← 离线 KaTeX（MIT，见下方致谢）
 ├─ docs/
@@ -161,6 +161,9 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 │   ├─ demo/                ← 在线 demo（中文）：节选 8 页的可交互产物（单文件）
 │   ├─ demo-en/             ← 在线 demo（英文）：同一产物的全英文版
 │   └─ images/              ← README 里那几张截图
+├─ .github/
+│   └─ workflows/
+│       └─ selftest.yml     ← CI：每次 push 到 main / 每个 PR 跑三条自查线
 └─ TODO.md                  ← 路线图：让它对陌生人更好用的待办清单
 ```
 
@@ -193,6 +196,9 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 python scripts/selftest.py        # 现造一份 6 页小 PDF，跑通「机械 + 语义」两条路线，并体检套件自身文档口径，期望结尾「自检结果: PASS」
 python scripts/check_docs.py      # 只跑文档口径体检（改了 README / SKILL.md / 交互功能之后跑这一条就够，秒级）
 ```
+
+这两条在 CI 里是自动跑的：`.github/workflows/selftest.yml` 会在每次 push 到 `main` 和每个 PR 上，
+在 ubuntu / windows 双平台跑完整 `selftest.py`（三条自查线），顺带覆盖 Linux 真机验证。
 
 ---
 
@@ -227,7 +233,7 @@ python scripts/check_docs.py      # 只跑文档口径体检（改了 README / S
 - **不许写死本机路径**。校验：`grep -rn "/home/\|/Users/\|C:/Users/" scripts/ assets/ templates/` 应当无命中。
 - **模板注释里不许出现字面标签**。`build.py` 用非贪婪正则匹配整段区块，注释里的假 `<section>` 会让它提前收尾，症状是「图在文件里、但 DOM 里查不到」，极难排查。
 
-动笔前先扫一遍 `references/pitfalls.md`（42 条，每条都对应一个真实事故）。
+动笔前先扫一遍 `references/pitfalls.md`（45 条，每条都对应一个真实事故）。
 
 ---
 

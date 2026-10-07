@@ -11,7 +11,8 @@
     ② 数字口径：「N 类交互」在五处文档 + check_ui.py docstring 里是不是同一个 N
     ③ 关键功能名：check_ui 声明的每一项交互，功能名在中文文档里能不能找到
     ④ 步骤编号：run_all.py 的 ④–⑧ 各步所引用的脚本，README 校验表是否都列了
-    ⑤ pitfalls 编号：1..N 连续无空洞，全仓库「第 N 条」引用都指向存在的条目
+    ⑤ pitfalls 编号：1..N 连续无空洞，全仓库「第 N 条」引用都指向存在的条目，
+      以及「pitfalls.md（N 条」的散文裸总数等于真实条数
     ⑥ 目录树：README 目录树里列的文件真实存在，且 scripts/ templates/ 下
        新增的 .py/.js 都被列进去了
 
@@ -223,6 +224,13 @@ RE_PIT_HEAD = re.compile(r'^##\s+([A-Z])\.', re.M)
 RE_REF = re.compile(r'第\s*(\d+(?:\s*[、,]\s*\d+)*)\s*条')
 REF_GLOBS = [('scripts', '.py'), ('scripts', '.js'), ('templates', '.js'),
              ('templates', '.html'), ('examples', '.html')]
+# 散文里的「裸总数」：「pitfalls.md（N 条」或「N 条…pitfalls.md」两种写法都算。
+# 为什么单独查：上面的 ⑤ 只查「第 N 条」引用是否越界，不查这个总数——
+# 2026-10-04 pitfalls 从 42 涨到 45 时，README.md 两处 + workflow.md 一处仍写「42 条」，
+# 没有任何一条体检拦住（2026-10-07 接手时才发现）。这里把「总数口径」也纳入体检。
+RE_PIT_COUNT = re.compile(
+    r'pitfalls\.md[^\n]*?[（(]\s*\**(\d+)\s*条'
+    r'|(\d+)\s*条[^\n]*?pitfalls\.md')
 
 
 def check_pitfalls():
@@ -264,6 +272,18 @@ def check_pitfalls():
     chk('全仓库 %d 处「第 N 条」引用都指向存在的条目' % total, not bad,
         '' if not bad else '越界 %d 处' % len(bad))
     for b in bad[:10]:
+        print('      ✘ %s' % b)
+
+    # 裸总数口径：「pitfalls.md（N 条」的 N 都等于真实条数（含英文 README 的对应写法）
+    count_bad = []
+    for rel in ('README.md', 'README.en.md', 'SKILL.md', 'docs/workflow.md', 'TODO.md'):
+        for m in RE_PIT_COUNT.finditer(read(rel)):
+            n = int(m.group(1) or m.group(2))
+            if n != len(nums):
+                count_bad.append('%s → %d 条（实际 %d 条）' % (rel, n, len(nums)))
+    chk('「pitfalls.md（N 条」的裸总数都等于真实条数', not count_bad,
+        '' if not count_bad else '漂移 %d 处' % len(count_bad))
+    for b in count_bad[:10]:
         print('      ✘ %s' % b)
 
 

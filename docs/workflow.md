@@ -2,7 +2,7 @@
 
 > 给想理解这套流程的人看——无论接下来动手的是你还是 AI agent。
 > 可照抄的完整命令与 Agent 执行规范在 `SKILL.md`；写讲解的质量标准在 `references/content-quality.md`；
-> 42 条真实踩坑记录在 `references/pitfalls.md`。
+> 45 条真实踩坑记录在 `references/pitfalls.md`。
 
 ## 一屏看懂
 
