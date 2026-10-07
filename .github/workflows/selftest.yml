@@ -1,0 +1,78 @@
+name: selftest
+
+# 三条自查线（机械 / 语义 / 文档口径）一次约 5 分钟，手动跑没人会天天做；
+# 这里让它在每次 push 到 main、以及每个 PR 上强制跑一遍，
+# PR 上的绿色 check 就是「项目还活着」的信号。
+#
+# 顺带白送第 7 条（Linux 真机验证）的 Linux 半边：
+# ubuntu runner 预装 Google Chrome，装上 fonts-noto-cjk 后，
+# 「正文缺字」等体检项就能在非 Windows 平台上也跑通。
+#
+# 注意：这里**只跑体检、不做发布**。GITHUB_TOKEN 是只读的，
+# 且本仓库 8 个 tag 里有 4 个是开发期快照，任何 push / release 都不该在 CI 里发生。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  selftest:
+    name: selftest (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false          # 一个平台挂了别取消另一个
+      matrix:
+        include:
+          - os: ubuntu-latest
+            # kitpath 按 KIT_BROWSER → PATH → 常见位置探测浏览器；
+            # Linux 显式指向 runner 预装的 Chrome，避免歧义。
+            browser: /usr/bin/google-chrome
+          - os: windows-latest
+            # Windows 留空：kitpath 会自动找到预装的 Edge / Chrome
+            #（runner 的 Chrome/Edge 安装路径可能随镜像漂移，交给探测更稳）。
+            browser: ""
+
+    env:
+      PYTHONUNBUFFERED: "1"
+      KIT_BROWSER: ${{ matrix.browser }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # check_math.js 用 Node 跑 KaTeX 公式自检；
+      # probe_*.js 走浏览器 --dump-dom，不依赖 node。
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Linux 不装中日韩字体的话，「正文缺字」体检会误报（见 references/pitfalls.md）。
+      - name: Install CJK fonts (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      # 环境自查：python / node / 浏览器 / pymupdf / pillow 是否就位。
+      # 缺任一项就提前退出，不用等后面 5 分钟才看到环境问题。
+      - name: Env self-check
+        run: python scripts/kitpath.py
+
+      # 文档口径体检很快（纯 Python、不碰浏览器），先单独跑一遍「快速失败」，
+      # 让「改了实现忘了改文档」这类漂移在几秒内暴露，而不是淹没在完整自检里。
+      - name: Docs consistency
+        run: python scripts/check_docs.py
+
+      # 完整三条自查线：机械路线 + 语义路线 + 文档口径（内部还会再跑 check_docs.py）。
+      - name: Full selftest
+        run: python scripts/selftest.py
