@@ -259,7 +259,10 @@ def main():
 
     print()
     print('=== 数量一致性 ===')
-    pg = html.count('<section class="pg"')
+    # 「逐页区块」的匹配式：**只看属性、不看顺序**，与 build.py / check_math.js / coursekit.py 同源。
+    # v1 用字符串 `'<section class="pg"'` 计数，隐含要求 class 紧跟 `<section`；v2 给 section
+    # 追加 data-* 之后，属性换序的写法会让这里少数、而 build.py 照样注入 —— 两边对不上。
+    pg = len(re.findall(r'<section(?=[^>]*\bclass="pg")(?=[^>]*\bdata-page="\d+")[^>]*>', html))
     th = html.count('class="thumb"')
     # 深链计数要**按标签分别数**，不能只数 class="pdf-link" 字符串。
     # 早先用字符串计数，把停用态的 <span> 和活链 <a> 混在一起算——数字对上了，

@@ -169,7 +169,7 @@ body.hide-thumb .pg{grid-template-columns:minmax(0,1fr);grid-template-areas:"hea
    U+20D7。中文字体栈（PingFang SC / Microsoft YaHei / Source Han Sans / Noto CJK）
    普遍缺 U+20D7 的字形，浏览器回退不到任何字体 → 渲染成方框（tofu）。
    font-style:inherit 是为了让它在 <em> 里自动变粗斜体、在外面保持正体，
-   与原文既有的 <em> 标注保持一致。详见 references/pitfalls.md 第 34 条。 */
+   与原文既有的 <em> 标注保持一致。详见 references/pitfalls.md 第 16 条。 */
 .vec{font-weight:700;font-style:inherit}
 
 /* 列表 */

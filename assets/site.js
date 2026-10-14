@@ -1599,6 +1599,46 @@
     }
   }
 
+  /* ======================= 9.5 深链：#q=<词> =======================
+     课程合集入口的「跨讲检索」会生成这种链接，形如：
+         xxx-逐页精解.html#q=残差
+         xxx-逐页精解.html#q=残差&p=p51
+     比 query string 好在哪：hash 是纯前端可读的，不触发任何网络行为 —— 与 C1「断网可用」相容。
+
+     为什么还要 p=<页id> 这一半：只给 #q= 的话用户还得在结果面板里再点一次；
+     课程页那一侧已经知道这条命中属于哪一页，把页锚点一起带过来就能**直接跳过去并高亮**。
+     （普通页锚点如 #p51 不用管 —— 浏览器原生就会滚过去，本函数只认 #q= 开头的。） */
+  function initDeepLink() {
+    var h = String(location.hash || '');
+    if (h.indexOf('#q=') !== 0) return;
+    var fields = {}, parts = ('q=' + h.slice(3)).split('&');
+    for (var i = 0; i < parts.length; i++) {
+      var kv = parts[i].split('=');
+      if (kv.length < 2) continue;                 // 形如 "&foo" 的残段，跳过
+      try { fields[kv[0]] = decodeURIComponent(kv.slice(1).join('=')); }
+      catch (e) { fields[kv[0]] = kv.slice(1).join('='); }
+    }
+    var word = String(fields.q || '').replace(/\+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!word) return;
+    var qq = $('#q');
+    if (!qq) return;
+    /* 侧栏收起时先展开再搜索 —— 否则结果面板生成了却看不见，
+       与「/」快捷键同一条理由（有结果却无处可看最难解释）。 */
+    var navOff = MOBILE.matches
+      ? !document.body.classList.contains('nav-shown')
+      : document.body.classList.contains('nav-hidden');
+    if (navOff) { var nb = $('#navToggle'); if (nb) nb.click(); }
+    qq.value = word;
+    Find.run(qq);
+    var want = String(fields.p || '');
+    if (!want || !Find.items.length) return;
+    for (var k = 0; k < Find.items.length; k++) {
+      if (Find.items[k].e.id === want) { Find.goto(k); return; }   // 高亮该节全部命中并滚过去
+    }
+    var el = document.getElementById(want);                        // 该页没被检索到就至少滚到它
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
+  }
+
   /* ======================= 启动 ======================= */
   function boot() {
     ensureSectionIds();          // 先补 id：没有 id 的卡片标不了，也存不下 pid
@@ -1617,6 +1657,7 @@
     initChrome();
     initPdfLinks();
     initEmbeddedPdf();
+    initDeepLink();       // 放最后：它要用到 #q / #qres 与 Find，前面都准备好才跑
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();

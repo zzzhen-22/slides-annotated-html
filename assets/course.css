@@ -1,0 +1,193 @@
+/* ============================================================================
+   课程合集入口（index.html）的样式 —— **与单讲产物的 site.css 完全独立**。
+   为什么不复用：单讲那套承载「左讲解右缩略图 + 标记笔记抽屉 + 字号调节」，
+   课程页一样都用不上；硬复用会让两边互相污染，而单讲那套是被 check_ui.py
+   与 4 个探针严格守着的资产（见 docs/v2-course-collection.md §5.3）。
+   ============================================================================ */
+:root{
+  --bg:#f2f4f9; --surface:#fff; --surface2:#f8f9fc;
+  --text:#1b2233; --text2:#3d4759; --muted:#6b7488;
+  --line:#e2e7f0; --line2:#eef1f7;
+  --accent:#2f4fd0; --accent2:#1f3aa8; --accent-soft:#eef2ff; --accent-line:#c7d2fe;
+  --red:#b8352a; --red-soft:#fdf0ee; --red-line:#f3cfc9;
+  --amber:#8a5a00; --amber-soft:#fff8e6; --amber-line:#f0dca6;
+  --green:#1a6b52; --green-soft:#eefaf5; --green-line:#bfe6d5;
+  --xslate:#2c6a94; --xsoft:#eef4f8; --xline:#d7e5ee; --xdash:#5b8fb8;
+  --shadow:0 1px 2px rgba(20,30,60,.05),0 6px 22px rgba(20,30,60,.06);
+  --radius:14px;
+  --sans:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC","Noto Sans CJK SC",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font:15px/1.75 var(--sans);
+  -webkit-font-smoothing:antialiased;
+}
+.sp{flex:1}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------- 顶栏 ---------- */
+.cbar{
+  position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+}
+.cbar-in{display:flex;align-items:center;gap:12px;padding:10px 22px;max-width:1180px;margin:0 auto}
+.cbrand{font-weight:700;font-size:15.5px}
+.csub{color:var(--muted);font-size:12.5px}
+.cnav{display:flex;gap:2px;flex-wrap:wrap}
+.cnav a{
+  padding:5px 11px;border-radius:8px;font-size:13.2px;color:var(--text2);
+}
+.cnav a:hover{background:var(--accent-soft);color:var(--accent2);text-decoration:none}
+
+/* ---------- 布局与卡片 ---------- */
+.cwrap{max-width:1180px;margin:0 auto;padding:22px 22px 60px}
+.chero{padding:20px 4px 12px}
+.chero h1{margin:0 0 8px;font-size:27px;line-height:1.35}
+.csum{margin:0;color:var(--text2);font-size:15px;max-width:820px}
+.cmeta{margin:10px 0 0;color:var(--muted);font-size:13px}
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px 24px;margin:16px 0;box-shadow:var(--shadow);scroll-margin-top:64px;
+}
+.card h2{margin:0 0 6px;font-size:19px}
+.lead{margin:0 0 14px;color:var(--text2);font-size:14px}
+.caveat{
+  margin:0 0 12px;padding:9px 13px;background:var(--amber-soft);
+  border:1px solid var(--amber-line);border-left:4px solid var(--amber);
+  border-radius:9px;color:var(--amber);font-size:13px;
+}
+.cfoot{color:var(--muted);font-size:12.5px;padding:20px 4px;text-align:center}
+.cfoot .small{font-size:12px}
+
+/* ---------- ① 课程地图 ---------- */
+.lec{
+  display:flex;align-items:baseline;gap:12px;padding:12px 14px;margin:8px 0;
+  border:1px solid var(--line);border-radius:11px;background:var(--surface2);
+}
+.lec:hover{border-color:var(--accent-line);background:var(--accent-soft)}
+.lec .lid{font-family:var(--mono);font-size:12.5px;color:var(--accent);flex:none;min-width:30px}
+.lec .ltitle{font-weight:600;font-size:14.8px}
+.lec .ltitle.dim{color:var(--muted);font-weight:500}
+.lec .lmeta{margin-left:auto;flex:none;color:var(--muted);font-size:12.5px;font-family:var(--mono)}
+.lec .ltopics{color:var(--muted);font-size:12px;font-weight:400}
+.badge{
+  display:inline-block;padding:1px 8px;border-radius:20px;font-size:11.5px;
+  border:1px solid var(--line);background:var(--surface);color:var(--text2);font-family:var(--sans);
+}
+.badge.done{background:var(--green-soft);border-color:var(--green-line);color:var(--green)}
+.badge.partial{background:var(--amber-soft);border-color:var(--amber-line);color:var(--amber)}
+.badge.skeleton,.badge.pending{background:var(--surface2);color:var(--muted)}
+
+/* ---------- ② 要点总结 ---------- */
+.kp-tools{display:flex;align-items:center;gap:10px;margin:0 0 14px;flex-wrap:wrap}
+.kinput{
+  flex:1;min-width:220px;padding:9px 13px;border:1px solid var(--line);
+  border-radius:9px;font:14px var(--sans);background:var(--surface);color:var(--text);
+}
+.kinput.wide{flex:0 0 100%;max-width:640px;margin-bottom:12px}
+.kinput:focus{outline:none;border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.kp-tools button,.res-more{
+  padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface);
+  color:var(--text2);font:13.2px var(--sans);cursor:pointer;flex:none;
+}
+.kp-tools button:hover{border-color:var(--accent-line);color:var(--accent2);background:var(--accent-soft)}
+.kp-count{color:var(--muted);font-size:12.5px;font-family:var(--mono);flex:none}
+.kp-empty{padding:14px;color:var(--muted);font-size:13.5px;background:var(--surface2);
+  border:1px dashed var(--line);border-radius:10px;text-align:center}
+
+.klec{border:1px solid var(--line);border-radius:11px;margin:10px 0;overflow:hidden}
+.klec > summary{
+  padding:11px 15px;cursor:pointer;font-weight:600;font-size:14.5px;
+  display:flex;align-items:baseline;gap:10px;background:var(--surface2);list-style:none;
+}
+.klec > summary::-webkit-details-marker{display:none}
+.klec > summary::before{content:'▸';color:var(--muted);font-size:12px;flex:none}
+.klec[open] > summary::before{content:'▾'}
+.klec > summary:hover{background:var(--accent-soft)}
+.klec .kmeta{margin-left:auto;color:var(--muted);font-size:12.5px;font-family:var(--mono);flex:none}
+.kpl{list-style:none;counter-reset:kpl;margin:0;padding:4px 15px 10px}
+.kpl li{
+  counter-increment:kpl;position:relative;padding:9px 0 9px 36px;
+  border-bottom:1px dashed var(--line2);line-height:1.75;font-size:14.4px;
+}
+.kpl li:last-child{border-bottom:0}
+.kpl li::before{
+  content:counter(kpl);position:absolute;left:0;top:11px;
+  width:23px;height:23px;border-radius:7px;background:var(--accent-soft);color:var(--accent);
+  font-size:12px;font-weight:700;font-family:var(--mono);
+  display:flex;align-items:center;justify-content:center;
+}
+.kp-at{
+  margin-left:7px;font-size:12px;font-family:var(--mono);
+  color:var(--xslate);border-bottom:1px solid var(--xline);white-space:nowrap;
+}
+.kp-topic{
+  margin-left:6px;font-size:12px;color:var(--muted);
+  background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:0 6px;
+}
+.kp-topic:hover{border-color:var(--accent-line);color:var(--accent2);text-decoration:none}
+.kp-hold{
+  padding:11px 15px;color:var(--muted);font-size:13.4px;
+  background:repeating-linear-gradient(45deg,var(--surface2),var(--surface2) 8px,#fff 8px,#fff 16px);
+}
+
+/* ---------- ③ 跨讲检索 ---------- */
+.cres{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface)}
+.ck-sum{
+  padding:9px 14px;background:var(--surface2);border-bottom:1px solid var(--line);
+  color:var(--text2);font-size:13px;
+}
+.ck-hit{padding:10px 14px;border-bottom:1px solid var(--line2);cursor:pointer}
+.ck-hit:last-child{border-bottom:0}
+.ck-hit:hover{background:var(--accent-soft)}
+.ck-hit .ch-loc{
+  font-size:12px;font-family:var(--mono);color:var(--accent);margin-bottom:3px;
+}
+.ck-hit .ch-s{font-size:13.4px;color:var(--text2);line-height:1.65;word-break:break-word}
+mark.ch{background:#bfe3ff;color:inherit;padding:0 1px;border-radius:3px}
+
+/* ---------- ④ 术语总表 ---------- */
+table.tbl{width:100%;border-collapse:collapse;font-size:13.8px}
+table.tbl th,table.tbl td{
+  border-bottom:1px solid var(--line2);padding:8px 10px;text-align:left;vertical-align:top;
+}
+table.tbl th{background:var(--surface2);color:var(--text2);font-weight:600;font-size:13px}
+table.tbl tr:hover td{background:var(--surface2)}
+.mono{font-family:var(--mono);font-size:12.5px}
+.dim{color:var(--muted)}
+.see{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.7}
+
+/* ---------- ⑤ 进度看板 ---------- */
+.pbar{display:inline-block;width:120px;height:7px;border-radius:5px;background:var(--line2);
+  overflow:hidden;vertical-align:middle;margin-right:8px}
+.pbar > i{display:block;height:100%;background:var(--green);border-radius:5px}
+.pbar.warn > i{background:var(--amber)}
+.pbar.none > i{background:var(--muted)}
+
+/* ---------- 回到顶部 ---------- */
+#toTop{
+  position:fixed;right:22px;bottom:22px;width:40px;height:40px;border-radius:50%;
+  border:1px solid var(--line);background:var(--surface);color:var(--text2);
+  font-size:17px;cursor:pointer;box-shadow:var(--shadow);display:none;
+}
+#toTop.on{display:block}
+#toTop:hover{border-color:var(--accent-line);color:var(--accent2)}
+
+@media (max-width:760px){
+  .cwrap{padding:14px 14px 50px}
+  .card{padding:16px 16px;border-radius:12px}
+  .cbar-in{padding:8px 14px}
+  .cnav{width:100%;overflow-x:auto}
+  .lec{flex-wrap:wrap}
+  .lec .lmeta{margin-left:0}
+}
+@media print{
+  .cbar,#toTop,.kp-tools,.caveat{display:none!important}
+  .card{box-shadow:none;border-color:#ddd;break-inside:avoid}
+  .klec > summary{background:#f5f5f5}
+  .klec:not([open]) > .kpl{display:block}   /* 打印时展开全部，否则导出的纸面会缺要点 */
+}

@@ -12,7 +12,7 @@
 
 约定：探针脚本自己在结束时把页面清空，只留
       <pre id="__r">要回传的文本</pre>
-      （直接改 document.head/body 的 innerHTML 即可，见 references/pitfalls.md 第 30 条）。
+      （直接改 document.head/body 的 innerHTML 即可，见 references/pitfalls.md 第 23 条）。
 
 为什么需要它：截图只能看「长得对不对」，看不了「结构有没有被改坏」（例如
 划线把 <td> 搬进 <mark>、表格 tr/td 数量变化）。DOM 断言必须靠这个。
@@ -63,6 +63,8 @@ def main():
     ap.add_argument('--profile', default=None)
     ap.add_argument('--wait', type=int, default=20000)
     ap.add_argument('--keep', action='store_true')
+    ap.add_argument('--hash', default=None,
+                    help='打开时附带的 URL hash（不含 #），用来测深链，如 --hash "q=残差&p=p51"')
     a = ap.parse_args()
 
     src = os.path.abspath(a.html)
@@ -82,6 +84,9 @@ def main():
     target = os.path.join(tmp, 'isolated.html')
     open(target, 'w', encoding='utf-8').write(html)
     url = 'file:///' + urllib.parse.quote(target.replace('\\', '/'), safe='/:')
+    if a.hash:
+        # hash 里的中文/空格要编码，但 `&` `=` 是参数分隔符，必须原样留下
+        url += '#' + urllib.parse.quote(str(a.hash).lstrip('#'), safe='&=%/:')
 
     cmd = [find_browser(), '--headless=new', '--disable-gpu', '--no-sandbox',
            '--no-first-run', '--no-default-browser-check', '--disable-sync',

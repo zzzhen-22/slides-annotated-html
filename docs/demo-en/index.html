@@ -178,7 +178,7 @@ body.hide-thumb .pg{grid-template-columns:minmax(0,1fr);grid-template-areas:"hea
    U+20D7。中文字体栈（PingFang SC / Microsoft YaHei / Source Han Sans / Noto CJK）
    普遍缺 U+20D7 的字形，浏览器回退不到任何字体 → 渲染成方框（tofu）。
    font-style:inherit 是为了让它在 <em> 里自动变粗斜体、在外面保持正体，
-   与原文既有的 <em> 标注保持一致。详见 references/pitfalls.md 第 34 条。 */
+   与原文既有的 <em> 标注保持一致。详见 references/pitfalls.md 第 16 条。 */
 .vec{font-weight:700;font-style:inherit}
 
 /* 列表 */
@@ -631,6 +631,39 @@ mark.q-hit{
 }
 /* 命中跨了内联元素边界、套不上 mark 时，让所在块整块闪一下 */
 .q-flash{background:#e8f4ff;border-radius:6px;transition:background .35s}
+
+/* ===================== 跨讲串联卡（v2 多讲课程） =====================
+   用法：<div class="xref"><b>跨讲：</b>第 3 讲 <a href="../…/x.html#p09">P9</a> 已把…讲透。</div>
+   为什么和 .note / .quote 都要区分开：四类提示卡的语义是「原文有什么、讲解者加了什么」，
+   而 .xref 是**指向别的讲次**的导航卡，读者需要一眼认出「这条要出去看」。
+   区分手段用**虚线左竖线**（四类卡全是实线），底色调成偏冷的灰蓝。
+   ⚠ 内容纪律：信息本体要写在文字里，链接只是增强 —— 单讲被单独拷走时相对路径会断链，
+     但「第 3 讲 P9 已详述」这句话仍然读得懂（硬约束 C2）。 */
+.xref{
+  background:#eef4f8;border:1px solid #d7e5ee;border-left:4px dashed #5b8fb8;
+  border-radius:10px;padding:12px 16px;margin:14px 0;
+  color:var(--text2);font-size:14.4px;line-height:1.75;
+}
+.xref b:first-child{color:#2c6a94}
+.xref a{color:#2c6a94;text-decoration:none;border-bottom:1px solid #9dc0d6}
+.xref a:hover{border-bottom-color:#2c6a94}
+
+/* ===================== 「本讲要点」列表（v2） =====================
+   它是课程主页「要点总结页」的真源，所以视觉上要「读得进去」而不是密密麻麻。
+   编号用 ::before 画成圆角方块（不依赖 ol 的原生序号，样式可控且不吃缩进）。
+   li 上的 data-at / data-topic 在产物里不显示，只给课程层抽取用。 */
+.kpl{list-style:none;counter-reset:kpl;margin:14px 0 2px;padding:0}
+.kpl li{
+  counter-increment:kpl;position:relative;padding:10px 0 10px 38px;
+  border-bottom:1px dashed var(--line2);line-height:1.78;
+}
+.kpl li:last-child{border-bottom:0}
+.kpl li::before{
+  content:counter(kpl);position:absolute;left:0;top:12px;
+  width:24px;height:24px;border-radius:7px;background:var(--accent-soft);
+  color:var(--accent);font-size:12.5px;font-weight:700;font-family:var(--mono);
+  display:flex;align-items:center;justify-content:center;
+}
 
 @media print{
   .qres{display:none!important}
@@ -2938,6 +2971,46 @@ mark.q-hit{
     }
   }
 
+  /* ======================= 9.5 深链：#q=<词> =======================
+     课程合集入口的「跨讲检索」会生成这种链接，形如：
+         xxx-逐页精解.html#q=残差
+         xxx-逐页精解.html#q=残差&p=p51
+     比 query string 好在哪：hash 是纯前端可读的，不触发任何网络行为 —— 与 C1「断网可用」相容。
+
+     为什么还要 p=<页id> 这一半：只给 #q= 的话用户还得在结果面板里再点一次；
+     课程页那一侧已经知道这条命中属于哪一页，把页锚点一起带过来就能**直接跳过去并高亮**。
+     （普通页锚点如 #p51 不用管 —— 浏览器原生就会滚过去，本函数只认 #q= 开头的。） */
+  function initDeepLink() {
+    var h = String(location.hash || '');
+    if (h.indexOf('#q=') !== 0) return;
+    var fields = {}, parts = ('q=' + h.slice(3)).split('&');
+    for (var i = 0; i < parts.length; i++) {
+      var kv = parts[i].split('=');
+      if (kv.length < 2) continue;                 // 形如 "&foo" 的残段，跳过
+      try { fields[kv[0]] = decodeURIComponent(kv.slice(1).join('=')); }
+      catch (e) { fields[kv[0]] = kv.slice(1).join('='); }
+    }
+    var word = String(fields.q || '').replace(/\+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!word) return;
+    var qq = $('#q');
+    if (!qq) return;
+    /* 侧栏收起时先展开再搜索 —— 否则结果面板生成了却看不见，
+       与「/」快捷键同一条理由（有结果却无处可看最难解释）。 */
+    var navOff = MOBILE.matches
+      ? !document.body.classList.contains('nav-shown')
+      : document.body.classList.contains('nav-hidden');
+    if (navOff) { var nb = $('#navToggle'); if (nb) nb.click(); }
+    qq.value = word;
+    Find.run(qq);
+    var want = String(fields.p || '');
+    if (!want || !Find.items.length) return;
+    for (var k = 0; k < Find.items.length; k++) {
+      if (Find.items[k].e.id === want) { Find.goto(k); return; }   // 高亮该节全部命中并滚过去
+    }
+    var el = document.getElementById(want);                        // 该页没被检索到就至少滚到它
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
+  }
+
   /* ======================= 启动 ======================= */
   function boot() {
     ensureSectionIds();          // 先补 id：没有 id 的卡片标不了，也存不下 pid
@@ -2956,6 +3029,7 @@ mark.q-hit{
     initChrome();
     initPdfLinks();
     initEmbeddedPdf();
+    initDeepLink();       // 放最后：它要用到 #q / #qres 与 Find，前面都准备好才跑
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();

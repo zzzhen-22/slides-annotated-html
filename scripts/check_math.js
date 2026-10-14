@@ -121,7 +121,13 @@ console.log('⑤b TODO 残留（已排除 script / 内嵌 base64 载荷）：' +
   (todoHits ? '  ⚠ 请清掉；目标 0' : '  ✔'));
 
 const thumbs = (html.match(/class="thumb"/g) || []).length;
-const pgSections = (html.match(/<section class="pg"/g) || []).length;
+/* 「逐页区块」的匹配式：**只看属性、不看顺序**。
+   v1 的老写法 `<section class="pg" id="p\d+" data-page="\d+">` 要求开标签在 data-page 后
+   立刻闭合，v2 给 section 追加 data-concepts / data-pays-off / data-forward 之后会一条都匹配不上 ——
+   于是这里数出 0、build.py 那边也注入 0，两边「一致地错」，⑥ 反而报 ✔。
+   ⚠ 同源拷贝：build.py / coursekit.py / check_ui.py 各有一份，四处口径必须一致。 */
+const PG_TAG_SRC = '<section(?=[^>]*\\bclass="pg")(?=[^>]*\\bdata-page="\\d+")[^>]*>';
+const pgSections = (html.match(new RegExp(PG_TAG_SRC, 'g')) || []).length;
 const links = (html.match(/class="pdf-link"/g) || []).length;
 console.log(`⑥ 缩略图 ${thumbs} / 逐页区块 ${pgSections} / PDF深链 ${links}` +
   (thumbs === pgSections && links === pgSections ? '  ✔ 一致' : '  ⚠ 数量不一致'));

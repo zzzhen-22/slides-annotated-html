@@ -29,6 +29,11 @@
 
 注意：内容（讲解文字）**不会**被自动写出来 —— 这一份流水线负责把机械部分全部做完，
       并把「还差多少页没写」直接报出来（probe_doc.js 的「待补页面」）。
+
+**一门课有多份课件**（第 1 讲到第 14 讲）时：本命令**一讲跑一次**，全部跑完后用课程级入口
+`run_course.py` 把它们串成一个课程合集入口页（课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 进度）。
+课程层只是叠加在单讲之外的一层，不改变任何单讲产物。见 SKILL.md「多讲课程合集」。
+（在课程目录里跑本命令会给一句提示，但**不改变任何行为**。）
 """
 import argparse
 import json
@@ -118,6 +123,28 @@ def parse_probe(out):
     return m
 
 
+def _hint_course(out_dir):
+    """在「课程目录」里跑单讲流水线时给一句提示（设计稿 §9 风险清单）。
+
+    只提示，不改行为。判据：out_dir 或它的任一层父目录里有 `course.json`
+    —— 那说明这一层是**课程合集目录**，用户多半是想跑课程级的 `run_course.py`。
+    不往更深的下钻：讲次目录里不会有 course.json，有的话才奇怪。
+    """
+    d = out_dir
+    for _ in range(3):
+        d = os.path.dirname(d)
+        if not d or d == os.path.dirname(d):
+            break
+        if os.path.exists(os.path.join(d, 'course.json')):
+            d = os.path.normpath(d)
+            print()
+            print('提示：%s 看起来是一门**课程合集**目录（含 course.json）。' % d)
+            print('      如果本意是同步整门课（而不是只做这一讲），用：')
+            print('        python scripts/run_course.py "%s"' % d)
+            print('      本命令会照常在下面这个讲次目录里干活，不受影响。')
+            break
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('pdf')
@@ -158,6 +185,11 @@ def main():
     print('项目 : %s' % out_dir)
     print('python: %s' % py)
     print('node  : %s' % (node or '✘ 没找到（check_math.js 会跳过）'))
+
+    # 「课程目录里跑了单讲命令」的提示（设计稿 §9 风险清单：course/ 层与 v1 命令打架）。
+    # 只提示、**不改行为** —— 在课程目录里跑 run_all 有可能是用户故意为之
+    # （课程目录本身也可能是一个讲次），拦下来反而是自作聪明。
+    _hint_course(out_dir)
 
     # --stage plan：出 outline 草案，不建骨架、不构建。
     # 默认只抽文字层（省时间/磁盘）；加 --render 才顺带渲染逐页图（供第②步逐页看图）。

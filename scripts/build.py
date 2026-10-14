@@ -45,6 +45,19 @@ REQUIRED = ['__KATEX_CSS__', '__CSS__', '__KATEX_JS__', '__TITLE__', '__BRAND__'
             '__TOC__', '__BODY__', '__FOOT1__', '__FOOT2__',
             '__PDF_NAME__', '__PDF_B64__']
 
+# ------------------------------------------------------------ 「逐页区块」的匹配式
+# **只看属性、不看顺序。**
+#
+# 为什么不能用 v1 的老写法 `<section class="pg" id="p\d+" data-page="\d+">`：
+# 它要求开标签在 `data-page` 之后**立刻闭合**。v2 给 section 追加了 data-concepts /
+# data-pays-off / data-forward 之后，这条正则**一条都匹配不上** —— 后果是缩略图全部不注入，
+# 产物每页都缺原页图。实测：属性追加在后、属性换序、class 不在最前，老写法全部失配。
+#
+# ⚠ **同源拷贝**：coursekit.py / check_math.js / check_ui.py 里各有一份等价实现，
+#   四处口径必须一致（改一处就要改四处），否则「缩略图 N / 逐页区块 M」会互相打架。
+RE_PG_TAG = re.compile(r'<section(?=[^>]*\bclass="pg")(?=[^>]*\bdata-page="\d+")[^>]*>')
+RE_PG_BLOCK = re.compile(RE_PG_TAG.pattern + r'.*?</section>', re.S)
+
 
 def b64(path):
     with open(path, 'rb') as f:
@@ -205,8 +218,18 @@ def main():
         return '\x00CMT%d\x00' % (len(_comments) - 1)
 
     masked = re.sub(r'<!--[\s\S]*?-->', _mask, body)
-    masked, n_pg = re.subn(r'<section class="pg" id="p\d+" data-page="\d+">.*?</section>',
-                           inject, masked, flags=re.S)
+    # 先数应注入多少块，注入完再核对。**不等就硬失败**，不留一个数字让人自己看 ——
+    # 「区块正则在某类写法下失配」这个故障极隐蔽（产物里图片「在」，但 DOM 里查不到），
+    # 与其让它以「缩略图 0 / 逐页区块 12」的形式漏到下游，不如在源头拦住。见 pitfalls 第 44 条：
+    # 断言要问「是不是我无法接受的样子」，而不是「是不是我期望的样子」。
+    n_expect = len(RE_PG_TAG.findall(masked))
+    masked, n_pg = re.subn(RE_PG_BLOCK, inject, masked)
+    if n_pg != n_expect:
+        raise SystemExit(
+            '缩略图注入区块数 %d ≠ 逐页区块数 %d —— build.py 的区块正则失配了。\n'
+            '  多半是 section 开标签的写法超出了 RE_PG_TAG 的容忍范围。\n'
+            '  逐页区块必须同时有 class="pg" 与 data-page="N"，缺一个就不算。\n'
+            '  见 scripts/build.py 顶部 RE_PG_TAG 的注释。' % (n_pg, n_expect))
     body = re.sub(r'\x00CMT(\d+)\x00', lambda m: _comments[int(m.group(1))], masked)
     print('注入缩略图区块: %d' % n_pg)
 

@@ -17,6 +17,9 @@
 - 六类交互：目录逐级折叠 / 每节概述卡 / 侧栏收起后缩略图自动放大 / **划词标记 → 笔记抽屉** / **正文字号 A−/A＋ 调节（存浏览器）** / **正文搜索（搜正文不只搜标题，命中列表可跳转并高亮）**
 - 页面里明确区分「原文有什么」与「讲解者加了什么」（绿=直觉、蓝=补充推导、红=原稿问题、灰=原文引用）
 - 可选把**原 PDF 整份 base64 内嵌**，点页码直接跳原页，换设备也不失效
+- **多讲课程合集**：一门课十几份课件各留独立产物，另生一个课程入口页（课程地图 / 要点总表 /
+  跨讲检索 / 术语总表 / 进度），同样断网可开；改完一讲重跑一次就同步，见
+  [「多讲课程合集」](#多讲课程合集一门课有多份课件时)
 
 <p align="center">
   <img src="docs/images/overview.png" width="49%" alt="每节开头的「本节概述」卡：这节的主线、必须记住的记号、最容易混的点、读完自检">
@@ -121,6 +124,43 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 
 ---
 
+## 多讲课程合集（一门课有多份课件时）
+
+一门课十几份课件（第 1 讲到第 14 讲），**不要合并进一个巨型 HTML** —— 每讲仍做一份
+独立产物，课程层只在它们之外加一层目录：
+
+```
+<课程目录>/
+├─ course.json          ← 课程元数据 + 讲次清单
+├─ index.html           ← 课程入口：课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 进度
+├─ _course/             ← 派生数据（索引、术语表、要点表、前序知识简报）
+└─ lecture-01-xxx/      ← 每一讲仍是完整独立的单讲项目，可单独拷走使用
+   lecture-02-yyy/
+```
+
+入口页的索引数据在生成时**内联进 HTML**，所以双击即可打开、断网可用。
+
+```bash
+python scripts/course_init.py "<课程目录>" --name "<课程名>"   # 首次：建 course.json
+python scripts/run_course.py "<课程目录>"                      # 日常：一键同步整门课
+python scripts/run_course.py "<课程目录>" --add lecture-07-xxx  # 新加一讲后登记
+python scripts/course_check.py "<课程目录>"                    # 课程层体检（改完课必跑）
+```
+
+`run_course.py` 走 `init → index → brief → site → check → probe`。**每写完一讲都重跑一次**——
+课程层按产物内容哈希做增量，没变的讲次复用索引，很快。
+
+`course_check.py` 查的是**单讲体检答不了**的问题：跨讲链接的文件与锚点是否可达、
+同一概念在不同讲里译名是否漂移、伏笔指向的页是否真实存在、要点锚点是否有效、
+各讲产物哈希与索引是否一致。**改名或挪动讲次目录之后一定要再跑一次**：课程序列断链是
+静默的——入口页看着正常，点进去 404。
+
+> 想让跨讲真正串起来（「这个概念第 3 讲讲过」），需要在逐页区块上写三个可选属性
+> `data-concepts` / `data-pays-off` / `data-forward`，并在 `#glossary` 的 `tr` 上写
+> `data-concept`。具体写法见 [SKILL.md](SKILL.md)「多讲课程合集」一节。
+
+---
+
 ## 目录结构
 
 ```
@@ -130,6 +170,13 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 │   ├─ kitpath.py           ← 路径自查：python / node / 浏览器 / Python 依赖
 │   ├─ plan_outline.py      ← 巡读 PDF 文字层，产出语义大纲草案 outline.json（「先定结构」路线第一步）
 │   ├─ init_project.py      ← 只建骨架（--group-by 控制分段策略；--outline 按语义大纲建）
+│   ├─ coursekit.py         ← 【课程层】公共解析与状态判定：逐页区块匹配、讲次四态、路径工具
+│   ├─ course_init.py       ← 【课程层】初始化/更新一门课的 course.json（幂等；派生字段自动刷新）
+│   ├─ course_index.py      ← 【课程层】扫各讲产物 → _course/index.json + glossary/keypoints（按哈希增量）
+│   ├─ course_brief.py      ← 【课程层】产出某讲的「前序知识简报」_course/briefing-LNN.md（写讲解前先读）
+│   ├─ course_site.py       ← 【课程层】生成课程合集入口 index.html（五区块，索引内联、断网可用）
+│   ├─ course_check.py      ← 【课程层】课程层体检：跨讲链接/术语一致/伏笔指向/要点锚点/索引哈希
+│   ├─ run_course.py        ← 【课程层】主入口：一键同步一门课（init→index→brief→site→check→probe）
 │   ├─ prepare_pdf.py       ← PDF → 逐页 png + 缩略图 + 文字层
 │   ├─ katex_offline.py     ← 制作离线 KaTeX（一次即可，可跨项目复用）
 │   ├─ build.py             ← 组装单文件（可用 0 命令行参数：python build.py config.json）
@@ -146,18 +193,22 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 │   ├─ shell.html           ← 页面骨架（改版式改这里，不要改 build.py）
 │   ├─ site.css             ← 基础版式
 │   ├─ site.extra.css       ← 六类交互的追加样式
-│   └─ site.js              ← 全部交互逻辑，暴露 window.__doc 供无头测试
+│   ├─ site.js              ← 全部交互逻辑，暴露 window.__doc 供无头测试
+│   ├─ course-shell.html    ← 【课程层】课程合集入口的骨架（与单讲外壳彻底分开）
+│   ├─ course.css           ← 【课程层】课程页样式（五区块、要点表、进度条）
+│   └─ course.js            ← 【课程层】课程页交互：要点过滤 / 导出 Markdown / 跨讲检索
 ├─ templates/               ← 可复制的内容骨架 + 交付体检探针 + 截图 harness
 │   ├─ content-skeleton/    ← init_project.py 复制的逐页区块骨架
 │   ├─ probe_doc.js         ← 交付体检：待补页面 N/M、缺缩略图、目录断链、缺字
 │   ├─ probe_font.js        ← 字号调节回归（--profile 跑两遍验跨会话持久化）
 │   ├─ probe_find.js        ← 正文搜索回归（索引/命中/跳转高亮/Esc 还原/不碰笔记）
+│   ├─ probe_course.js      ← 【课程层】课程入口行为探针（地图/要点表/检索/术语/进度/导出/过滤）
 │   ├─ harness_nav.js       ← 截图 harness：先触发目录交互再截
 │   └─ harness_markshot.js  ← 截图 harness：先划词标记再截
 ├─ examples/                ← sample-lecture.pdf 示例课件（三步上手 ③ 的输入）、config 样例、逐页区块模板
 │   └─ demo/                ← 两份在线 demo 的源工程（zh/ + en/，见 demo/README.md）
 ├─ references/
-│   ├─ pitfalls.md          ← 踩坑清单（46 条，按「频率 × 隐蔽度」排序）
+│   ├─ pitfalls.md          ← 踩坑清单（48 条，按「频率 × 隐蔽度」排序）
 │   └─ content-quality.md   ← 讲解内容的质量标准
 ├─ vendor/katex/            ← 离线 KaTeX（MIT，见下方致谢）
 ├─ docs/
@@ -168,7 +219,7 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 │   └─ images/              ← README 里那几张截图
 ├─ .github/
 │   └─ workflows/
-│       └─ selftest.yml     ← CI：每次 push 到 main / 每个 PR 跑三条自查线
+│       └─ selftest.yml     ← CI：每次 push 到 main / 每个 PR 跑四条自查线
 └─ TODO.md                  ← 路线图：让它对陌生人更好用的待办清单
 ```
 
@@ -199,12 +250,12 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 ### 自检
 
 ```bash
-python scripts/selftest.py        # 现造一份 6 页小 PDF，跑通「机械 + 语义」两条路线，并体检套件自身文档口径，期望结尾「自检结果: PASS」
+python scripts/selftest.py        # 现造一份 6 页小 PDF，跑通「机械 + 语义 + 课程」三条路线，并体检套件自身文档口径，期望结尾「自检结果: PASS」
 python scripts/check_docs.py      # 只跑文档口径体检（改了 README / SKILL.md / 交互功能之后跑这一条就够，秒级）
 ```
 
 这两条在 CI 里是自动跑的：`.github/workflows/selftest.yml` 会在每次 push 到 `main` 和每个 PR 上，
-在 ubuntu / windows 双平台跑完整 `selftest.py`（三条自查线），顺带覆盖 Linux 真机验证。
+在 ubuntu / windows 双平台跑完整 `selftest.py`（四条自查线），顺带覆盖 Linux 真机验证。
 
 ---
 
@@ -239,7 +290,7 @@ python scripts/check_docs.py      # 只跑文档口径体检（改了 README / S
 - **不许写死本机路径**。校验：`grep -rn "/home/\|/Users/\|C:/Users/" scripts/ assets/ templates/` 应当无命中。
 - **模板注释里不许出现字面标签**。`build.py` 用非贪婪正则匹配整段区块，注释里的假 `<section>` 会让它提前收尾，症状是「图在文件里、但 DOM 里查不到」，极难排查。
 
-动笔前先扫一遍 `references/pitfalls.md`（46 条，每条都对应一个真实事故）。
+动笔前先扫一遍 `references/pitfalls.md`（48 条，每条都对应一个真实事故）。
 
 ---
 

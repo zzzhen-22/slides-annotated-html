@@ -10,11 +10,13 @@
 然后调用 run_all.py 走完 建骨架 → 渲染 → 构建 → 四项体检 → 截图，
 最后按输出里的关键词判定 PASS/FAIL。
 
-**三条自查线**（互相独立，缺一条就少一类保障）：
+**四条自查线**（互相独立，缺一条就少一类保障）：
     ① 机械路线：现造 PDF → 全流水线
     ② 语义路线：--stage plan → 校对 outline → --outline → build → 体检
-    ③ 文档口径：跑 check_docs.py 查套件自己的文档与实现是否还对得上
-       （这一条与前两条无关——前两条查「产物对不对」，这条查「说明书准不准」，
+    ③ 课程路线：把①②产出的**两份真实产物**就地组成一门两讲课 → 课程层体检 → 反向注入
+       （这一条查的是「各部分之间还认不认得」，前两条各看一份产物、管不到跨讲关系）
+    ④ 文档口径：跑 check_docs.py 查套件自己的文档与实现是否还对得上
+       （这一条与前三条无关——前面查「产物对不对」，这条查「说明书准不准」，
         两者都会因为「改了代码忘了改另一处」而失效）
 
 预期：机械部分全绿；「待补页面 6/6」是**正常**的 —— 讲解内容本来就是留给人/agent 写的。
@@ -234,6 +236,190 @@ def semantic_path(base, pdf):
     return checks
 
 
+def course_path(base):
+    """课程路线：把前两条路线已经建好的产物**就地组成一门两讲小课程**，走一遍课程层。
+
+    为什么不另造一份 PDF：课程层是**纯静态**的（coursekit 不启浏览器，见 pitfalls 第 29 条），
+    它消费的只是各讲产物 HTML。前两条路线跑完，磁盘上已经躺着两份真实产物
+    （机械路线一份、语义路线一份）—— 直接拿它们当讲次，比再造 PDF 更省时间，
+    而且用的是**真实产物形态**而不是手搓的迷你样例。
+
+    本函数做四件事：
+      ① 复制两讲目录到 `base/course/lecture-01-zh` 与 `lecture-02-en`，
+         并把 `config.json` 里 `out` / `pdf` 的**绝对路径改写到副本内**
+         （不改的话 course_index 读的还是原件，断言对象错位，等于没测）；
+      ② 给 L01 的产物补上 v2 声明（data-concepts / data-pays-off / data-forward、
+         要点、术语行、一张 .xref 跨讲卡）—— 合成 PDF 没有内容作者，
+         不补的话 ③④⑤⑥ 组会是「0 个术语 0 条要点」的空转 PASS，
+         那正是 pitfalls 第 44 条要防的形态；
+      ③ 跑 course_init → run_course --sync --no-probe；
+      ④ **反向注入**：把一条 .xref 指向坏锚点，重跑体检，必须报 FAIL ——
+         证明刚才是真的在查，而不是「永远 PASS」。
+
+    返回断言列表（与另两条路线同格式）。
+    """
+    checks = []
+    course = os.path.join(base, 'course')
+    if os.path.exists(course):
+        shutil.rmtree(course, ignore_errors=True)
+    os.makedirs(course, exist_ok=True)
+
+    # 两讲：L01 = 机械路线产物（补 v2 声明），L02 = 语义路线产物（纯 v1，当对照）
+    lectures = (('lecture-01-zh', base), ('lecture-02-en', os.path.join(base, 'semantic')))
+    copied = True
+    for name, src in lectures:
+        dst = os.path.join(course, name)
+        try:
+            shutil.copytree(src, dst, ignore=shutil.ignore_patterns(
+                'course', '_extract', '_katex', 'content'))
+        except OSError:
+            copied = False
+            continue
+        # 产物绝对路径改写进副本
+        cfg_p = os.path.join(dst, 'config.json')
+        cfg = None
+        if os.path.exists(cfg_p):
+            cfg = json.load(open(cfg_p, encoding='utf-8'))
+            for k in ('out', 'pdf'):
+                if cfg.get(k):
+                    cfg[k] = cfg[k].replace(os.path.normpath(src), os.path.normpath(dst))
+            open(cfg_p, 'w', encoding='utf-8').write(
+                json.dumps(cfg, ensure_ascii=False, indent=2) + '\n')
+    checks.append(('⓪ 课程样例：两讲目录就位',
+                   copied and all(os.path.exists(os.path.join(course, n, 'config.json'))
+                                  for n, _ in lectures)))
+
+    # ② 给 L01 补 v2 声明
+    prod_rel = patch_course_lecture(os.path.join(course, 'lecture-01-zh'))
+    checks.append(('⓪ 课程样例：L01 补上 v2 声明', prod_rel is not None))
+
+    # ③ 初始化 + 全量同步（跳过浏览器探针 —— 课程层体检是静态的）
+    _, rc0 = run_pipeline([sys.executable, '-u',
+                           os.path.join(HERE, 'course_init.py'), course,
+                           '--name', '自检课程 · selftest'])
+    checks.append(('⑤ course_init 退出码 0', rc0 == 0))
+    out_c, rc_c = run_pipeline([sys.executable, '-u',
+                                os.path.join(HERE, 'run_course.py'), course,
+                                '--sync', '--no-probe'])
+    checks.append(('⑤ run_course --sync 全绿', rc_c == 0))
+    checks.append(('⑤ 课程入口 index.html 已生成',
+                   os.path.exists(os.path.join(course, 'index.html'))))
+
+    # ⑤ 体检输出：必须 ALL PASS，**且断言对象不能是空的**
+    # 单独再跑一次 course_check.py 取它的完整输出 —— run_course 成功时只回显
+    # 步骤名、不回显子步骤的输出，从 run_course 的输出里 grep 不到明细。
+    out_ck, rc_ck = run_pipeline([sys.executable, '-u',
+                                  os.path.join(HERE, 'course_check.py'), course])
+    checks.append(('⑤ course_check ALL PASS',
+                   rc_ck == 0 and re.search(r'结果: ALL PASS', out_ck) is not None))
+    # 这一条是「防空转」：0 个术语 0 条要点也能 ALL PASS，但那说明样例没铺开、
+    # ③⑤⑥ 组什么都没查（pitfalls 第 44 条的形态）。
+    m = re.search(r'统计：(\d+) 讲 ｜ (\d+) 条入口链接 ｜ (\d+) 个术语 ｜ (\d+) 条要点', out_ck)
+    if m:
+        n_lec, n_link, n_term, n_kp = (int(x) for x in m.groups())
+        checks.append(('⑤ 体检确实铺开了（讲/链接/术语/要点都 > 0）',
+                       n_lec > 0 and n_link > 0 and n_term > 0 and n_kp > 0))
+    else:
+        checks.append(('⑤ 体检确实铺开了（讲/链接/术语/要点都 > 0）', False))
+    checks.append(('⑤ .xref 跨讲卡被真的检查到', '检查了 1 条 .xref 外链' in out_ck))
+
+    # ④ 反向注入：坏锚点必须被抓到
+    checks.append(reverse_check_course(course, prod_rel))
+    return checks
+
+
+def patch_course_lecture(lec_dir):
+    """给一讲的产物补上 v2 声明与三张卡的示例内容；返回产物相对路径（失败给 None）。
+
+    补的都是**真实课件里内容作者会写的东西**（见 templates/content-skeleton/20_page.html
+    与 examples/section-template.html）—— 这里只是把「内容作者」这一环程序化，
+    好让课程层的 ③④⑤⑥ 组有真实的断言对象。
+    """
+    cfg_p = os.path.join(lec_dir, 'config.json')
+    if not os.path.exists(cfg_p):
+        return None
+    cfg = json.load(open(cfg_p, encoding='utf-8'))
+    out = cfg.get('out') or ''
+    prod = out if os.path.isabs(out) else os.path.normpath(os.path.join(lec_dir, out))
+    if not os.path.exists(prod):
+        return None
+    html = open(prod, encoding='utf-8').read()
+    rel = os.path.basename(prod)
+
+    # a) 逐页区块挂上三个声明（p04 同时回收 L01 的 counting 伏笔、留下 smoothing-constant）
+    for pid, extra in (
+        ('p03', ' data-concepts="counting"'),
+        ('p04', ' data-concepts="laplace-smoothing" data-pays-off="counting@L01:p03"'),
+        ('p05', ' data-forward="smoothing-constant"'),
+    ):
+        tag = '<section class="pg" id="%s" data-page="%s">' % (pid, pid[1:].lstrip('0'))
+        html = html.replace(tag, tag[:-1] + extra + '>', 1)
+
+    # b) #keypoints：三条真要点（首条带 data-topic，验证要点↔术语互链）
+    old = re.search(r'<ol class="kpl"[\s\S]*?</ol>', html)
+    if old:
+        new = ('<ol class="kpl">\n'
+               '    <li data-at="#p03" data-topic="counting">'
+               'Counting is the whole idea: estimate p(x) from frequencies.</li>\n'
+               '    <li data-at="#p04">'
+               'Smoothing exists to keep an unseen outcome from getting probability zero.</li>\n'
+               '    <li data-at="#p05">'
+               'The smoothing constant trades confidence for robustness.</li>\n'
+               '  </ol>')
+        html = html[:old.start()] + new + html[old.end():]
+
+    # c) #glossary：两行真术语。**必须在 glossary 卡内定位**（产物有多个 <tbody>）
+    gi = html.find('id="glossary"')
+    if gi >= 0:
+        tb = re.search(r'<tbody>[\s\S]*?</tbody>', html[gi:])
+        if tb:
+            new = ('<tbody>\n'
+                   '      <tr data-concept="counting">'
+                   '<td>Counting</td><td>counting</td>'
+                   '<td>Estimate p(x) as count(x)/N.</td>'
+                   '<td><a href="#p03">P3</a></td></tr>\n'
+                   '      <tr data-concept="laplace-smoothing">'
+                   '<td>Smoothing</td><td>Laplace smoothing</td>'
+                   '<td>Add a small constant to every count.</td>'
+                   '<td><a href="#p04">P4</a></td></tr>\n'
+                   '    </tbody>')
+            a, b = gi + tb.start(), gi + tb.end()
+            html = html[:a] + new + html[b:]
+
+    # d) 一张 .xref 跨讲卡，指向 L02 的产物（验证跨讲外链的文件 + 锚点都可达）
+    xref = ('<div class="xref"><b>Cross-deck:</b> lecture 2 '
+            '<a href="../lecture-02-en/%s#p02">P2</a> takes this further.</div>' % rel)
+    html = html.replace('<section class="pg" id="p04"', xref + '<section class="pg" id="p04"', 1)
+
+    open(prod, 'w', encoding='utf-8', newline='').write(html)
+    return rel
+
+
+def reverse_check_course(course, prod_rel):
+    """反向注入：把 L01 的 .xref 改成坏锚点 → 体检**必须**报 FAIL，然后复原。
+
+    没有这一步，前面那条 ALL PASS 只证明了「脚本没崩」，没证明「脚本在查东西」。
+    """
+    prod = os.path.join(course, 'lecture-01-zh', prod_rel or '')
+    if not prod_rel or not os.path.exists(prod):
+        return ('⑤ 反向注入：坏锚点被 course_check 抓到', False)
+    html = open(prod, encoding='utf-8').read()
+    good = '../lecture-02-en/%s#p02' % prod_rel
+    bad = '../lecture-02-en/%s#p88' % prod_rel
+    if good not in html:
+        return ('⑤ 反向注入：坏锚点被 course_check 抓到', False)
+    open(prod, 'w', encoding='utf-8', newline='').write(html.replace(good, bad, 1))
+    out, _ = run_pipeline([sys.executable, '-u',
+                           os.path.join(HERE, 'course_check.py'), course])
+    caught = (re.search(r'结果: FAILED', out) is not None
+              and re.search(r'目标产物里没有 #p88', out) is not None)
+    # 复原，并重跑索引让状态回到自洽（--keep 时留下的目录不该是坏的）
+    open(prod, 'w', encoding='utf-8', newline='').write(html)
+    run_pipeline([sys.executable, '-u',
+                  os.path.join(HERE, 'course_index.py'), course])
+    return ('⑤ 反向注入：坏锚点被 course_check 抓到', caught)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--keep', action='store_true', help='保留生成的项目目录')
@@ -280,6 +466,14 @@ def main():
     print('开始跑语义路线（--stage plan → 校对 outline → --outline → build → 三校验）：\n',
           flush=True)
     checks.extend(semantic_path(base, pdf))
+
+    # 课程路线：把上面两条路线产出的**真实产物**就地组成一门两讲课，走一遍课程层。
+    # 「有课程样例才跑」落在本函数内部：两讲的 config.json 或产物缺一，就整体跳过并说明，
+    # 而不是让单讲场景在课程层报一堆看不懂的错。
+    print('\n' + '=' * 72)
+    print('开始跑课程路线（把两份真实产物组成两讲课 → 课程层体检 → 反向注入）：\n',
+          flush=True)
+    checks.extend(course_path(base))
 
     # 套件自身的文档口径：不属于「产物对不对」，但属于「套件健康吗」。
     # 接在这里而不是 run_all.py —— run_all 是给用户跑课件的流水线，

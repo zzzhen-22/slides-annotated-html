@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__COURSE__</title>
+<style>
+__CSS__
+</style>
+</head>
+<body>
+
+<header class="cbar">
+  <div class="cbar-in">
+    <span class="cbrand">__COURSE__</span>
+    <span class="csub">__SUBTITLE__</span>
+    <span class="sp"></span>
+    <nav class="cnav">__NAV__</nav>
+  </div>
+</header>
+
+<main class="cwrap">
+
+  <section class="chero">
+    <h1>__COURSE__</h1>
+    <p class="csum">__SUMMARY__</p>
+    <p class="cmeta">__META__</p>
+  </section>
+
+  <section id="map" class="card">
+    <h2>课程地图</h2>
+    <p class="lead">这门课的每一讲。点标题打开该讲的逐页精解。</p>
+    __MAP__
+  </section>
+
+  <section id="keypoints" class="card">
+    <h2>要点总结</h2>
+    <p class="lead">每一讲最值得记住的判断，按讲次顺序排。<b>随新增讲次自动生长</b>——它由各讲的
+      「本讲要点」汇总而来，不需要谁再维护第二份摘要。</p>
+    <div class="kp-tools">
+      <input id="kpFilter" class="kinput" type="search" autocomplete="off"
+             placeholder="过滤要点（只筛这张表，不建索引）">
+      <button id="kpExport" type="button" title="把当前这张表导出为 Markdown 文件">导出 Markdown</button>
+      <span class="kp-count" id="kpCount"></span>
+    </div>
+    <div id="kpEmpty" class="kp-empty" hidden>没有匹配的要点 —— 把过滤清空试试。</div>
+    <div id="kpBody">__KEYPOINTS__</div>
+  </section>
+
+  <section id="search" class="card">
+    <h2>跨讲检索</h2>
+    <p class="lead">在<b>全部讲次</b>的正文里找词，命中列表给出「哪一讲 · 哪一页 · 上下文片段」，
+      点一条直接跳到那一页并把命中词高亮。</p>
+    <p class="caveat">__NOTICE__</p>
+    <input id="cq" class="kinput wide" type="search" autocomplete="off"
+           placeholder="搜全课程正文，如「残差」「极大似然」（多词是「且」）">
+    <div id="cres" class="cres" hidden></div>
+  </section>
+
+  <section id="glossary" class="card">
+    <h2>术语总表</h2>
+    <p class="lead">这门课统一使用的术语与译名。「首见」可以点，跳到第一次讲它的那一页。</p>
+    __GLOSSARY__
+  </section>
+
+  <section id="progress" class="card">
+    <h2>进度看板</h2>
+    <p class="lead">哪一讲还没写完，一眼看出来。</p>
+    __PROGRESS__
+  </section>
+
+  <footer class="cfoot">
+    <p>__FOOT__</p>
+    <p class="small">__GENERATED__</p>
+  </footer>
+
+</main>
+
+<button id="toTop" type="button" title="回到顶部">↑</button>
+
+<!-- 课程索引（内联）。**必须内联**：file:// 是不透明源，fetch 同目录 JSON 会被 CORS 拦死，
+     用户双击打开就是空白页（硬约束 C1）。下面的 "<" 已在生成时转义成 \u003c，不会截断本标签。 -->
+<script type="application/json" id="cdata">__DATA__</script>
+<script>
+__JS__
+</script>
+</body>
+</html>

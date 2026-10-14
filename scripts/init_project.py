@@ -59,6 +59,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import unicodedata
 
@@ -467,6 +468,64 @@ def guess_meta(pdf_path, doc, titles, outline=None):
     return stem, first, course
 
 
+# --------------------------------------------------------------- 多讲课程（v2）
+def course_step(course_dir, out_dir):
+    """建完骨架后，把这一讲登记进课程并生成它的「前序知识简报」。
+
+    只做三件事，全部复用已经写好的课程层脚本 —— **不在这里重写它们的逻辑**
+    （各写一份必然漂移，见 references/pitfalls.md 第 43 条）：
+
+        course_init  → 登记/刷新 course.json（派生字段自动重算）
+        course_index → 扫各讲产物，更新 _course/*.json
+        course_brief → 出这一讲的 briefing-LNN.md（**写讲解前先读它**）
+
+    简报的内容来自**前序**讲次已构建的产物 —— 所以这一步放在「建骨架之后、写讲解之前」是对的：
+    本讲自己的产物还没生成，但前序的都在了。
+    """
+    course_dir = os.path.abspath(course_dir)
+    out_dir = os.path.abspath(out_dir)
+    rel = os.path.relpath(out_dir, course_dir)
+    if rel.startswith('..'):
+        print()
+        print('[course] 讲次目录在课程目录之外，跳过自动登记。')
+        print('         想纳入课程：把讲次目录挪进 %s，或手动跑 course_init.py --dir' % course_dir)
+        return
+    lec_name = os.path.basename(out_dir)
+    py = sys.executable
+    print()
+    print('=' * 68)
+    print('多讲课程：登记进《%s》并生成前序知识简报' % os.path.basename(course_dir))
+
+    def run(script, args, fatal):
+        cmd = [py, os.path.join(HERE, script)] + args
+        r = subprocess.run(cmd, capture_output=True, text=True,
+                           encoding='utf-8', errors='replace')
+        if r.returncode != 0:
+            print('  [%s] %s 退出码 %d' % ('warn' if not fatal else 'error', script, r.returncode))
+            tail = ((r.stdout or '') + (r.stderr or '')).strip().splitlines()[-6:]
+            for l in tail:
+                print('       %s' % l)
+        return r.returncode == 0
+
+    if not run('course_init.py', [course_dir], fatal=True):
+        print('  （登记失败，其余步骤跳过。常见原因：课程还没建 —— 先跑 '
+              'course_init.py "%s" --name "课程名"' % course_dir)
+        return
+    run('course_index.py', [course_dir, '--quiet'], fatal=False)
+
+    # 找到这一讲被分到的 id
+    data = json.load(open(os.path.join(course_dir, 'course.json'), encoding='utf-8'))
+    lid = next((x.get('id') for x in (data.get('lectures') or [])
+                if (x.get('dir') or '') == lec_name), None)
+    if not lid:
+        print('  [warn] 在 course.json 里找不到 %s' % lec_name)
+        return
+    if run('course_brief.py', [course_dir, '--for', lid], fatal=False):
+        print('  ✔ 前序知识简报: _course/briefing-%s.md' % lid)
+        print('    **写本讲讲解之前，先读它。**')
+    print('=' * 68)
+
+
 # --------------------------------------------------------------------- 主流程
 def main():
     ap = argparse.ArgumentParser()
@@ -484,6 +543,9 @@ def main():
     ap.add_argument('--embed-pdf', action='store_true', help='把原 PDF base64 内嵌进产物')
     ap.add_argument('--no-embed-pdf', action='store_true', help='（默认）只写本机绝对路径深链')
     ap.add_argument('--force', action='store_true', help='目录非空时也覆盖已有文件')
+    ap.add_argument('--course', default=None, metavar='课程目录',
+                    help='多讲课程：建完骨架后自动登记进该课程的 course.json，'
+                         '并生成一份「前序知识简报」(_course/briefing-<id>.md)，写讲解前先读它')
     a = ap.parse_args()
 
     pdf = os.path.abspath(a.pdf)
@@ -609,6 +671,7 @@ def main():
         'page_count': n_pages, 'last_n': n_pages, 'last_nn': '%02d' % n_pages,
     }))
     cfg_groups.append(['速查与说明', [
+        ['#keypoints', '本讲要点'],
         ['#cheatsheet', '公式与要点速查'],
         ['#glossary', '术语速查表'],
         ['#about', '关于本文档'],
@@ -717,7 +780,8 @@ def main():
         '   指出原稿问题（放 `.flag`）→ 点出与前后页的伏笔关系**。',
         '3. 每段一张概述卡（`*_ovN.html`）：核心问题 / 读完应能 / 与前后节关系。',
         '4. `00_intro.html` 的 primer（前置知识）与 roadmap（脉络表后半段）。',
-        '5. `90_outro.html` 的一页纸速查表与术语表。',
+        '5. `90_outro.html` 的**本讲要点**（3–7 条，它是课程主页「要点总结页」的真源）、',
+        '   一页纸速查表与术语表；引入的概念记得给术语表那一行加 `data-concept`。',
         '6. 交前跑一遍交付体检：`probe_doc.js` 里「待补页面」应为 0、TODO 注释应为 0。',
         '',
         '质量标准见套件的 `references/content-quality.md`；',
@@ -728,6 +792,8 @@ def main():
 
     print()
     print('=' * 68)
+    if a.course:
+        course_step(a.course, out_dir)
     print('骨架就绪。下一步：')
     print('  1) 一键跑通（会渲染逐页图 + 构建 + 体检 + 截图）：')
     print('     python "%s/scripts/run_all.py" "%s" --out "%s" --skip-init'

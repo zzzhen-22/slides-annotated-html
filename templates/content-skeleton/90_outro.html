@@ -1,7 +1,23 @@
 <!-- ============================================================================
-     收尾区骨架：速查表 / 术语表 / 关于本文档
-     TODO 处要人工写；速查表与术语表是复习价值最高的两块，别省。
+     收尾区骨架：本讲要点 / 速查表 / 术语表 / 关于本文档
+     TODO 处要人工写；这四块是复习价值最高的地方，别省。
+
+     ── 多讲课程（v2）两处要点 ──
+     · 「本讲要点」是课程主页「要点总结页」的**唯一真源**（course_index.py 从这里抽）。
+       每讲写 3–7 条，每条一个独立判断 —— 不是目录复述，也不是速查表的抄写。
+       li 上可选两个属性：data-at 指出处锚点（如 #p12）、data-topic 挂一个术语 id。
+     · 「术语速查表」是课程层 glossary 的**唯一真源**：凡本讲引入的概念，
+       给那一行 tr 加 data-concept，值与该页 data-concepts 里的一致。
      ============================================================================ -->
+<section class="card" id="keypoints">
+  <h2>本讲要点</h2>
+  <ol class="kpl">
+    <li data-at="#p{{last_nn}}"><!-- TODO 一条判断。反例：「本讲介绍了残差连接」（空话） --></li>
+    <li><!-- TODO 再一条。正例：「通用逼近定理说的是存在性，不是可学性」 --></li>
+    <li><!-- TODO 3–7 条为宜；超过 10 条说明你在抄速查表 --></li>
+  </ol>
+</section>
+
 <section class="card" id="cheatsheet">
   <h2>一页纸速查：公式与要点</h2>
   <p class="lead"><!-- TODO 一句话说明这张表怎么用 --></p>
@@ -22,7 +38,10 @@
   <table class="tbl gloss">
     <thead><tr><th style="width:24%">术语</th><th style="width:22%">English</th><th>一句话解释</th></tr></thead>
     <tbody>
-      <tr><td><!-- TODO --></td><td><!-- TODO --></td><td><!-- TODO --></td></tr>
+      <!-- 本讲引入的概念：给 tr 加 data-concept（小写连字符，与该页 data-concepts 一致）。
+           课程层 glossary.json 靠它定位术语的 中/英/一句话解释 三个字段；
+           没有它，这条术语进不了课程主页的术语总表。 -->
+      <tr data-concept=""><td><!-- TODO 术语 --></td><td><!-- TODO English --></td><td><!-- TODO 一句话解释 --></td></tr>
     </tbody>
   </table>
 </section>

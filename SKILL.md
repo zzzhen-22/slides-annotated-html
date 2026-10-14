@@ -5,10 +5,13 @@ description: >-
   每页配原页缩略图（可收起侧栏让缩略图自动放大）、关键公式用 LaTeX 排版、完全离线可打开，
   支持在正文里划词标记 → 汇入「我的标记」笔记抽屉（可备注、定位、导出），
   顶栏 A−/A＋ 可调正文字号（档位存浏览器）。
+  也支持**多讲课程合集**：一门课的多份课件各留独立产物，另生成一个课程入口页
+  （课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 进度），断网可用。
   适用于：课件逐页精解、PDF 转讲解文档、教材/讲义中文注释、生成便于对照原文阅读的 HTML、
-  把 slide 变成可检索可批注的学习笔记。
+  把 slide 变成可检索可批注的学习笔记、把一门课的十几份课件整理成课程合集。
   触发词：逐页讲解、逐页精解、对照原文件、PDF 转 HTML 讲解、课件解析、讲义讲解、
-  公式用 LaTeX、离线 HTML、划词标记、笔记、目录折叠、annotated slides、slides to html。
+  公式用 LaTeX、离线 HTML、划词标记、笔记、目录折叠、课程合集、多讲课程、课程入口页、
+  annotated slides、slides to html、course collection。
 agent_created: true
 ---
 
@@ -151,6 +154,63 @@ node  "$KIT/scripts/check_math.js" "输出.html" "_katex/katex.min.js"     # 公
 一行不能省（截图看不出 `<mark>` 里多出的空块级元素）。
 
 **套件自检**（验证套件本身没坏）：`"$PY" "$KIT/scripts/selftest.py"`，期望结尾「自检结果: PASS」。
+
+## 📚 多讲课程合集（一门课拆成多份讲次时）
+
+一份课件就是一讲时，上面那套走完即可。**一门课有十几份课件**（第 1 讲到第 14 讲）时，
+不要把它们合并进一个巨型 HTML —— 而是「**每讲仍是独立产物**，再加一层课程目录」。
+讲次产物完全按上面单讲的规矩做，课程层只是在它们**之外**再放三个东西：
+
+```
+<课程目录>/
+├─ course.json          ← 课程元数据 + 讲次清单（course_init.py 生成，幂等）
+├─ index.html           ← 课程合集入口：课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 进度
+├─ _course/             ← 派生数据（index.json / glossary.json / keypoints.json / briefing-*.md）
+└─ lecture-01-xxx/      ← 每一讲仍是完整独立的单讲项目（可单独拷走用）
+   lecture-02-yyy/
+```
+
+**入口页断网可用**：索引数据在 `course_site.py` 生成时**内联进 HTML**，不 fetch JSON —— 双击即开。
+
+### 一条命令同步整门课
+
+```bash
+"$PY" "$KIT/scripts/course_init.py" "<课程目录>" --name "<课程名>"   # 首次：建 course.json
+"$PY" "$KIT/scripts/run_course.py" "<课程目录>"                     # 日常：一键同步
+"$PY" "$KIT/scripts/run_course.py" "<课程目录>" --add lecture-07-xxx # 新加一讲后登记它
+```
+
+`run_course.py` 依次跑 `init → index → brief → site → check → probe`。
+**每写完一讲、或改了任何一讲的内容**，都要重跑一次 —— 课程层靠**产物内容哈希**做增量，
+没变的讲次直接复用索引，所以重跑很快。
+
+### 课程层专属的三样东西（写讲解时才用得上的）
+
+| 写法 | 挂在哪 | 作用 |
+|---|---|---|
+| `data-concepts="a,b"` | 逐页区块 `<section class="pg">` | 这一页引入/重点讲解的概念 id（小写连字符） |
+| `data-pays-off="id@L01:p77"` | 同上 | 本页**回收**了前序讲次的伏笔（指向那一讲的页） |
+| `data-forward="id"` | 同上 | 本页留下的、后讲应回收的开放问题 |
+| `<tr data-concept="id">` | `#glossary` 表里的一行 | 让这条术语进课程主页的术语总表 |
+| `<li data-at="#pNN" data-topic="id">` | `#keypoints` 的 `ol.kpl` | 本讲要点；**真源就在产物里**，不另立 JSON |
+
+**三个 `data-*` 全是可选的** —— 一门课不上这些也不影响单讲使用。但一旦跨讲要互相引用
+（「这个概念第 3 讲讲过」），就必须靠它们，课程层才能把各讲串起来。
+
+### 课程层体检（改完课必跑）
+
+```bash
+"$PY" "$KIT/scripts/course_check.py" "<课程目录>"
+```
+
+它查的是**单讲体检答不了**的问题：跨讲链接的文件与锚点是否可达、同一概念在不同讲里
+中/英/释是否漂移、伏笔指向的讲次与页是否真实存在、要点锚点是否有效、
+以及**各讲产物哈希与 `_course/index.json` 是否一致**（不一致 = 改过没重跑，先 `--sync`）。
+FAIL 进退出码，`结果: ALL PASS` 才算过。
+
+> **改名 / 挪目录之后**：`course.json` 里的 `dir` 是键，改目录名后必须重跑
+> `run_course.py --sync`，再 `course_check.py` 确认没有断链。课程序列断链是**静默**的
+> ——入口页看着好好的，点进去 404。
 
 ## 铁律
 

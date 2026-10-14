@@ -9,38 +9,46 @@
 > **已完成条目已从正文移除**（不再跟踪），只留在文末「已完成索引」一行。  
 > 基线数据是 2026-10-03 实测，不是估算。
 
-## 当前基线（2026-10-07 实测）
+## 当前基线（2026-10-14 实测）
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 49 个受版本控制的文件 ｜ 4.9 MB（不含 `.git`） ｜ 34 个提交 ｜ 与 `origin/main` 逐字节一致 |
-| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**46 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md`、`CHANGELOG.md` |
+| 仓库 | 82 个文件（71 已跟踪 + 11 待提交的课程层） ｜ 11 MB（不含 `.git`） ｜ 36 个提交 |
+| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**48 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
 | 图片资源 | ✅ 3 张（`docs/images/`，hero / notes / overview，各约 230 KB） |
 | 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.20 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.20 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。两份均已按 v2.2.0 重建，源工程在 `examples/demo/` |
 | 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` + `demo/`（两份 demo 的源工程：config + content + 原页图） |
 | 依赖清单 | ✅ `requirements.txt`（`pymupdf` + `pillow`，不锁版本；`node` 与浏览器为可选/外部） |
-| 自检体系 | ✅ 三条线：`selftest.py` = 机械路线 + 语义路线 + **文档口径**（`check_docs.py`，6 组断言）；已接进 `selftest.py`，**CI 已建**（第 3 条） |
-| CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（三条线） |
-| 版本号 | ✅ `v2.1.1`（annotated tag + GitHub Release）+ `CHANGELOG.md`（第 6 条已完成） |
-| tag 状况 | 9 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
+| 自检体系 | ✅ 四条线：`selftest.py` = 机械路线 + 语义路线 + **课程路线**（v2.3.0 新增：两份真实产物组成两讲课 → 课程层体检 + 反向注入）+ **文档口径**（`check_docs.py`，6 组断言）；**CI 已建**（第 3 条） |
+| CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（四条线） |
+| 版本号 | ✅ `v2.2.0`（annotated tag + GitHub Release）+ `CHANGELOG.md`（第 6 条已完成）；**进行中：v2.3.0「多课件课程合集」** |
+| tag 状况 | 10 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
 | 跨平台 | 代码里有 macOS / Linux 分支；**Linux 已由 CI 覆盖**（ubuntu runner 装 `fonts-noto-cjk`），macOS 仍未真机验证（见第 7 条） |
 | 文档口径 | ✅ 无已知漂移；`check_docs.py` 新增「pitfalls 裸计数」断言（第 1、13 条完成，`check_docs.py` 常驻把关） |
 
 ---
 
-## 下一步的大版本：v2「多课件课程合集」
+## 下一步的大版本：v2.3.0「多课件课程合集」
 
 > **开工前先读 [docs/v2-course-collection.md](docs/v2-course-collection.md)，不要从零设计。**
-> 那份设计稿已经定好了：目录与数据模型（`course.json` / `glossary.json`）、内容层方法
-> （`data-concepts` / `data-pays-off` / `data-forward` + `briefing.md`）、组件清单、
-> **已否决方案连同否决理由**、四个阶段的验收标准，以及给接手者的 5 条开工须知。
+> 那是**修订版（v2.1）**，已经定好了：目录与数据模型（`course.json` / `glossary.json` / `keypoints`）、
+> 内容层方法（`data-concepts` / `data-pays-off` / `data-forward` + `briefing.md`）、
+> 课程主页五区块（含**要点总结页**）、组件清单、**已否决方案连同否决理由**、
+> 阶段 0–4 的验收标准，以及给接手者的 6 条开工须知。
 >
 > 一句话背景：一门课往往有多个相关联的课件。v1 只能一讲一产出，讲次之间零关联；
 > v2 要在不破坏 v1 的前提下，让「写新一讲时读得到前面讲过什么」，并把这门课汇成一个
-> 可检索、可对照的合集入口。
+> 可检索、可对照、**能自动长出要点总结**的合集入口。
 >
 > 硬约束（违反了就别做）：`file://` 断网可用（**索引必须内联，不能 fetch 同目录 JSON**）、
 > 单讲目录仍可独立使用、不做巨型合并单文件、跨讲引用一律相对路径。
+>
+> **进度：阶段 0 ✔ 阶段 1 ✔ 阶段 2 ✔ 阶段 3 ✔ —— v2.3.0 已发布（2026-10-14）**（课程层地基 +
+> A 侧内容层 + **B 侧合集入口与要点总结页** + 课程层体检与文档口径：
+> `coursekit` / `course_init` / `course_index` / `course_brief` / `course_site` / `course_check` /
+> `run_course` + `assets/course-*` + `probe_course.js`；`build.py` 的区块正则已修 + 加硬断言；
+> `course_check.py` 接入 `selftest.py`，七种注入验收逐条 FAIL 通过）。
+> 详见 `CHANGELOG.md` 的 `[v2.3.0]`；下一步见设计稿 §8「阶段 4 · 增强（可延后）」。
 
 ---
 

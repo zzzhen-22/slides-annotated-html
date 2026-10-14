@@ -74,6 +74,43 @@ Prefer step by step? `prepare_pdf.py` (page images + text layer) → read `_extr
 
 ---
 
+## Multi-lecture course collection
+
+When one course spans a dozen decks (lecture 1 … lecture 14), **do not merge them into one giant HTML**.
+Each lecture stays a self-contained product; the course layer just adds a directory on top:
+
+```
+<course dir>/
+├─ course.json          ← course metadata + lecture list
+├─ index.html           ← course entry: map / key-points / cross-lecture search / glossary / progress
+├─ _course/             ← derived data (index, glossary, key points, prior-knowledge briefs)
+└─ lecture-01-xxx/      ← each lecture is still a complete, separately usable project
+   lecture-02-yyy/
+```
+
+The entry page **inlines its index data into the HTML**, so it opens by double-click and works offline.
+
+```bash
+python scripts/course_init.py "<course dir>" --name "<course name>"   # first time: create course.json
+python scripts/run_course.py "<course dir>"                           # daily: sync the whole course
+python scripts/run_course.py "<course dir>" --add lecture-07-xxx      # register a new lecture
+python scripts/course_check.py "<course dir>"                         # course-level check (run after edits)
+```
+
+`run_course.py` runs `init → index → brief → site → check → probe`. Re-run it after writing **any** lecture —
+the course layer is incremental (content hashes), so unchanged lectures reuse their index and it stays fast.
+
+`course_check.py` catches what per-lecture checks cannot: whether cross-lecture links resolve (file **and**
+anchor), whether one concept drifted to a different name across lectures, whether a payoff points at a page
+that exists, and whether each product still matches the recorded hash. **Always re-run it after renaming or
+moving a lecture directory** — a broken course sequence is silent: the entry page looks fine, the link 404s.
+
+> Cross-lecture wiring needs three optional attributes on page sections — `data-concepts`,
+> `data-pays-off`, `data-forward` — plus `data-concept` on `#glossary` table rows. See
+> [SKILL.md](SKILL.md) "多讲课程合集" for the exact syntax.
+
+---
+
 ## Known limitations
 
 - Input is **PDF only**; export PPTX/Keynote to PDF yourself first — no LibreOffice dependency, by design.

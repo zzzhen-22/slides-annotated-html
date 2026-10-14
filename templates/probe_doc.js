@@ -69,7 +69,9 @@ function run() {
        ① script —— probe.py 把本文件注入成页面的 <script>，**本文件自己的注释里
           就写着 TODO**（以及 &oiint; 这类例子），不跳过就会自己命中自己；
        ② 内嵌 PDF 的 base64 —— 随机字符里完全可能碰巧拼出 TODO。
-       第一版用 documentElement.innerHTML 扫，结果永远报「6 处」，见 pitfalls 第 16 条。 */
+       第一版用 documentElement.innerHTML 扫，结果永远报「6 处」。
+       「为了防误报而挖掉噪声」时，要把**噪声的类别**想全，而不是把它出现过的位置想全
+       （见 pitfalls 第 46 条）—— 这里的噪声类别是「探针自己的源码 + 一切内嵌载荷」。 */
     var tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode: function (n) {
         if (n.parentNode && n.parentNode.closest &&
