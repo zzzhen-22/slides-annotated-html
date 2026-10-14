@@ -1,0 +1,156 @@
+<section class="card" id="cheatsheet">
+  <h2>一页纸速查：公式与要点</h2>
+  <p class="lead">把全文的公式集中在这里，方便复习或直接对照原文件查。左侧是公式，右侧是它出自哪一页。</p>
+
+  <h4>概率基础</h4>
+  <table class="tbl">
+    <thead><tr><th>公式</th><th>含义</th><th>页码</th></tr></thead>
+    <tbody>
+      <tr><td><script type="math/tex">p(X,\mathcal{M})=p(X\mid\mathcal{M})p(\mathcal{M})</script></td><td>乘法法则（联合 = 条件 × 边缘）</td><td><a href="#p05">P5</a></td></tr>
+      <tr><td><script type="math/tex">p(X)=\int p(X\mid\mathcal{M})p(\mathcal{M})\,\mathrm{d}\mathcal{M}</script></td><td>求和／积分法则</td><td><a href="#p05">P5</a></td></tr>
+      <tr><td><script type="math/tex">p(\mathcal{M}\mid X)=\dfrac{p(\mathcal{M})p(X\mid\mathcal{M})}{p(X)}</script></td><td>贝叶斯定理</td><td><a href="#p06">P6</a></td></tr>
+    </tbody>
+  </table>
+
+  <h4>朴素贝叶斯</h4>
+  <table class="tbl">
+    <thead><tr><th>公式</th><th>含义</th><th>页码</th></tr></thead>
+    <tbody>
+      <tr><td><script type="math/tex">P(X_1\cdots X_d\mid Y)=\prod_{i=1}^{d}P(X_i\mid Y)</script></td><td>「朴素」的独立假设</td><td>P26</td></tr>
+      <tr><td><script type="math/tex">y^\star=\arg\max_{y}\ p(y)\prod_{i=1}^{d}p(x_i\mid y)</script></td><td>朴素贝叶斯分类器（实用形式）</td><td>P19／P26</td></tr>
+      <tr><td><script type="math/tex">\hat{q}_{kj}=\dfrac{N_k^{j}}{N_k}</script></td><td>MLE：数频率</td><td>P27</td></tr>
+      <tr><td><script type="math/tex">\hat{q}_{kj}=\dfrac{N_k^{j}+\alpha}{N_k+2\alpha}</script></td><td>拉普拉斯平滑（对付零计数）</td><td>P32</td></tr>
+      <tr><td><script type="math/tex">\hat{q}_{kj}=\dfrac{N_k^{j}+\alpha_1-1}{N_k+\alpha_1+\alpha_2-2}</script></td><td>MAP（Beta 先验下的结果）</td><td>P34</td></tr>
+      <tr><td><script type="math/tex">\hat\theta^{MAP}=\arg\max_\theta P(D\mid\theta)P(\theta)</script></td><td>MAP 就是「似然 × 先验」</td><td>P35</td></tr>
+    </tbody>
+  </table>
+
+  <h4>高斯分布</h4>
+  <table class="tbl">
+    <thead><tr><th>公式</th><th>含义</th><th>页码</th></tr></thead>
+    <tbody>
+      <tr><td><script type="math/tex">p(x\mid\mu,\sigma^2)=\dfrac{1}{\sqrt{2\pi}\sigma}e^{-\frac{(x-\mu)^2}{2\sigma^2}}</script></td><td>一元高斯</td><td>P41</td></tr>
+      <tr><td><script type="math/tex">p(\mathbf{x}\mid\boldsymbol{\mu},\Sigma)=\dfrac{1}{(2\pi)^{d/2}|\Sigma|^{1/2}}e^{-\frac{1}{2}(\mathbf{x}-\boldsymbol{\mu})^{\top}\Sigma^{-1}(\mathbf{x}-\boldsymbol{\mu})}</script></td><td>多元高斯</td><td>P43</td></tr>
+      <tr><td><script type="math/tex">\mu_{\mathrm{ML}}=\frac{1}{N}\sum_n x_n,\quad \sigma^2_{\mathrm{ML}}=\frac{1}{N}\sum_n(x_n-\mu_{\mathrm{ML}})^2</script></td><td>高斯的 MLE = 样本均值／方差</td><td>P42</td></tr>
+    </tbody>
+  </table>
+
+  <h4>逻辑回归（核心）</h4>
+  <table class="tbl">
+    <thead><tr><th>公式</th><th>含义</th><th>页码</th></tr></thead>
+    <tbody>
+      <tr><td><script type="math/tex">\sigma(v)=\dfrac{1}{1+e^{-v}}</script></td><td>Sigmoid（把实数压成概率）</td><td>P46</td></tr>
+      <tr><td><script type="math/tex">P(y=1\mid\mathbf{x})=\sigma\!\left(\mathbf{w}^{\top}\mathbf{x}\right)</script></td><td>逻辑回归模型（<script type="math/tex">\mathbf{x}</script> 已增广）</td><td>P48</td></tr>
+      <tr><td><script type="math/tex">\log\frac{P(Y=1\mid\mathbf{x})}{P(y=0\mid\mathbf{x})}=\mathbf{w}^{\top}\mathbf{x}</script></td><td>对数几率 = 线性函数</td><td>P47</td></tr>
+      <tr><td><script type="math/tex">\mathbf{w}^{\top}\mathbf{x}=0</script></td><td>决策边界：超平面（线性分类器）</td><td>P47</td></tr>
+      <tr><td><script type="math/tex">\mathcal{L}(\mathbf{w})=\sum_i\left[y_i\mathbf{w}^{\top}\mathbf{x}_i-\log\!\left(1+e^{\mathbf{w}^{\top}\mathbf{x}_i}\right)\right]</script></td><td>对数条件似然（要最大化的目标）</td><td>P52</td></tr>
+      <tr><td><script type="math/tex">\nabla_{\mathbf{w}}\mathcal{L}=\sum_i(y_i-\mu_i)\mathbf{x}_i=X(\mathbf{y}-\boldsymbol{\mu})</script></td><td>梯度（<script type="math/tex">\mu_i=\sigma(\mathbf{w}^{\top}\mathbf{x}_i)</script>）</td><td>P55／P60</td></tr>
+      <tr><td><script type="math/tex">\mathbf{w}_{t+1}=\mathbf{w}_t+\eta\sum_i\mathbf{x}_i(y_i-\mu_i^t)</script></td><td>梯度上升更新式</td><td>P55</td></tr>
+      <tr><td><script type="math/tex">H=-XRX^{\top},\ R_{ii}=\mu_i(1-\mu_i)</script></td><td>Hessian 矩阵</td><td>P60</td></tr>
+      <tr><td><script type="math/tex">\mathbf{w}_{t+1}=(XRX^{\top})^{-1}XR\mathbf{z}</script></td><td>IRLS 更新式（牛顿法的等价形式）</td><td>P61</td></tr>
+    </tbody>
+  </table>
+
+  <h4>三个必须记住的「一句话」</h4>
+  <ol class="lst">
+    <li><b>逻辑回归是线性分类器</b>——决策边界是超平面（P63）。</li>
+    <li><b>它用最大条件似然学参数</b>——没有闭式解，但目标函数是凹的，梯度法必得全局最优（P63）。</li>
+    <li><b>NB 与 LR 的假设不同</b>——NB 假设 <script type="math/tex">P(X\mid Y)</script>，LR 假设 <script type="math/tex">P(Y\mid X)</script> 的函数形式，对 <script type="math/tex">P(X\mid Y)</script> 不作任何假设（P63）。</li>
+  </ol>
+</section>
+
+<section class="card" id="glossary">
+  <h2>术语速查表</h2>
+  <p class="lead">按首次出现顺序排列，中文名后附英文原文（便于对照原课件）。点页码可跳回讲解。</p>
+  <table class="tbl gloss">
+    <thead><tr><th>术语</th><th>英文</th><th>一句话解释</th><th>首次出现</th></tr></thead>
+    <tbody>
+      <tr><td>监督学习</td><td>supervised learning</td><td>从「输入 + 正确答案」的数据里学预测函数</td><td><a href="#p02">P2</a></td></tr>
+      <tr><td>特征空间 / 标签空间</td><td>feature space / label space</td><td>模型看到的输入集合 / 想预测的答案集合</td><td><a href="#p02">P2</a></td></tr>
+      <tr><td>回归 / 分类</td><td>regression / classification</td><td>标签是连续数值 / 离散类别</td><td><a href="#p03">P3</a></td></tr>
+      <tr><td>条件概率</td><td>conditional probability</td><td>已知某事件成立时，另一事件的可能性</td><td><a href="#p05">P5</a></td></tr>
+      <tr><td>联合概率</td><td>joint probability</td><td>两件事同时发生的可能性</td><td><a href="#p05">P5</a></td></tr>
+      <tr><td>乘法法则 / 求和法则</td><td>product / sum rule</td><td>联合与边缘、条件之间的两个基本关系</td><td><a href="#p05">P5</a></td></tr>
+      <tr><td>贝叶斯定理</td><td>Bayes' theorem</td><td>用证据更新信念：后验 ∝ 先验 × 似然</td><td><a href="#p06">P6</a></td></tr>
+      <tr><td>先验 / 似然 / 后验</td><td>prior / likelihood / posterior</td><td>看数据前的信念 / 数据在该参数下的可能性 / 看数据后的信念</td><td><a href="#p07">P7</a></td></tr>
+      <tr><td>似然</td><td>likelihood</td><td>把数据固定、参数当变量时的 <script type="math/tex">p(D\mid\theta)</script></td><td><a href="#p07">P7</a></td></tr>
+      <tr><td>经验分布</td><td>empirical distribution</td><td>直接由数据数出来的分布（即直方图）</td><td>P11</td></tr>
+      <tr><td>核密度估计</td><td>kernel density estimation (KDE)</td><td>把直方图磨成光滑曲线的技巧</td><td>P11</td></tr>
+      <tr><td>决策边界</td><td>decision boundary</td><td>两类概率相等的位置；越过它预测就翻转</td><td>P15</td></tr>
+      <tr><td>生成式模型</td><td>generative model</td><td>建模 <script type="math/tex">P(X\mid Y)</script> 与 <script type="math/tex">P(Y)</script>，能「生成」数据</td><td>P16</td></tr>
+      <tr><td>判别式模型</td><td>discriminative model</td><td>只建模 <script type="math/tex">P(Y\mid X)</script>，不关心输入怎么来的</td><td>P51</td></tr>
+      <tr><td>条件独立</td><td>conditional independence</td><td>已知类别后，特征之间互不影响</td><td>P17</td></tr>
+      <tr><td>朴素贝叶斯假设</td><td>naïve Bayes assumption</td><td>特征在给定类别下条件独立（通常不成立，但好用）</td><td>P17</td></tr>
+      <tr><td>贝叶斯决策规则</td><td>Bayes' decision rule</td><td>选后验概率最大的类别</td><td>P19</td></tr>
+      <tr><td>贝叶斯误差</td><td>Bayes error</td><td>任何分类器都无法突破的最低错误率</td><td>P20</td></tr>
+      <tr><td>维度灾难</td><td>curse of dimensionality</td><td>特征一多，需要的数据量指数级暴涨</td><td>P23</td></tr>
+      <tr><td>最大似然估计</td><td>maximum likelihood estimation (MLE)</td><td>选让数据最可能的参数；结果就是数频率</td><td>P28</td></tr>
+      <tr><td>最大后验估计</td><td>maximum a posteriori (MAP)</td><td>选最可能的参数，综合先验与数据</td><td>P35</td></tr>
+      <tr><td>零计数问题</td><td>zero-counts problem</td><td>某特征在某类里没出现过，导致概率被估成 0</td><td>P32</td></tr>
+      <tr><td>拉普拉斯平滑</td><td>Laplace / additive smoothing</td><td>给每个计数都加一个小正数，避免 0</td><td>P32</td></tr>
+      <tr><td>贝塔分布</td><td>Beta distribution</td><td>定义在 [0,1] 上、用来当概率参数先验的分布</td><td>P33</td></tr>
+      <tr><td>无信息先验</td><td>non-informative prior</td><td>均匀先验；此时 MAP 退化为 MLE</td><td>P37</td></tr>
+      <tr><td>高斯（正态）分布</td><td>Gaussian / normal distribution</td><td>钟形曲线，由均值与方差决定</td><td>P41</td></tr>
+      <tr><td>协方差矩阵</td><td>covariance matrix</td><td>描述各维分散程度与维度间相关性的矩阵</td><td>P43</td></tr>
+      <tr><td>各向同性 / 对角 / 一般</td><td>isotropic / diagonal / general</td><td>协方差矩阵的三种简化程度</td><td>P43</td></tr>
+      <tr><td>边缘分布仍为高斯</td><td>marginal is Gaussian</td><td>多元高斯积分掉某些维度，结果还是高斯</td><td>P45</td></tr>
+      <tr><td>逻辑函数 / Sigmoid</td><td>logistic function / sigmoid</td><td><script type="math/tex">1/(1+e^{-v})</script>，把实数压成 (0,1) 的概率</td><td>P46</td></tr>
+      <tr><td>对数几率</td><td>log-odds / logit</td><td><script type="math/tex">\log\frac{p}{1-p}</script>；在逻辑回归里等于线性得分</td><td>P47</td></tr>
+      <tr><td>增广向量</td><td>augmented vector</td><td>给输入补一个恒为 1 的分量，把偏置并入权重</td><td>P48</td></tr>
+      <tr><td>参照类</td><td>reference class</td><td>多分类里得分为 0 的那一类；因此只需 K−1 组权重</td><td>P49</td></tr>
+      <tr><td>最大条件似然</td><td>maximum conditional likelihood</td><td>只对 <script type="math/tex">P(Y\mid X)</script> 求似然，避开 <script type="math/tex">P(X)</script></td><td>P51</td></tr>
+      <tr><td>闭式解</td><td>closed-form solution</td><td>能用显式公式直接算出的解；逻辑回归没有</td><td>P53</td></tr>
+      <tr><td>凹函数 / 凸函数</td><td>concave / convex function</td><td>倒扣的碗 / 正放的碗；保证没有假的局部最优</td><td>P53</td></tr>
+      <tr><td>梯度上升 / 下降</td><td>gradient ascent / descent</td><td>沿坡度方向走，让函数变大 / 变小</td><td>P54</td></tr>
+      <tr><td>步长 / 学习率</td><td>step-size / learning rate <script type="math/tex">\eta</script></td><td>每一步迈多大；大了震荡，小了慢</td><td>P54</td></tr>
+      <tr><td>过拟合</td><td>over-fitting</td><td>把训练数据的噪声也学进去了，泛化变差</td><td>P56</td></tr>
+      <tr><td>正则化</td><td>regularization</td><td>惩罚过大的权重，抑制过拟合</td><td>P56</td></tr>
+      <tr><td>牛顿法</td><td>Newton / Newton-Raphson method</td><td>用切线找零点；用于优化时收敛远快于梯度法</td><td>P58</td></tr>
+      <tr><td>Hessian 矩阵</td><td>Hessian matrix</td><td>二阶偏导排成的方阵，描述曲率</td><td>P59</td></tr>
+      <tr><td>IRLS</td><td>iteratively reweighted least squares</td><td>反复解加权最小二乘；等价于牛顿法</td><td>P61</td></tr>
+      <tr><td>指数族分布</td><td>exponential family</td><td>一大批分布的共同格式；伯努利、高斯、贝塔都是成员</td><td>补充 A</td></tr>
+      <tr><td>广义线性模型</td><td>generalized linear model (GLM)</td><td>响应分布 + 线性预测器 + 连接函数的三件套</td><td>补充 B</td></tr>
+      <tr><td>典型连接</td><td>canonical link</td><td>连接函数取自然参数本身；伯努利对应 logit</td><td>补充 B</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card" id="about">
+  <h2>关于本文档</h2>
+  <div class="about-grid">
+    <div>
+      <h4>原文件信息</h4>
+      <ul class="lst">
+        <li><b>文件名：</b>1-Logistic Regression(1).pdf</li>
+        <li><b>路径：</b><span class="gloss">（本 demo 隐去了原文件的本机路径）</span></li>
+        <li><b>标题：</b>Introduction to Artificial Intelligence — Logistic Regression</li>
+        <li><b>作者：</b>苏航（清华大学）</li>
+        <li><b>页数：</b>63 页（由 PowerPoint 导出，创建于 2026-09-22）</li>
+      </ul>
+    </div>
+    <div>
+      <h4>覆盖范围</h4>
+      <ul class="lst">
+        <li><b>正文：</b>严格按原文件页序逐页讲解，每页都配有原页缩略图与页码链接。<b>本 demo 只节选了 P1–P8</b>（完整版覆盖 1–63 页）。</li>
+        <li><b>前置知识：</b>「阅读前必读」九张速成卡为本文档新增内容，原文件没有。</li>
+        <li><b>补充篇 A / B：</b>指数族分布与广义线性模型——原文件第 4 页大纲提及但正文未展开，本文档单独补充，<em>不占用原页码</em>。</li>
+        <li><b>速查部分：</b>公式速查、术语表均为本文档新增的检索工具。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h4>阅读时需要注意的三处原文件细节</h4>
+  <ol class="lst">
+    <li><b>第 55 页有一处蓝色色块遮挡。</b>原文中 Sigmoid 的定义式 <script type="math/tex">\psi(v)=1/(1+e^{-v})</script> 被一个蓝色方块盖住了——这是原 PPT 里动画／图片对象被导出后留下的痕迹。本文档已根据 PDF 文字层还原了被遮内容（详见该页讲解）。</li>
+    <li><b>第 11–15 页的红／蓝配色不一致。</b>这几页的示意图沿用自旧讲义，红色曲线有时画在左边、有时在右边，与第 10 页图例（红＝Katydids、蓝＝Grasshoppers）并不总是对应。本文档以原页标注的<em>数字</em>（10:2、3:9、6:6）为准进行讲解，不依赖颜色位置。</li>
+    <li><b>第 20 页积分上下限为 −1 到 1。</b>原文写作 <script type="math/tex">\int_{-1}^{1}</script>（课件中特征已归一化到该区间）；更一般的写法是对 <script type="math/tex">x</script> 的整个取值范围积分。本文档保留原样并加了说明。</li>
+  </ol>
+
+  <h4>技术说明</h4>
+  <ul class="lst">
+    <li>公式使用 <b>KaTeX</b> 离线渲染，字体已内嵌为 data URI——<b>断网状态下打开本文件，公式依然正常显示</b>，无需联网加载任何资源。</li>
+    <li>页面缩略图为原 PDF 渲染后压缩所得，仅用于对照阅读；如需看清细节，请点击缩略图放大，或直接打开原 PDF 对应页。</li>
+    <li>本文件为单文件 HTML，可自由移动、复制、离线分享（不要单独把图片或字体抽出来）。</li>
+    <li><b>完整版会把原课件 PDF 整个内嵌进 HTML</b>，因此拷到任何设备都能直接打开原文件对照，顶栏另有一个「另存原 PDF」按钮。<b>本 demo 不包含原课件</b>（版权不属于本项目），所以每页的「打开原 PDF 该页」按钮显示为停用态。</li>
+  </ul>
+</section>

@@ -1,0 +1,57 @@
+<section class="card overview" id="ov1">
+  <span class="ov-kicker">本节概述 · 第一节</span>
+  <h2>概率的语言<em>Probabilistic Foundations — 先学会怎么说话，再谈怎么建模</em></h2>
+  <p class="ov-range">覆盖原文件 P1–P8 ｜ 8 页 ｜ 建议 15 分钟</p>
+
+  <p class="lead"><b>这一节不教任何模型，它只做一件事：把「不确定性」变成可以计算的符号。</b>后面的朴素贝叶斯和逻辑回归，全部建立在这一节定义的几个记号和两条法则上——所以这 8 页值得慢读。如果跳过它，后面会在 <script type="math/tex">p(X\mid\mathcal{M})</script> 这类写法上反复卡壳。</p>
+
+  <div class="ov-grid">
+    <div class="ov-item">
+      <h5>这 8 页的主线</h5>
+      <ol class="lst" style="margin-top:4px">
+        <li><b>给任务下定义</b>（P2–P3）：监督学习就是「从输入 <script type="math/tex">\mathbf{x}</script> 预测输出 <script type="math/tex">y</script>」，<script type="math/tex">y</script> 连续叫<b>回归</b>，离散叫<b>分类</b>。</li>
+        <li><b>给语言下定义</b>（P5–P6）：联合概率、边缘概率、条件概率三种量，配上乘法法则与求和法则。</li>
+        <li><b>合成一件工具</b>（P6–P7）：贝叶斯定理——「先验 × 似然 ∝ 后验」，这是用证据更新信念的全部机制。</li>
+        <li><b>给出一张地图</b>（P8）：任何概率模型都必须回答<b>表示 / 推断 / 学习</b>三个问题。</li>
+      </ol>
+    </div>
+
+    <div class="ov-item">
+      <h5>必须记住的记号</h5>
+      <ul>
+        <li><script type="math/tex">p(X)</script> 概率、<script type="math/tex">p(X\mid Y)</script> 条件概率、<script type="math/tex">p(X,Y)</script> 联合概率</li>
+        <li><b>乘法法则</b>：<script type="math/tex">p(X,Y)=p(X\mid Y)p(Y)</script></li>
+        <li><b>求和法则</b>：<script type="math/tex">p(X)=\sum_Y p(X,Y)</script>（连续则换成积分）</li>
+        <li><b>贝叶斯定理</b>：<script type="math/tex">p(Y\mid X)=\dfrac{p(Y)p(X\mid Y)}{p(X)}</script></li>
+        <li>大写 <script type="math/tex">X</script> 是随机变量，小写 <script type="math/tex">x</script> 是它取到的具体值</li>
+      </ul>
+    </div>
+
+    <div class="ov-item">
+      <h5>两个最容易混的点</h5>
+      <p><b>① <script type="math/tex">p(X\mid\mathcal{M})</script> 不是「X 导致 M」。</b>竖线左边是「被解释的」，右边是「已知的前提」。读成「在 M 成立的前提下，X 的可能性」就不会错。</p>
+      <p><b>② 「似然」与「条件概率」不是两个东西。</b>同一个式子 <script type="math/tex">p(D\mid\theta)</script>，固定 <script type="math/tex">D</script> 看 <script type="math/tex">\theta</script> 就叫似然，固定 <script type="math/tex">\theta</script> 看 <script type="math/tex">D</script> 就叫条件概率——换的是视角，不是公式。</p>
+    </div>
+
+    <div class="ov-item">
+      <h5>读完自检</h5>
+      <ol class="ov-questions">
+        <li>已知 <script type="math/tex">p(\mathcal{M})</script>、<script type="math/tex">p(X\mid\mathcal{M})</script> 和 <script type="math/tex">p(X)</script>，怎么算出 <script type="math/tex">p(\mathcal{M}\mid X)</script>？</li>
+        <li>「先验」「似然」「后验」分别对应贝叶斯公式里的哪一项？哪个是我们真正想知道的？</li>
+        <li>第 8 页的「表示 / 推断 / 学习」三问中，<b>哪一问</b>是在问「怎么回答一个具体查询」？</li>
+      </ol>
+    </div>
+  </div>
+
+  <p><b>与后面几节的衔接：</b>这一节给出的贝叶斯定理，在第二节被直接用作分类器（朴素贝叶斯）；而 P8 的「学习」一问——「哪个模型才是对的」——会在第二节的后半段变成 MLE 与 MAP 两条路线的分岔口。</p>
+
+  <div class="ov-chips">
+    <span class="chip-label">快速跳转：</span>
+    <a href="#p02">P2 监督学习</a>
+    <a href="#p03">P3 回归</a>
+    <a href="#p05">P5 概率法则</a>
+    <a href="#p06">P6 贝叶斯法则</a>
+    <a href="#p07">P7 用于机器学习</a>
+    <a href="#p08">P8 三个基本问题</a>
+  </div>
+</section>

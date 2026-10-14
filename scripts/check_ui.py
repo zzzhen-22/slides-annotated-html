@@ -5,12 +5,14 @@
 用法：
     python check_ui.py <输出.html>
 
-检查五项交互功能的"接线"是否正确：
+检查六项交互功能的"接线"是否正确：
     ① 目录逐级折叠：分组/按钮/计数徽标数量、各小节标题是否都在
     ② 本节概述：overview 卡数量与其锚点是否进目录
     ③ 侧栏收起：navToggle/thumbToggle 是否存在、收起后缩略图列宽是否真的变大
     ④ 标记与笔记：抽屉 DOM、选择工具条依赖的样式、localStorage 命名空间是否注入
     ⑤ 正文字号调节：A−/A＋ 按钮、--fs 缩放变量、max-width 反向补偿、localStorage 键
+    ⑥ 正文搜索：搜索框与结果面板、索引惰性建、临时高亮与笔记高亮的类名隔离、
+       清空时拆除并 normalize、↑↓/Enter/Esc 键盘路径、搜索框是否真的接到 Find
 
 浏览器失灵时（见 references/pitfalls.md 第 29 条）用它兜底，
 能覆盖"结构对不对"，覆盖不了"长得对不对"。
@@ -66,7 +68,7 @@ def main():
     chk('计数徽标只出现在含页码的分组上', 0 < html.count('class="gcount"') <= groups,
         str(html.count('class="gcount"')))
     chk('有展开/折叠全部按钮', 'id="tocExpand"' in html and 'id="tocCollapse"' in html)
-    chk('JS 有 filter（搜索兼容嵌套）', 'filter: function' in js)
+    chk('JS 有 filter（正文 0 命中时回退到目录标题过滤）', 'filter: function' in js)
     chk('JS 有 revealLink（滚动时自动展开所在组）', 'revealLink: function' in js)
 
     print()
@@ -230,6 +232,30 @@ def main():
     chk('JS 有字号存储键 FS_KEY', 'FS_KEY' in js and "'font-size'" in js)
     chk('JS 字号档位存 localStorage', 'LS.set(FS_KEY' in js)
     chk('JS 字号模块暴露给探针', 'font: Font' in js)
+
+    print()
+    print('=== ⑪ 正文搜索（#qres 结果面板 + mark.q-hit 临时高亮）===')
+    # 功能：搜索框不只过滤目录标题，还搜正文；命中在左栏列出
+    # 「页码 · 标题 · 上下文片段」，点一条跳到该页并把命中词高亮。
+    # 高亮是**临时**的（mark.q-hit），与持久笔记（mark.hl）严格分开：
+    # 笔记的 unwrapAll / audit / restoreAll 只认 mark.hl，两者永不互相误伤。
+    # 这一组只查「接线」，真实行为由 ⑥c probe_find.js 在浏览器里回归。
+    chk('存在搜索框 #q', 'id="q"' in html)
+    chk('存在结果面板 #qres', 'id="qres"' in html)
+    chk('CSS 定义了结果面板与 .on 态', '.qres' in css and '.qres.on' in css)
+    chk('CSS 定义了临时命中高亮 mark.q-hit', 'mark.q-hit' in css)
+    chk('CSS 让结果面板顶掉目录（.toc-nav.off）', '.toc-nav.off' in css)
+    chk('CSS 定义了跨边界命中的块级闪烁 .q-flash', '.q-flash' in css)
+    chk('JS 有 Find 模块', 'var Find = {' in js)
+    chk('JS 索引惰性建（首次查询才建）', 'build: function' in js and 'this.idx || this.build()' in js)
+    chk('JS 索引跳过 KaTeX 隐藏副本', 'SKIP_SEL' in js and 'projOf(sec).str' in js)
+    chk('JS 高亮类名与笔记严格分开', "'q-hit'" in js and 'mark.hl[data-nid=' in js)
+    chk('JS 清空时拆除高亮并 normalize', 'clearHits: function' in js and 'p.normalize' in js)
+    chk('JS 支持 ↑↓ / Enter / Esc', 'ArrowDown' in js and 'ArrowUp' in js and
+        "'Enter'" in js and "'Escape'" in js)
+    chk('JS 把搜索框接到 Find（不再只过滤目录）', 'Find.run(q)' in js)
+    chk('JS 支持「/」对焦搜索框', "k === '/'" in js)
+    chk('JS 搜索模块暴露给探针', 'find: Find' in js)
 
     print()
     print('=== 数量一致性 ===')

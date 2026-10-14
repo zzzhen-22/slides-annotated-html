@@ -1,0 +1,178 @@
+<section class="pg" id="p01" data-page="1">
+  <div class="pg-head">
+    <span class="pg-badge">原文件 P1</span>
+    <h3>Introduction to Artificial Intelligence — Logistic Regression <em>封面页</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="本 demo 未包含原课件（版权不属于本项目）。完整版会把原 PDF 整份内嵌，点这里即可跳到第 1 页对照。">打开原 PDF 该页（demo 已停用）</span>
+  </div>
+  <div class="pg-text">
+    <p>这是整套课件的封面：课程《人工智能导论》，本次主题「逻辑回归（Logistic Regression）」，授课人 苏航（清华大学）。</p>
+    <p>这一页没有知识点，但它定了调子——接下来 62 页要讲的，是<b>机器学习中最基础、也最经得起考验的分类模型之一</b>。逻辑回归到今天仍然广泛用在垃圾邮件过滤、点击率预估、信用评分、疾病风险预测这些场景里；而它背后的推导方式（最大似然 + 梯度法）几乎是所有现代神经网络训练方法的雏形。</p>
+    <div class="note"><b>读法建议：</b>先记住这个标题里的两个词——<em>logistic</em>（指 Sigmoid 函数）和 <em>regression</em>（虽然名字里带「回归」，它实际做的是<em>分类</em>）。这个别扭的名字会在第 46 页得到解释。</div>
+  </div>
+</section>
+
+<section class="pg" id="p02" data-page="2">
+  <div class="pg-head">
+    <span class="pg-badge">原文件 P2</span>
+    <h3>Supervised Learning <em>监督学习</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="本 demo 未包含原课件（版权不属于本项目）。完整版会把原 PDF 整份内嵌，点这里即可跳到第 2 页对照。">打开原 PDF 该页（demo 已停用）</span>
+  </div>
+  <div class="pg-text">
+    <p><b>这一页要把「监督学习」这四个字翻译成人话：给定一批「题目 + 标准答案」，让机器自己总结出一套解题规律。</b></p>
+    <p>原文写「Task: learn a predictive function」，即<em>学一个预测函数</em>：</p>
+    <script type="math/tex; mode=display">h:\ \mathcal{X}\to\mathcal{Y}</script>
+    <p>这里出现了两个集合：<b>特征空间 <script type="math/tex">\mathcal{X}</script></b>（模型看到的输入）和<b>标签空间 <script type="math/tex">\mathcal{Y}</script></b>（我们想预测的东西）。</p>
+    <p>幻灯片用两组例子对照说明：</p>
+    <ul class="lst">
+      <li><b>文本分类：</b>特征 <script type="math/tex">\mathcal{X}</script> 是「文档里出现的词」，标签 <script type="math/tex">\mathcal{Y}</script> 是 <code>Sports</code>／<code>News</code>／<code>Politics</code> 这样的类别。这里 <script type="math/tex">\mathcal{Y}</script> 是一堆<em>离散的类别</em>。</li>
+      <li><b>股价预测：</b>特征 <script type="math/tex">\mathcal{X}</script> 是「截至时刻 <script type="math/tex">t</script> 的市场信息」，标签是 <code>$20.50</code> 这样的<em>数值</em>。</li>
+    </ul>
+    <p>页面上还标了一个红字 <b>knowledge</b>（知识）：它的意思是，<script type="math/tex">\mathcal{X}</script> 和 <script type="math/tex">\mathcal{Y}</script> 之间存在的那层对应关系，正是我们希望机器学到的「知识」——它不是写在代码里的规则，而是从数据里估出来的。</p>
+    <p>底部给出训练数据的记号：</p>
+    <script type="math/tex; mode=display">\{\langle \mathbf{x}_d,y_d\rangle\}_{d=1}^{D},\qquad \mathbf{x}_d\in\mathcal{X},\ y_d\in\mathcal{Y}</script>
+    <p>意思很直白：有 <script type="math/tex">D</script> 条样本，第 <script type="math/tex">d</script> 条由输入 <script type="math/tex">\mathbf{x}_d</script>（加粗表示它是<em>一个向量</em>，包含多个特征）和答案 <script type="math/tex">y_d</script> 组成。这个记号后面会反复出现。</p>
+    <div class="tip"><b>「监督」是什么意思？</b>就是训练数据里每条输入都配了正确答案。反过来说，如果只有输入没有答案，那是「无监督学习」（比如聚类）。</div>
+  </div>
+</section>
+
+<section class="pg" id="p03" data-page="3">
+  <div class="pg-head">
+    <span class="pg-badge">原文件 P3</span>
+    <h3>Supervised Learning — regression <em>监督学习的一种：回归</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="本 demo 未包含原课件（版权不属于本项目）。完整版会把原 PDF 整份内嵌，点这里即可跳到第 3 页对照。">打开原 PDF 该页（demo 已停用）</span>
+  </div>
+  <div class="pg-text">
+    <p>同样画了「特征空间 → 标签空间」的箭头，但这一页在强调标签的性质：<b>标签是连续数值</b>。幻灯片右下角专门加了一个红框 <b>Continuous Labels</b>。</p>
+    <ul class="lst">
+      <li>输入是截至 <script type="math/tex">t</script> 时刻的市场信息 → 输出是股价 <code>$20.50</code>；</li>
+      <li>输入是「时段、地点、时间」<script type="math/tex">(\text{session},\text{location},\text{time}\dots)</script> → 输出是气温 <code>42°F</code>。</li>
+    </ul>
+    <p><b>这一页真正的作用是给「回归」和「分类」划界。</b>两者的输入都是特征向量，区别只在输出：</p>
+    <table class="tbl">
+      <thead><tr><th></th><th>标签 <script type="math/tex">y</script> 的类型</th><th>任务名</th><th>本课件的例子</th></tr></thead>
+      <tbody>
+        <tr><td>输出连续值</td><td>实数，如 <script type="math/tex">20.50</script>、<script type="math/tex">42</script></td><td><b>回归（regression）</b></td><td>股价、气温、第 40 页的贝叶斯回归</td></tr>
+        <tr><td>输出离散类别</td><td>如 <code>Sports/News</code>、<code>鸟/哺乳动物</code></td><td><b>分类（classification）</b></td><td>朴素贝叶斯、逻辑回归</td></tr>
+      </tbody>
+    </table>
+    <div class="note"><b>伏笔：</b>名称里的 confusion 就在这儿——逻辑回归叫「回归」，但它输出的是<em>概率</em>（0 到 1 之间的连续值），再阈值化成类别。因为输出概率这一步确实是回归，所以名字才保留了「regression」。第 47 页会把这个逻辑补完。</div>
+  </div>
+</section>
+
+<section class="pg" id="p04" data-page="4">
+  <div class="pg-head">
+    <span class="pg-badge">原文件 P4</span>
+    <h3>Outline <em>大纲</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="本 demo 未包含原课件（版权不属于本项目）。完整版会把原 PDF 整份内嵌，点这里即可跳到第 4 页对照。">打开原 PDF 该页（demo 已停用）</span>
+  </div>
+  <div class="pg-text">
+    <p>大纲列了五个主题，构成了这次课的知识阶梯：</p>
+    <ol class="lst">
+      <li><b>Probabilistic methods for supervised learning</b>——监督学习的概率方法（第 5–15 页）</li>
+      <li><b>Naive Bayes classifier</b>——朴素贝叶斯分类器（第 16–39 页）</li>
+      <li><b>Logistic regression</b>——逻辑回归（第 40–63 页）</li>
+      <li><b>Exponential family distributions</b>——指数族分布</li>
+      <li><b>Generalized linear models</b>——广义线性模型</li>
+    </ol>
+    <div class="flag">
+      <b>需要提醒的一点：</b>原文 63 页里，第 4、5 两个主题（指数族分布、广义线性模型）<em>并没有展开</em>。课件讲完逻辑回归的收敛曲线就直接进入总结页了。本文档严格保留原顺序，不把这两节插进正文，而是在全文末尾以「补充篇 A / B」的形式单独给出简明讲解——它们是理解「逻辑回归为什么会是 Sigmoid 这个形状」的关键，值得知道。
+    </div>
+    <p>另外注意大纲的排序本身就是一个叙事：<b>先讲概率方法（这是地基），再讲朴素贝叶斯（第一个完整可用的模型），再讲逻辑回归（把生成式换成判别式）</b>。第 63 页的总结会回扣这个结构。</p>
+  </div>
+</section>
+
+<section class="pg" id="p05" data-page="5">
+  <div class="pg-head">
+    <span class="pg-badge">原文件 P5</span>
+    <h3>Basic Rules of Probability <em>概率的基本法则</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="本 demo 未包含原课件（版权不属于本项目）。完整版会把原 PDF 整份内嵌，点这里即可跳到第 5 页对照。">打开原 PDF 该页（demo 已停用）</span>
+  </div>
+  <div class="pg-text">
+    <p>这一页只写了三个概念和两条法则，但它们是后面 58 页的全部工具。原文里的 <script type="math/tex">\mathcal{M}</script> 是一个花体字母（读作 "M"），在这里代表一个<em>模型假设</em>；先把它当成一个普通的随机变量就行。</p>
+    <p><b>三个概念：</b></p>
+    <table class="tbl">
+      <thead><tr><th>符号</th><th>读法</th><th>原页面的英文注解</th></tr></thead>
+      <tbody>
+        <tr><td><script type="math/tex">p(X)</script></td><td>X 的概率</td><td>probability of <script type="math/tex">X</script></td></tr>
+        <tr><td><script type="math/tex">p(X\mid\mathcal{M})</script></td><td>给定 M 时 X 的条件概率</td><td>conditional probability of <script type="math/tex">X</script> given <script type="math/tex">\mathcal{M}</script></td></tr>
+        <tr><td><script type="math/tex">p(X,\mathcal{M})</script></td><td>X 与 M 的联合概率</td><td>joint probability of <script type="math/tex">X</script> and <script type="math/tex">\mathcal{M}</script></td></tr>
+      </tbody>
+    </table>
+    <p><b>两条法则</b>（幻灯片用蓝色高亮标出了它们的名字）：</p>
+    <p class="eq"><script type="math/tex; mode=display">p(X,\mathcal{M}) = p(X\mid\mathcal{M})\,p(\mathcal{M}) \qquad\text{(product rule)}</script></p>
+    <p class="eq"><script type="math/tex; mode=display">p(X) = \int p(X\mid\mathcal{M})\,p(\mathcal{M})\,\mathrm{d}\mathcal{M} \qquad\text{(sum / integral rule)}</script></p>
+    <p>第二条里用积分而不是求和，是因为 <script type="math/tex">\mathcal{M}</script> 被当作连续量处理；如果它只取有限几个值，就该换成 <script type="math/tex">\sum</script>。两种写法意思一样：<b>把不关心的那个变量「积分掉／求和掉」，就得到剩下的那个变量的分布。</b></p>
+    <div class="tip"><b>为什么这两条这么重要？</b>因为贝叶斯定理（下一页）就是这两条法则的直接推论。而贝叶斯定理，正是朴素贝叶斯分类器的全部内容。</div>
+  </div>
+</section>
+
+<section class="pg" id="p06" data-page="6">
+  <div class="pg-head">
+    <span class="pg-badge">原文件 P6</span>
+    <h3>Bayes' Rule <em>贝叶斯法则</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="本 demo 未包含原课件（版权不属于本项目）。完整版会把原 PDF 整份内嵌，点这里即可跳到第 6 页对照。">打开原 PDF 该页（demo 已停用）</span>
+  </div>
+  <div class="pg-text">
+    <p><b>一句话概括贝叶斯定理：它告诉你「如何用新证据更新旧看法」。</b></p>
+    <p>推导只有一步。把乘法法则 <script type="math/tex">p(X,\mathcal{M})=p(X\mid\mathcal{M})p(\mathcal{M})</script> 对称地写另一遍，得到 <script type="math/tex">p(X,\mathcal{M})=p(\mathcal{M}\mid X)p(X)</script>——注意联合概率是对称的，两种分解方式必然相等（原文标题下面那句「Combining the definition of conditional prob. with the product and sum rules」说的就是这个）。于是：</p>
+    <script type="math/tex; mode=display">p(\mathcal{M}\mid X)=\frac{p(X,\mathcal{M})}{p(X)}=\frac{p(\mathcal{M})\,p(X\mid\mathcal{M})}{\displaystyle\int p(\mathcal{M})\,p(X\mid\mathcal{M})\,\mathrm{d}\mathcal{M}}</script>
+    <p>这正是原页面上的两行公式。四行字里其实有四个角色，第 7 页会给它们正式命名。这里先用直觉记住每一块的含义：</p>
+    <ul class="lst">
+      <li><b>左边 <script type="math/tex">p(\mathcal{M}\mid X)</script>：</b>看到数据 X 之后，我对假设 M 的<em>新</em>看法（后验）。</li>
+      <li><b><script type="math/tex">p(\mathcal{M})</script>：</b>看数据<em>之前</em>，我对 M 的旧看法（先验）。</li>
+      <li><b><script type="math/tex">p(X\mid\mathcal{M})</script>：</b>如果 M 成立，看到这份 X 有多合理（似然）。</li>
+      <li><b>分母：</b>数据 X 本身出现的总可能性，起归一化作用，保证右边算出来是合法概率。</li>
+    </ul>
+    <p>页面右侧是 Thomas Bayes（1702–1761）的画像，并注明这一结果最初发表于 1763 年《论机会学说中一个问题的解》（<i>An Essay towards Solving a Problem in the Doctrine of Chances</i>），刊登在伦敦皇家学会的《哲学汇刊》上——是他去世后才由朋友整理发表的。</p>
+    <div class="note"><b>注意一个细节：</b>分母那个积分和 <script type="math/tex">\mathcal{M}</script> 无关（它已经被积掉了），所以如果只是要找「哪个 <script type="math/tex">\mathcal{M}</script> 最可能」，分母是个常数，可以完全不管。第 35 页正是靠这一点把 MAP 的公式化简的。</div>
+  </div>
+</section>
+
+<section class="pg" id="p07" data-page="7">
+  <div class="pg-head">
+    <span class="pg-badge">原文件 P7</span>
+    <h3>Bayes' Rule Applied to Machine Learning <em>贝叶斯法则在机器学习中的应用</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="本 demo 未包含原课件（版权不属于本项目）。完整版会把原 PDF 整份内嵌，点这里即可跳到第 7 页对照。">打开原 PDF 该页（demo 已停用）</span>
+  </div>
+  <div class="pg-text">
+    <p>这一页把上一页的抽象公式落到机器学习的具体场景：<b>让 <script type="math/tex">\mathcal{D}</script> 表示手上的数据集，让 <script type="math/tex">\mathcal{M}</script> 表示一个模型</b>。于是：</p>
+    <script type="math/tex; mode=display">p(\mathcal{M}\mid\mathcal{D})=\frac{p(\mathcal{M})\,p(\mathcal{D}\mid\mathcal{M})}{p(\mathcal{D})}</script>
+    <p>原页面右侧把这四项逐一命名，这是全篇最该背下来的对照表：</p>
+    <table class="tbl">
+      <thead><tr><th>符号</th><th>名称</th><th>中文含义</th></tr></thead>
+      <tbody>
+        <tr><td><script type="math/tex">p(\mathcal{M})</script></td><td>prior probability of <script type="math/tex">\mathcal{M}</script></td><td><b>先验</b>：还没看数据时，你认为哪个模型更可信</td></tr>
+        <tr><td><script type="math/tex">p(\mathcal{D}\mid\mathcal{M})</script></td><td>likelihood of <script type="math/tex">\mathcal{M}</script> on data</td><td><b>似然</b>：这个模型生成出当前这份数据的可能性</td></tr>
+        <tr><td><script type="math/tex">p(\mathcal{M}\mid\mathcal{D})</script></td><td>posterior probability of <script type="math/tex">\mathcal{M}</script> given <script type="math/tex">\mathcal{D}</script></td><td><b>后验</b>：看过数据之后，模型的可信度</td></tr>
+        <tr><td><script type="math/tex">p(\mathcal{D})</script></td><td>marginal likelihood or evidence</td><td><b>边缘似然／证据</b>：归一化常数</td></tr>
+      </tbody>
+    </table>
+    <p>接着是<b>模型比较（Model Comparison）</b>。这里引入了一个「模型空间」<script type="math/tex">\mathbb{M}=\{\mathcal{M}\}</script>，并写出：</p>
+    <script type="math/tex; mode=display">p(\mathbb{M}\mid\mathcal{D})=\frac{p(\mathcal{D}\mid\mathbb{M})\,p(\mathbb{M})}{p(\mathcal{D})},\qquad p(\mathcal{D}\mid\mathbb{M})=\int p(\mathcal{D}\mid\mathcal{M},\mathbb{M})\,p(\mathcal{M}\mid\mathbb{M})\,\mathrm{d}\mathcal{M}</script>
+    <p>它的意思：如果模型本身也不确定（是一族模型 <script type="math/tex">\mathbb{M}</script> 里的哪一个），那就把 <script type="math/tex">\mathcal{M}</script> 积分掉，对整个模型族算一个总的后验。这一步用到的正是第 5 页那条求和法则。</p>
+    <p>最后是<b>预测（Prediction）</b>：</p>
+    <script type="math/tex; mode=display">p(x\mid\mathcal{D},\mathbb{M})=\int p(x\mid\mathcal{M},\mathcal{D},\mathbb{M})\,p(\mathcal{M}\mid\mathcal{D},\mathbb{M})\,\mathrm{d}\mathcal{M}\ \xrightarrow{\ \text{under some common assumptions}\ }\ p(x\mid\mathcal{M})</script>
+    <p>公式在说：要对新样本 <script type="math/tex">x</script> 做预测，严格做法是把「所有可能模型各自给出的预测」按它们的后验概率加权平均。但那个积分通常算不出来，所以在一些常见假设下，直接用<em>一个</em>模型（比如最可能的那个）代替整个积分——这就是第 35–38 页 MAP 估计的思想来源。</p>
+    <div class="tip"><b>记忆钩子：</b>先验 × 似然 ∝ 后验。看见这三个词，脑子里就该浮现这个乘法关系。</div>
+  </div>
+</section>
+
+<section class="pg" id="p08" data-page="8">
+  <div class="pg-head">
+    <span class="pg-badge">原文件 P8</span>
+    <h3>Three Fundamental Questions <em>三个基本问题</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="本 demo 未包含原课件（版权不属于本项目）。完整版会把原 PDF 整份内嵌，点这里即可跳到第 8 页对照。">打开原 PDF 该页（demo 已停用）</span>
+  </div>
+  <div class="pg-text">
+    <p>这一页是一张「地图」，给出了任何概率模型都必须回答的三个问题。它不涉及公式，但值得记住，因为后续每一页其实都在回答其中之一。</p>
+    <h4>1. 表示（Representation）</h4>
+    <p>「How to capture/model uncertainty in possible worlds?」「How to encode our domain knowledge / assumptions / constraints?」——<b>如何把「不确定性」写成数学对象，又如何把我们的先验知识塞进去？</b>本课件的回答是：用概率分布（联合分布、条件分布）来表示不确定性；用朴素贝叶斯假设、Beta 先验来注入假设。</p>
+    <h4>2. 推断（Inference）</h4>
+    <p>「How do I answer questions/queries according to my model and/or based on given data?」——<b>给定模型和数据，怎么回答具体的问题？</b>页面给了一个例子：<script type="math/tex">P(X_i\mid \mathcal{D})</script>，即在看到数据后，某个变量的分布是什么。第 19 页的贝叶斯决策规则就属于这一类。</p>
+    <h4>3. 学习（Learning）</h4>
+    <p>「What model is 'right' for my data?」——<b>哪个模型才是对的？</b>页面给出的公式是：</p>
+    <script type="math/tex; mode=display">\mathcal{M}=\arg\max_{\mathcal{M}\in\mathbb{M}}F(\mathcal{D};\mathcal{M})</script>
+    <p>读法：在所有候选模型里，挑出让某个评分函数 <script type="math/tex">F</script> 最大的那个。这个 <script type="math/tex">F</script> 取什么，正是后面 MLE 与 MAP 的分歧所在——MLE 取 <script type="math/tex">F=p(\mathcal{D}\mid\mathcal{M})</script>，MAP 取 <script type="math/tex">F=p(\mathcal{D}\mid\mathcal{M})p(\mathcal{M})</script>。</p>
+    <div class="note"><b>为什么先讲这三个问题？</b>因为它们构成了后面评价任何模型的框架。第 63 页的总结里对逻辑回归的评价，本质上就是「它的表示是什么、怎么推断、怎么学」这三句话。</div>
+  </div>
+</section>

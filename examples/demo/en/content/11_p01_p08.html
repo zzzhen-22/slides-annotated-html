@@ -1,0 +1,178 @@
+<section class="pg" id="p01" data-page="1">
+  <div class="pg-head">
+    <span class="pg-badge">Source P1</span>
+    <h3>Introduction to Artificial Intelligence — Logistic Regression <em>Cover page</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="This demo does not include the original deck (its copyright is not held by this project). The full version embeds the whole PDF, and clicking would jump to page 1.">Open this page in the original PDF (disabled in demo)</span>
+  </div>
+  <div class="pg-text">
+    <p>This is the cover of the deck: the course <i>Introduction to Artificial Intelligence</i>, today's topic "Logistic Regression", taught by Su Hang (Tsinghua University).</p>
+    <p>There is no new content on this page, but it sets the tone — the next 62 pages develop <b>one of the most fundamental and time-tested classification models in machine learning</b>. Logistic regression is still widely used today in spam filtering, click-through-rate prediction, credit scoring, and disease-risk estimation; and the machinery behind it (maximum likelihood + gradient methods) is the prototype of almost every modern neural-network training procedure.</p>
+    <div class="note"><b>How to read the title:</b> keep two words in mind — <em>logistic</em> (referring to the Sigmoid function) and <em>regression</em> (despite the name, it actually performs <em>classification</em>). This awkward naming is explained on page 46.</div>
+  </div>
+</section>
+
+<section class="pg" id="p02" data-page="2">
+  <div class="pg-head">
+    <span class="pg-badge">Source P2</span>
+    <h3>Supervised Learning <em>learning a predictor from labeled examples</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="This demo does not include the original deck (its copyright is not held by this project). The full version embeds the whole PDF, and clicking would jump to page 2.">Open this page in the original PDF (disabled in demo)</span>
+  </div>
+  <div class="pg-text">
+    <p><b>This page translates "supervised learning" into plain words: give the machine a batch of questions with correct answers, and let it distill its own rule for solving them.</b></p>
+    <p>The slide says "Task: learn a predictive function":</p>
+    <script type="math/tex; mode=display">h:\ \mathcal{X}\to\mathcal{Y}</script>
+    <p>Two sets appear here: the <b>feature space <script type="math/tex">\mathcal{X}</script></b> (the input the model sees) and the <b>label space <script type="math/tex">\mathcal{Y}</script></b> (what we want to predict).</p>
+    <p>The slide contrasts two families of examples:</p>
+    <ul class="lst">
+      <li><b>Text classification:</b> the features <script type="math/tex">\mathcal{X}</script> are "the words appearing in a document", and the labels <script type="math/tex">\mathcal{Y}</script> are categories like <code>Sports</code>, <code>News</code>, <code>Politics</code>. Here <script type="math/tex">\mathcal{Y}</script> is a set of <em>discrete categories</em>.</li>
+      <li><b>Stock-price prediction:</b> the features <script type="math/tex">\mathcal{X}</script> are "market information up to time <script type="math/tex">t</script>", and the label is a <em>numeric value</em> like <code>$20.50</code>.</li>
+    </ul>
+    <p>The slide also highlights one word in red: <b>knowledge</b>. The point is that the correspondence between <script type="math/tex">\mathcal{X}</script> and <script type="math/tex">\mathcal{Y}</script> is exactly the "knowledge" we want the machine to learn — not rules written in code, but something estimated from data.</p>
+    <p>The notation for training data appears at the bottom:</p>
+    <script type="math/tex; mode=display">\{\langle \mathbf{x}_d,y_d\rangle\}_{d=1}^{D},\qquad \mathbf{x}_d\in\mathcal{X},\ y_d\in\mathcal{Y}</script>
+    <p>Plainly: there are <script type="math/tex">D</script> samples; the <script type="math/tex">d</script>-th one pairs an input <script type="math/tex">\mathbf{x}_d</script> (boldface because it is <em>a vector</em> of multiple features) with its answer <script type="math/tex">y_d</script>. This notation recurs throughout.</p>
+    <div class="tip"><b>What does "supervised" mean?</b> Every input in the training data comes with its correct answer. Conversely, inputs without answers make it "unsupervised learning" (clustering, for example).</div>
+  </div>
+</section>
+
+<section class="pg" id="p03" data-page="3">
+  <div class="pg-head">
+    <span class="pg-badge">Source P3</span>
+    <h3>Supervised Learning — regression <em>a variant with continuous labels</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="This demo does not include the original deck (its copyright is not held by this project). The full version embeds the whole PDF, and clicking would jump to page 3.">Open this page in the original PDF (disabled in demo)</span>
+  </div>
+  <div class="pg-text">
+    <p>The same "feature space → label space" arrow is drawn, but this page stresses the nature of the labels: <b>they are continuous values</b>. A red box <b>Continuous Labels</b> is added in the lower right.</p>
+    <ul class="lst">
+      <li>Input: market information up to time <script type="math/tex">t</script> → output: a stock price <code>$20.50</code>;</li>
+      <li>Input: "session, location, time" <script type="math/tex">(\text{session},\text{location},\text{time}\dots)</script> → output: a temperature <code>42°F</code>.</li>
+    </ul>
+    <p><b>The real job of this page is to draw the boundary between regression and classification.</b> Both take feature vectors as input; the difference is only in the output:</p>
+    <table class="tbl">
+      <thead><tr><th></th><th>Type of label <script type="math/tex">y</script></th><th>Task</th><th>Example in this deck</th></tr></thead>
+      <tbody>
+        <tr><td>Continuous output</td><td>Real number, e.g. <script type="math/tex">20.50</script>, <script type="math/tex">42</script></td><td><b>Regression</b></td><td>Stock price, temperature, Bayesian regression on page 40</td></tr>
+        <tr><td>Discrete output</td><td>e.g. <code>Sports/News</code>, <code>bird/mammal</code></td><td><b>Classification</b></td><td>Naive Bayes, logistic regression</td></tr>
+      </tbody>
+    </table>
+    <div class="note"><b>Foreshadowing:</b> here lies the naming confusion — logistic regression is called "regression" but outputs a <em>probability</em> (a continuous value between 0 and 1), which is then thresholded into a class. The name keeps "regression" because producing that probability really is a regression. Page 47 completes this line of reasoning.</div>
+  </div>
+</section>
+
+<section class="pg" id="p04" data-page="4">
+  <div class="pg-head">
+    <span class="pg-badge">Source P4</span>
+    <h3>Outline <em>the ladder of this lecture</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="This demo does not include the original deck (its copyright is not held by this project). The full version embeds the whole PDF, and clicking would jump to page 4.">Open this page in the original PDF (disabled in demo)</span>
+  </div>
+  <div class="pg-text">
+    <p>The outline lists five topics, forming a knowledge ladder:</p>
+    <ol class="lst">
+      <li><b>Probabilistic methods for supervised learning</b> (pages 5–15)</li>
+      <li><b>Naive Bayes classifier</b> (pages 16–39)</li>
+      <li><b>Logistic regression</b> (pages 40–63)</li>
+      <li><b>Exponential family distributions</b></li>
+      <li><b>Generalized linear models</b></li>
+    </ol>
+    <div class="flag">
+      <b>Worth flagging:</b> in the original 63 pages, topics 4 and 5 (exponential family, generalized linear models) are <em>never actually developed</em>. The deck jumps from logistic regression's convergence curves straight to the summary. This document strictly preserves the original order — these two sections are not inserted into the main text; instead, concise supplements A / B are given at the end. They are the key to understanding <i>why</i> logistic regression has the Sigmoid shape, and are worth knowing.
+    </div>
+    <p>Note also that the ordering of the outline is itself a narrative: <b>probability methods first (the foundation), then Naive Bayes (the first complete working model), then logistic regression (swapping the generative view for the discriminative one)</b>. The summary on page 63 calls back to this structure.</p>
+  </div>
+</section>
+
+<section class="pg" id="p05" data-page="5">
+  <div class="pg-head">
+    <span class="pg-badge">Source P5</span>
+    <h3>Basic Rules of Probability <em>the entire toolbox, in one page</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="This demo does not include the original deck (its copyright is not held by this project). The full version embeds the whole PDF, and clicking would jump to page 5.">Open this page in the original PDF (disabled in demo)</span>
+  </div>
+  <div class="pg-text">
+    <p>This page holds only three concepts and two rules, yet they are the entire toolbox for the remaining 58 pages. The script letter <script type="math/tex">\mathcal{M}</script> in the original stands for a <em>model assumption</em>; for now, treat it as an ordinary random variable.</p>
+    <p><b>Three concepts:</b></p>
+    <table class="tbl">
+      <thead><tr><th>Symbol</th><th>Reading</th><th>On-slide annotation</th></tr></thead>
+      <tbody>
+        <tr><td><script type="math/tex">p(X)</script></td><td>probability of X</td><td>probability of <script type="math/tex">X</script></td></tr>
+        <tr><td><script type="math/tex">p(X\mid\mathcal{M})</script></td><td>conditional probability of X given M</td><td>conditional probability of <script type="math/tex">X</script> given <script type="math/tex">\mathcal{M}</script></td></tr>
+        <tr><td><script type="math/tex">p(X,\mathcal{M})</script></td><td>joint probability of X and M</td><td>joint probability of <script type="math/tex">X</script> and <script type="math/tex">\mathcal{M}</script></td></tr>
+      </tbody>
+    </table>
+    <p><b>Two rules</b> (the slide highlights their names in blue):</p>
+    <p class="eq"><script type="math/tex; mode=display">p(X,\mathcal{M}) = p(X\mid\mathcal{M})\,p(\mathcal{M}) \qquad\text{(product rule)}</script></p>
+    <p class="eq"><script type="math/tex; mode=display">p(X) = \int p(X\mid\mathcal{M})\,p(\mathcal{M})\,\mathrm{d}\mathcal{M} \qquad\text{(sum / integral rule)}</script></p>
+    <p>The second uses an integral rather than a sum because <script type="math/tex">\mathcal{M}</script> is treated as continuous; if it took only finitely many values, you would write <script type="math/tex">\sum</script>. Both say the same thing: <b>marginalize out the variable you don't care about, and you get the distribution of the one you do.</b></p>
+    <div class="tip"><b>Why do these two rules matter so much?</b> Because Bayes' rule (next page) is their direct corollary — and Bayes' rule is the entire content of the Naive Bayes classifier.</div>
+  </div>
+</section>
+
+<section class="pg" id="p06" data-page="6">
+  <div class="pg-head">
+    <span class="pg-badge">Source P6</span>
+    <h3>Bayes' Rule <em>updating old beliefs with new evidence</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="This demo does not include the original deck (its copyright is not held by this project). The full version embeds the whole PDF, and clicking would jump to page 6.">Open this page in the original PDF (disabled in demo)</span>
+  </div>
+  <div class="pg-text">
+    <p><b>Bayes' theorem in one sentence: how to update an old belief with new evidence.</b></p>
+    <p>The derivation is one step. Write the product rule <script type="math/tex">p(X,\mathcal{M})=p(X\mid\mathcal{M})p(\mathcal{M})</script> symmetrically a second way, <script type="math/tex">p(X,\mathcal{M})=p(\mathcal{M}\mid X)p(X)</script> — the joint probability is symmetric, so the two decompositions must be equal (that is exactly what the sentence under the original title, "Combining the definition of conditional prob. with the product and sum rules", says). Hence:</p>
+    <script type="math/tex; mode=display">p(\mathcal{M}\mid X)=\frac{p(X,\mathcal{M})}{p(X)}=\frac{p(\mathcal{M})\,p(X\mid\mathcal{M})}{\displaystyle\int p(\mathcal{M})\,p(X\mid\mathcal{M})\,\mathrm{d}\mathcal{M}}</script>
+    <p>These are the two lines on the original slide. Four roles hide in those four terms; page 7 names them formally. For now, hold the intuition for each piece:</p>
+    <ul class="lst">
+      <li><b>Left side <script type="math/tex">p(\mathcal{M}\mid X)</script>:</b> after seeing data X, my <em>new</em> belief about hypothesis M (the posterior).</li>
+      <li><b><script type="math/tex">p(\mathcal{M})</script>:</b> before the data, my old belief about M (the prior).</li>
+      <li><b><script type="math/tex">p(X\mid\mathcal{M})</script>:</b> how plausible this X is if M holds (the likelihood).</li>
+      <li><b>Denominator:</b> the total chance of observing X at all — a normalizer ensuring the right side is a legal probability.</li>
+    </ul>
+    <p>On the right of the slide is a portrait of Thomas Bayes (1702–1761), noting that the result first appeared posthumously in 1763 in <i>An Essay towards Solving a Problem in the Doctrine of Chances</i>, published in the Philosophical Transactions of the Royal Society of London — arranged by friends after his death.</p>
+    <div class="note"><b>A detail worth noticing:</b> the integral in the denominator does not involve <script type="math/tex">\mathcal{M}</script> (it has already been integrated out), so if you only need to know "which <script type="math/tex">\mathcal{M}</script> is most likely", the denominator is a constant and can be ignored entirely. Page 35 uses exactly this to simplify the MAP formula.</div>
+  </div>
+</section>
+
+<section class="pg" id="p07" data-page="7">
+  <div class="pg-head">
+    <span class="pg-badge">Source P7</span>
+    <h3>Bayes' Rule Applied to Machine Learning <em>naming the four terms</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="This demo does not include the original deck (its copyright is not held by this project). The full version embeds the whole PDF, and clicking would jump to page 7.">Open this page in the original PDF (disabled in demo)</span>
+  </div>
+  <div class="pg-text">
+    <p>This page lands the abstract formula in a concrete machine-learning setting: <b>let <script type="math/tex">\mathcal{D}</script> be the dataset at hand and <script type="math/tex">\mathcal{M}</script> a model</b>. Then:</p>
+    <script type="math/tex; mode=display">p(\mathcal{M}\mid\mathcal{D})=\frac{p(\mathcal{M})\,p(\mathcal{D}\mid\mathcal{M})}{p(\mathcal{D})}</script>
+    <p>The right side of the slide names all four terms — the single most worth-memorizing table in this deck:</p>
+    <table class="tbl">
+      <thead><tr><th>Symbol</th><th>Name</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><script type="math/tex">p(\mathcal{M})</script></td><td>prior probability of <script type="math/tex">\mathcal{M}</script></td><td><b>Prior</b>: which model you consider more credible before seeing any data</td></tr>
+        <tr><td><script type="math/tex">p(\mathcal{D}\mid\mathcal{M})</script></td><td>likelihood of <script type="math/tex">\mathcal{M}</script> on data</td><td><b>Likelihood</b>: how plausibly this model would have generated the observed data</td></tr>
+        <tr><td><script type="math/tex">p(\mathcal{M}\mid\mathcal{D})</script></td><td>posterior probability of <script type="math/tex">\mathcal{M}</script> given <script type="math/tex">\mathcal{D}</script></td><td><b>Posterior</b>: the model's credibility after seeing the data</td></tr>
+        <tr><td><script type="math/tex">p(\mathcal{D})</script></td><td>marginal likelihood or evidence</td><td><b>Evidence</b>: the normalizing constant</td></tr>
+      </tbody>
+    </table>
+    <p>Next comes <b>model comparison</b>. A "model space" <script type="math/tex">\mathbb{M}=\{\mathcal{M}\}</script> is introduced, and:</p>
+    <script type="math/tex; mode=display">p(\mathbb{M}\mid\mathcal{D})=\frac{p(\mathcal{D}\mid\mathbb{M})\,p(\mathbb{M})}{p(\mathcal{D})},\qquad p(\mathcal{D}\mid\mathbb{M})=\int p(\mathcal{D}\mid\mathcal{M},\mathbb{M})\,p(\mathcal{M}\mid\mathbb{M})\,\mathrm{d}\mathcal{M}</script>
+    <p>Meaning: if the model itself is uncertain (which member of a family <script type="math/tex">\mathbb{M}</script>?), integrate out <script type="math/tex">\mathcal{M}</script> and score the whole family with one posterior. This is exactly the sum rule from page 5 at work.</p>
+    <p>Finally, <b>prediction</b>:</p>
+    <script type="math/tex; mode=display">p(x\mid\mathcal{D},\mathbb{M})=\int p(x\mid\mathcal{M},\mathcal{D},\mathbb{M})\,p(\mathcal{M}\mid\mathcal{D},\mathbb{M})\,\mathrm{d}\mathcal{M}\ \xrightarrow{\ \text{under some common assumptions}\ }\ p(x\mid\mathcal{M})</script>
+    <p>The formula says: to predict a new sample <script type="math/tex">x</script>, the strict approach averages the predictions of all possible models, weighted by their posteriors. That integral is usually intractable, so under some common assumptions one model (say, the most probable one) substitutes for the whole integral — the origin of the MAP idea on pages 35–38.</p>
+    <div class="tip"><b>Memory hook:</b> prior × likelihood ∝ posterior. Whenever you see those three words, this multiplicative relationship should light up.</div>
+  </div>
+</section>
+
+<section class="pg" id="p08" data-page="8">
+  <div class="pg-head">
+    <span class="pg-badge">Source P8</span>
+    <h3>Three Fundamental Questions <em>a map of probabilistic modeling</em></h3>
+    <span class="pdf-link" aria-disabled="true" title="This demo does not include the original deck (its copyright is not held by this project). The full version embeds the whole PDF, and clicking would jump to page 8.">Open this page in the original PDF (disabled in demo)</span>
+  </div>
+  <div class="pg-text">
+    <p>This page is a map: three questions that any probabilistic model must answer. No formulas here, but worth memorizing — every subsequent page is answering one of them.</p>
+    <h4>1. Representation</h4>
+    <p>"How to capture/model uncertainty in possible worlds?" "How to encode our domain knowledge / assumptions / constraints?" — <b>how to write uncertainty down as a mathematical object, and how to inject prior knowledge into it?</b> This deck's answers: represent uncertainty with probability distributions (joint, conditional); inject assumptions via the Naive Bayes assumption and Beta priors.</p>
+    <h4>2. Inference</h4>
+    <p>"How do I answer questions/queries according to my model and/or based on given data?" — <b>given a model and data, how do we answer concrete questions?</b> The slide gives one example: <script type="math/tex">P(X_i\mid \mathcal{D})</script> — the distribution of some variable after observing the data. The Bayesian decision rule on page 19 belongs here.</p>
+    <h4>3. Learning</h4>
+    <p>"What model is 'right' for my data?" The slide gives:</p>
+    <script type="math/tex; mode=display">\mathcal{M}=\arg\max_{\mathcal{M}\in\mathbb{M}}F(\mathcal{D};\mathcal{M})</script>
+    <p>Reading: among all candidate models, pick the one maximizing some scoring function <script type="math/tex">F</script>. What <script type="math/tex">F</script> should be is precisely where MLE and MAP diverge — MLE takes <script type="math/tex">F=p(\mathcal{D}\mid\mathcal{M})</script>; MAP takes <script type="math/tex">F=p(\mathcal{D}\mid\mathcal{M})p(\mathcal{M})</script>.</p>
+    <div class="note"><b>Why start with these three questions?</b> Because they form the framework for judging every model that follows. The evaluation of logistic regression in the page-63 summary is, at heart, three sentences: what it represents, how it infers, how it learns.</div>
+  </div>
+</section>

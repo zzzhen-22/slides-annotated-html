@@ -305,3 +305,39 @@ body.drawer-open #toTop{right:416px}
 
 /* .tb-btn 自带 display:inline-flex，会盖掉 [hidden] 的 display:none —— 显式兜住 */
 .tb-btn[hidden]{display:none!important}
+
+/* ---------------------------------------------------------------------------
+   正文搜索：结果面板（#qres）+ 正文命中高亮（mark.q-hit）
+   —— 与上面的「我的标记」是两套东西：mark.hl 是**持久**的（进笔记、存 localStorage），
+      mark.q-hit 是**临时**的（清空查询即拆除、永不落盘）。
+      配色刻意错开：笔记是黄色下划线式，搜索命中是蓝色实心块，
+      同一条文字上两者叠在一起也一眼分得清。
+   --------------------------------------------------------------------------- */
+.toc-nav.off{display:none}
+.qres{display:none;flex:1;overflow-y:auto;padding:10px 10px 60px;scrollbar-width:thin}
+.qres.on{display:block}
+.qres::-webkit-scrollbar{width:8px}
+.qres::-webkit-scrollbar-thumb{background:#d8dee9;border-radius:8px;border:2px solid #fff}
+.qsum{
+  font-size:11.5px;color:var(--muted);line-height:1.7;
+  padding:4px 8px 10px;margin-bottom:5px;border-bottom:1px solid var(--line2);
+}
+.qhit{padding:7px 9px;border-radius:8px;cursor:pointer;transition:background .13s}
+.qhit:hover{background:var(--accent-soft)}
+.qhit.on{background:var(--accent-soft);box-shadow:inset 2px 0 0 var(--accent)}
+.qhit .qp{
+  font-size:11.5px;font-family:var(--mono);color:var(--accent);margin-bottom:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.qhit .qs{font-size:12.4px;color:var(--text2);line-height:1.6;word-break:break-word}
+mark.q-hit{
+  background:#bfe3ff;color:inherit;padding:0 1px;border-radius:3px;
+  box-shadow:inset 0 -2px 0 #4a9fe0;
+}
+/* 命中跨了内联元素边界、套不上 mark 时，让所在块整块闪一下 */
+.q-flash{background:#e8f4ff;border-radius:6px;transition:background .35s}
+
+@media print{
+  .qres{display:none!important}
+  mark.q-hit{background:#bfe3ff!important;box-shadow:none!important}
+}

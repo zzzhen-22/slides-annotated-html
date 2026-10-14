@@ -193,7 +193,9 @@ def check_feature_names():
 
 
 # ───────────────────────────── ④ 流水线④–⑧ 各步引用的脚本，README 校验表都列了
-RE_STEP = re.compile(r'^\s*([④-⑳]b?)\s+(\S+\.(?:py|js))', re.M)
+# 步骤号允许带一个小写字母后缀（⑥b / ⑥c…）：run_all.py 里后加的回归探针
+# 一律以「挂靠在原步骤号之后」的方式编号，不改动既有编号（pitfalls 第 45 条的教训）。
+RE_STEP = re.compile(r'^\s*([④-⑳][a-z]?)\s+(\S+\.(?:py|js))', re.M)
 
 
 def check_pipeline_coverage():

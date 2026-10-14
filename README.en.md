@@ -13,7 +13,7 @@ Feed it a slide deck (a lecture PPT exported to PDF, a tech talk, training mater
 
 - Explanations on the **left**, original page thumbnails on the **right** — no window switching
 - Formulas rendered by **KaTeX, fully offline** (fonts embedded as data URIs)
-- Five interactions: collapsible TOC / per-section overview cards / thumbnails auto-enlarge when the sidebar collapses / **highlight text → notes drawer** / **A− / A＋ to adjust body text size (level saved in your browser)**
+- Six interactions: collapsible TOC / per-section overview cards / thumbnails auto-enlarge when the sidebar collapses / **highlight text → notes drawer** / **A− / A＋ to adjust body text size (level saved in your browser)** / **full-text search over the body (hit list with jump & highlight, not just a title filter)**
 - Clearly separates "what the original says" from "what the explainer added" (green = intuition, blue = added derivation, red = source issue, gray = quotation)
 - Optionally **embed the original PDF** (base64) so page-deep links survive across devices
 
@@ -92,13 +92,14 @@ Every deliverable must pass all of these — mechanical checks catch what screen
 | Check | Catches |
 |---|---|
 | `check_math.js` | formulas that cannot render, CJK inside math, broken anchors, missing glyphs (hard fail), leftover TODOs |
-| `check_ui.py` | the five interactions' wiring — DOM / CSS / JS alignment (including the `--fs` scale variable, the `max-width` compensation, and the font-size localStorage key) |
+| `check_ui.py` | the six interactions' wiring — DOM / CSS / JS alignment (including the `--fs` scale variable, the `max-width` compensation, the font-size localStorage key, and the separation between the two highlight classes) |
 | `probe.py` + `probe_marks.js` | structural damage invisible in screenshots (e.g. block elements inside `<mark>`), via real-UI selection & assertion |
 | `probe.py` + `probe_font.js` | **body text size control**: 100% on load, `--fs` / label / localStorage staying in sync after `step()`, restore via `Font.init()`, MIN(0.9)/MAX(1.4) clamping and button disabling; run twice with `--profile` to prove cross-session persistence |
+| `probe.py` + `probe_find.js` | **full-text search**: lazy index over every non-empty section, hit count = result rows, `mark.q-hit` in both the snippet and the body, jumping only adds elements (block count and every character unchanged), multi-word queries are AND, the TOC is handed back on zero hits, Esc clears every highlight, and `mark.hl` is never touched | looks |
 | `probe.py` + `probe_doc.js` | **is the content actually finished**: pending pages N / M, pages missing a thumbnail, broken TOC anchors, leftover KaTeX `<script>` tags, TODO comments, missing-glyph risk | whether the explanations are *correct* |
 | `shot.py` | looks and real interaction states |
 
-> The six rows above check the **output**. One more script checks the **suite itself**: `check_docs.py`
+> The seven rows above check the **output**. One more script checks the **suite itself**: `check_docs.py`
 > asserts that cross-document facts ("how many interactions?", which scripts a step runs, the
 > pitfalls numbering) stay in sync across the five docs and the code. It is what catches
 > "changed the feature, forgot the docs". It is not part of `run_all.py` (that pipeline runs a

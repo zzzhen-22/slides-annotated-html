@@ -106,13 +106,18 @@ console.log('⑤ 占位符残留：' + (leftovers.length ? leftovers.join(', ') 
 if (leftovers.length) hardFail = 1;
 
 /* ---------- ⑤b TODO 残留 ----------
-   **必须先把所有 <script>…</script> 挖掉**，否则必然误报，实测两个来源：
+   **必须先把所有内嵌载荷挖掉**，否则必然误报，实测三个来源：
      ① 内嵌 PDF 的 base64 payload（随机字符里碰巧拼出 TODO —— 真碰到过 1 次）
      ② 注入页面的体检探针自身源码（probe_doc.js 的注释里就写着 TODO）
-   probe_doc.js 那边只看「可见正文」，这里看的是源码层面，两边互补。 */
-const noScript = html.replace(/<script[\s\S]*?<\/script>/g, '');
+     ③ **缩略图的 `data:image/jpeg;base64,…`**（同样是小概率巧合，2026-10-13 实测命中
+        了同一份课件的 thumb_42 与 thumb_77 两张，一次报 2 处）。
+        ①只挖 <script> 时 ③ 会漏网 —— 所以除了 script，data-URI 载荷也要一起挖掉。
+        base64 是**二进制载荷**，不是源码，本来就不该参与任何「源码层」体检。 */
+const noScript = html
+  .replace(/<script[\s\S]*?<\/script>/g, '')
+  .replace(/data:[\w.+-]+\/[\w.+-]+;base64,[A-Za-z0-9+/=]+/g, '');
 const todoHits = (noScript.match(/TODO/g) || []).length;
-console.log('⑤b TODO 残留（已排除 script / 内嵌 base64）：' + todoHits + ' 处' +
+console.log('⑤b TODO 残留（已排除 script / 内嵌 base64 载荷）：' + todoHits + ' 处' +
   (todoHits ? '  ⚠ 请清掉；目标 0' : '  ✔'));
 
 const thumbs = (html.match(/class="thumb"/g) || []).length;

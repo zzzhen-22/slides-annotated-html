@@ -1,0 +1,57 @@
+<section class="card overview" id="ov1">
+  <span class="ov-kicker">Section overview · Part 1</span>
+  <h2>The Language of Probability<em>Probabilistic Foundations — learn to speak before learning to model</em></h2>
+  <p class="ov-range">Covers source P1–P8 ｜ 8 pages ｜ ~15 min</p>
+
+  <p class="lead"><b>This section teaches no models. It does one thing: turns "uncertainty" into computable symbols.</b> The Naive Bayes classifier and logistic regression that follow are built entirely on the notation and the two rules defined here — so these 8 pages deserve a slow read. Skip them and you will keep stumbling over expressions like <script type="math/tex">p(X\mid\mathcal{M})</script>.</p>
+
+  <div class="ov-grid">
+    <div class="ov-item">
+      <h5>The through-line of these 8 pages</h5>
+      <ol class="lst" style="margin-top:4px">
+        <li><b>Define the task</b> (P2–P3): supervised learning is "predict <script type="math/tex">y</script> from input <script type="math/tex">\mathbf{x}</script>"; continuous <script type="math/tex">y</script> is <b>regression</b>, discrete <script type="math/tex">y</script> is <b>classification</b>.</li>
+        <li><b>Define the language</b> (P5–P6): three quantities — joint, marginal, conditional probability — plus the product rule and the sum rule.</li>
+        <li><b>Assemble one tool</b> (P6–P7): Bayes' theorem — "posterior ∝ prior × likelihood" — the complete mechanism for updating beliefs with evidence.</li>
+        <li><b>Hand out a map</b> (P8): every probabilistic model must answer <b>representation / inference / learning</b>.</li>
+      </ol>
+    </div>
+
+    <div class="ov-item">
+      <h5>Notation to memorize</h5>
+      <ul>
+        <li><script type="math/tex">p(X)</script> probability, <script type="math/tex">p(X\mid Y)</script> conditional, <script type="math/tex">p(X,Y)</script> joint</li>
+        <li><b>Product rule</b>: <script type="math/tex">p(X,Y)=p(X\mid Y)p(Y)</script></li>
+        <li><b>Sum rule</b>: <script type="math/tex">p(X)=\sum_Y p(X,Y)</script> (an integral for continuous Y)</li>
+        <li><b>Bayes' theorem</b>: <script type="math/tex">p(Y\mid X)=\dfrac{p(Y)p(X\mid Y)}{p(X)}</script></li>
+        <li>Uppercase <script type="math/tex">X</script> is a random variable; lowercase <script type="math/tex">x</script> is a value it takes</li>
+      </ul>
+    </div>
+
+    <div class="ov-item">
+      <h5>Two easiest points to confuse</h5>
+      <p><b>① <script type="math/tex">p(X\mid\mathcal{M})</script> does not mean "X causes M".</b> The left of the bar is what's being explained; the right is what's assumed known. Read it as "the plausibility of X, given M" and you'll never go wrong.</p>
+      <p><b>② "Likelihood" and "conditional probability" are not two different things.</b> The same expression <script type="math/tex">p(D\mid\theta)</script> is called a likelihood when you fix <script type="math/tex">D</script> and vary <script type="math/tex">\theta</script>, and a conditional probability when you fix <script type="math/tex">\theta</script> and vary <script type="math/tex">D</script> — the viewpoint changes, not the formula.</p>
+    </div>
+
+    <div class="ov-item">
+      <h5>Self-check after reading</h5>
+      <ol class="ov-questions">
+        <li>Given <script type="math/tex">p(\mathcal{M})</script>, <script type="math/tex">p(X\mid\mathcal{M})</script> and <script type="math/tex">p(X)</script>, how do you compute <script type="math/tex">p(\mathcal{M}\mid X)</script>?</li>
+        <li>Which terms of Bayes' formula are the "prior", "likelihood" and "posterior" — and which one do we actually want?</li>
+        <li>Of the three questions on page 8 — representation / inference / learning — <b>which one</b> asks "how do I answer a concrete query"?</li>
+      </ol>
+    </div>
+  </div>
+
+  <p><b>Connection to what follows:</b> the Bayes' theorem from this section is used directly as a classifier in Part 2 (Naive Bayes); and the "learning" question of P8 — "which model is right?" — becomes the fork between MLE and MAP in the second half.</p>
+
+  <div class="ov-chips">
+    <span class="chip-label">Quick jumps:</span>
+    <a href="#p02">P2 Supervised learning</a>
+    <a href="#p03">P3 Regression</a>
+    <a href="#p05">P5 Probability rules</a>
+    <a href="#p06">P6 Bayes' rule</a>
+    <a href="#p07">P7 Applied to ML</a>
+    <a href="#p08">P8 Three questions</a>
+  </div>
+</section>

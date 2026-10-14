@@ -14,7 +14,7 @@
 
 - **左侧**是逐页中文讲解，**右侧**贴着原页缩略图，不用来回切窗口
 - 公式用 **KaTeX 离线渲染**（字体已转 data URI 内嵌，**完全不联网**）
-- 五类交互：目录逐级折叠 / 每节概述卡 / 侧栏收起后缩略图自动放大 / **划词标记 → 笔记抽屉** / **正文字号 A−/A＋ 调节（存浏览器）**
+- 六类交互：目录逐级折叠 / 每节概述卡 / 侧栏收起后缩略图自动放大 / **划词标记 → 笔记抽屉** / **正文字号 A−/A＋ 调节（存浏览器）** / **正文搜索（搜正文不只搜标题，命中列表可跳转并高亮）**
 - 页面里明确区分「原文有什么」与「讲解者加了什么」（绿=直觉、蓝=补充推导、红=原稿问题、灰=原文引用）
 - 可选把**原 PDF 整份 base64 内嵌**，点页码直接跳原页，换设备也不失效
 
@@ -108,9 +108,10 @@ python scripts/prepare_pdf.py "<课件.pdf>" "_extract" 860 75   # 逐页图 + �
 #   ↓ 逐页看 _extract/page-NN.png，写 content/*.html
 python scripts/build.py config.json                             # 组装单文件
 node   scripts/check_math.js "<输出.html>" "_katex/katex.min.js" # 公式语法 + 标签/锚点/数量
-python scripts/check_ui.py   "<输出.html>"                      # 五类交互的「接线」是否完好
+python scripts/check_ui.py   "<输出.html>"                      # 六类交互的「接线」是否完好
 python scripts/probe.py      "<输出.html>" scripts/probe_marks.js
 python scripts/probe.py      "<输出.html>" templates/probe_font.js
+python scripts/probe.py      "<输出.html>" templates/probe_find.js
 python scripts/probe.py      "<输出.html>" templates/probe_doc.js
 python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看长相
 ```
@@ -132,8 +133,9 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 │   ├─ prepare_pdf.py       ← PDF → 逐页 png + 缩略图 + 文字层
 │   ├─ katex_offline.py     ← 制作离线 KaTeX（一次即可，可跨项目复用）
 │   ├─ build.py             ← 组装单文件（可用 0 命令行参数：python build.py config.json）
+│   ├─ build_demo.py        ← 重建仓库里那两份在线 demo（源工程在 examples/demo/）
 │   ├─ check_math.js        ← 公式语法、标签配对、目录锚点、正文缺字体检
-│   ├─ check_ui.py          ← 五类交互的 DOM 与 CSS/JS 是否对齐
+│   ├─ check_ui.py          ← 六类交互的 DOM 与 CSS/JS 是否对齐
 │   ├─ check_docs.py        ← 套件自身的文档口径体检（改完文档/加新功能后跑）
 │   ├─ probe.py             ← 无头跑探针 JS 并把结果读回来（读 DOM 靠它）
 │   ├─ probe_marks.js       ← 标记功能回归（跨格/跨段/跨公式/单段 + 重开恢复）
@@ -143,21 +145,24 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 ├─ assets/                  ← 已验证的外壳与样式，build.py 自动内联
 │   ├─ shell.html           ← 页面骨架（改版式改这里，不要改 build.py）
 │   ├─ site.css             ← 基础版式
-│   ├─ site.extra.css       ← 五类交互的追加样式
+│   ├─ site.extra.css       ← 六类交互的追加样式
 │   └─ site.js              ← 全部交互逻辑，暴露 window.__doc 供无头测试
 ├─ templates/               ← 可复制的内容骨架 + 交付体检探针 + 截图 harness
 │   ├─ content-skeleton/    ← init_project.py 复制的逐页区块骨架
 │   ├─ probe_doc.js         ← 交付体检：待补页面 N/M、缺缩略图、目录断链、缺字
 │   ├─ probe_font.js        ← 字号调节回归（--profile 跑两遍验跨会话持久化）
+│   ├─ probe_find.js        ← 正文搜索回归（索引/命中/跳转高亮/Esc 还原/不碰笔记）
 │   ├─ harness_nav.js       ← 截图 harness：先触发目录交互再截
 │   └─ harness_markshot.js  ← 截图 harness：先划词标记再截
 ├─ examples/                ← sample-lecture.pdf 示例课件（三步上手 ③ 的输入）、config 样例、逐页区块模板
+│   └─ demo/                ← 两份在线 demo 的源工程（zh/ + en/，见 demo/README.md）
 ├─ references/
-│   ├─ pitfalls.md          ← 踩坑清单（45 条，按「频率 × 隐蔽度」排序）
+│   ├─ pitfalls.md          ← 踩坑清单（46 条，按「频率 × 隐蔽度」排序）
 │   └─ content-quality.md   ← 讲解内容的质量标准
 ├─ vendor/katex/            ← 离线 KaTeX（MIT，见下方致谢）
 ├─ docs/
 │   ├─ workflow.md          ← 人类向完整流程：每步做什么、为什么不能省
+│   ├─ v2-course-collection.md ← v2 设计稿：多课件课程合集（数据模型 / 内容层方法 / 分阶段落地）
 │   ├─ demo/                ← 在线 demo（中文）：节选 8 页的可交互产物（单文件）
 │   ├─ demo-en/             ← 在线 demo（英文）：同一产物的全英文版
 │   └─ images/              ← README 里那几张截图
@@ -177,15 +182,16 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 | 脚本 | 管什么 | 不管什么 |
 |---|---|---|
 | `check_math.js` | 公式能不能渲染、CJK 有没有混进公式、标签配对、目录锚点、缩略图/区块/深链数量、正文缺字（组合符号 U+20D0–U+20FF，硬失败）、TODO 残留 | 长相、交互 |
-| `check_ui.py` | 五类交互的 DOM 与 CSS/JS 是否对齐（分组数与按钮数相等、收起后列宽真的变大、抽屉元素齐全、`DOC_NS` 已注入、字号调节的 `--fs`/反向补偿/localStorage 键、标记上色的结构安全） | 长相、实际行为 |
+| `check_ui.py` | 六类交互的 DOM 与 CSS/JS 是否对齐（分组数与按钮数相等、收起后列宽真的变大、抽屉元素齐全、`DOC_NS` 已注入、字号调节的 `--fs`/反向补偿/localStorage 键、搜索面板与两套高亮类名的隔离、标记上色的结构安全） | 长相、实际行为 |
 | `probe.py` + `probe_marks.js` | **结构有没有被改坏**：自动找跨格/跨段/跨公式/单段四种选区，用**真实入口**标记后断言「块级元素数、可见文本、表格 tr/td 一字不变、无块级元素进 mark、无零宽 mark」，再拆掉全部 mark 重新定位一遍复查 | 长相 |
 | `probe.py` + `probe_font.js` | **正文字号调节**：初始 100%、`step()` 后 `--fs`/标签/localStorage 三者一致、`Font.init()` 重读恢复、MIN(0.9)/MAX(1.4) 钳制与按钮禁用；加 `--profile` 跑两遍可验跨进程持久化 | 长相 |
+| `probe.py` + `probe_find.js` | **正文搜索**：索引惰性建且覆盖全部有文字的节、查询命中数 = 结果行数、片段与正文都出现 `mark.q-hit`、跳转只加元素不改块级结构也不改一个字、多词是「且」、0 命中时目录交还、Esc 后高亮归零且正文逐字复原、全程不碰 `mark.hl` | 长相 |
 | `probe.py` + `probe_doc.js` | **内容写完了没有**：待补页面 N/M、缺缩略图的页、目录断链、KaTeX 残留 script、TODO 注释、正文缺字风险 | 讲解写得对不对 |
 | `shot.py` | 长相与真实交互状态 | 细节正确性 |
 
 **截图看不出结构被改坏**，所以只要动了标记相关代码，`probe.py` 这一行不能省。
 
-> 上表六行查的是**产物**。另有一条查**套件自己**：`check_docs.py` 断言「几类交互」这类口径
+> 上表七行查的是**产物**。另有一条查**套件自己**：`check_docs.py` 断言「几类交互」这类口径
 > 在五份文档与 `check_ui.py` 之间是否一致、README 目录树有没有漏列新文件、
 > `pitfalls.md` 编号是否连续。**改功能而忘了改文档**，靠的就是这条拦。
 > 它不进 `run_all.py`（那条流水线是给用户跑课件的），由 `selftest.py` 顺带跑。
@@ -233,7 +239,7 @@ python scripts/check_docs.py      # 只跑文档口径体检（改了 README / S
 - **不许写死本机路径**。校验：`grep -rn "/home/\|/Users/\|C:/Users/" scripts/ assets/ templates/` 应当无命中。
 - **模板注释里不许出现字面标签**。`build.py` 用非贪婪正则匹配整段区块，注释里的假 `<section>` 会让它提前收尾，症状是「图在文件里、但 DOM 里查不到」，极难排查。
 
-动笔前先扫一遍 `references/pitfalls.md`（45 条，每条都对应一个真实事故）。
+动笔前先扫一遍 `references/pitfalls.md`（46 条，每条都对应一个真实事故）。
 
 ---
 

@@ -262,7 +262,8 @@ def main():
 
     f1, f2 = (cfg.get('footer') or ['', ''])
     nav_foot = cfg.get('nav_foot',
-                       '快捷键：<b>J</b>/<b>K</b> 翻页 · <b>M</b> 标记选中 · <b>B</b> 侧栏 · <b>T</b> 缩略图 · <b>N</b> 笔记')
+                       '快捷键：<b>J</b>/<b>K</b> 翻页 · <b>/</b> 搜索正文 · '
+                       '<b>M</b> 标记选中 · <b>B</b> 侧栏 · <b>T</b> 缩略图 · <b>N</b> 笔记')
 
     repl = {
         '__KATEX_CSS__': katex_css,
@@ -275,7 +276,7 @@ def main():
         '__BRAND__': cfg.get('brand', ''),
         '__SIDEBAR_TITLE__': cfg.get('sidebar_title', ''),
         '__SIDEBAR_SUB__': cfg.get('sidebar_sub', ''),
-        '__SEARCH_PH__': cfg.get('search_placeholder', '搜索页码或标题'),
+        '__SEARCH_PH__': cfg.get('search_placeholder', '搜索正文 · 标题 · 页码（/）'),
         '__NAV_FOOT__': nav_foot,
         '__TOPBAR_TITLE__': cfg.get('topbar_title', ''),
         '__PDF_LINE__': pdf_line,

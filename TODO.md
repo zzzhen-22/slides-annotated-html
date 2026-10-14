@@ -14,10 +14,10 @@
 | 项目 | 现状 |
 |---|---|
 | 仓库 | 49 个受版本控制的文件 ｜ 4.9 MB（不含 `.git`） ｜ 34 个提交 ｜ 与 `origin/main` 逐字节一致 |
-| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**45 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md`、`CHANGELOG.md` |
+| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**46 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md`、`CHANGELOG.md` |
 | 图片资源 | ✅ 3 张（`docs/images/`，hero / notes / overview，各约 230 KB） |
-| 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.19 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.19 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。两份均已按 v2.1.0 重建 |
-| 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` |
+| 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.20 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.20 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。两份均已按 v2.2.0 重建，源工程在 `examples/demo/` |
+| 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` + `demo/`（两份 demo 的源工程：config + content + 原页图） |
 | 依赖清单 | ✅ `requirements.txt`（`pymupdf` + `pillow`，不锁版本；`node` 与浏览器为可选/外部） |
 | 自检体系 | ✅ 三条线：`selftest.py` = 机械路线 + 语义路线 + **文档口径**（`check_docs.py`，6 组断言）；已接进 `selftest.py`，**CI 已建**（第 3 条） |
 | CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（三条线） |
@@ -25,6 +25,22 @@
 | tag 状况 | 9 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
 | 跨平台 | 代码里有 macOS / Linux 分支；**Linux 已由 CI 覆盖**（ubuntu runner 装 `fonts-noto-cjk`），macOS 仍未真机验证（见第 7 条） |
 | 文档口径 | ✅ 无已知漂移；`check_docs.py` 新增「pitfalls 裸计数」断言（第 1、13 条完成，`check_docs.py` 常驻把关） |
+
+---
+
+## 下一步的大版本：v2「多课件课程合集」
+
+> **开工前先读 [docs/v2-course-collection.md](docs/v2-course-collection.md)，不要从零设计。**
+> 那份设计稿已经定好了：目录与数据模型（`course.json` / `glossary.json`）、内容层方法
+> （`data-concepts` / `data-pays-off` / `data-forward` + `briefing.md`）、组件清单、
+> **已否决方案连同否决理由**、四个阶段的验收标准，以及给接手者的 5 条开工须知。
+>
+> 一句话背景：一门课往往有多个相关联的课件。v1 只能一讲一产出，讲次之间零关联；
+> v2 要在不破坏 v1 的前提下，让「写新一讲时读得到前面讲过什么」，并把这门课汇成一个
+> 可检索、可对照的合集入口。
+>
+> 硬约束（违反了就别做）：`file://` 断网可用（**索引必须内联，不能 fetch 同目录 JSON**）、
+> 单讲目录仍可独立使用、不做巨型合并单文件、跨讲引用一律相对路径。
 
 ---
 
@@ -256,18 +272,25 @@
 
 **验收**：`check_math.js` 要么被删掉，要么 README 明确写出「没有它会少什么、怎么补」
 
-### [ ] 10. demo 的生成脚本入库
+### [x] 10. demo 的生成脚本入库 ✅ **已完成（2026-10-14，随 v2.2.0）**
 
-**为什么**：`docs/demo/` 和 `docs/demo-en/` 是仓库里唯二**无法重建**的产物——  
-原始课件 PDF 已因版权移除，重建只能靠「从单文件产物反解 content 分片 + 缩略图 + config」。  
-本轮验证过这条路可行（重建后 DOC_NS 变化、8 页区块与公式全绿），但脚本是一次性的，  
-**没进仓库**。半年后想改 demo，只能重新摸索一遍。
+**为什么**：`docs/demo/` 和 `docs/demo-en/` 曾是仓库里唯二**无法重建**的产物——
+原始课件 PDF 已因版权移除，重建只能靠「从单文件产物反解 content 分片 + 缩略图 + config」。
 
-**怎么做**：把脱敏后的反解 + 重建流程写成 `docs/demo/build_demo.py`，参数化成  
-「源产物 → 输出 demo」一步命令，并写清它依赖 build.py 的注入是确定性的（缩略图插在  
-`</section>` 前、pdf-link 只改写 `<a>` 形式）。
+**怎么做的**：新增 `scripts/build_demo.py`，源工程入 `examples/demo/`：
 
-**验收**：从任一在线 demo 反解并重建，得到字节级可复现的产物
+- `zh/`、`en/` 各一份标准 v1 项目（`config.json` + `content/`），`out` 指向对应产物；
+- 8 张原页图入 `examples/demo/_thumbs/`，**明确归类为源资产**——上游 PDF 不可得，
+  它们没有可再生来源。zh / en bytes 相同，共享一份；
+- `build_demo.py --check` 是**忠实性闸门**：重建到临时文件，断言 nav 与 wrap
+  （含原页图）与已入库产物**逐字节一致**，不一致就非零退出。
+
+**实测**：反向导出后 `--check` 通过；nav、wrap、8 张原页图三者均与旧产物逐字节一致，
+只有外壳与 `DOC_NS` 按预期变化。
+
+**顺手记下的一个坑**：一度想当然地拿 `examples/sample-lecture.pdf` 当 demo 的上游
+重新渲染缩略图——那是**另一份物理讲义**，结果 demo 里每页讲解旁边贴的是物理课幻灯片。
+已写进 `examples/demo/README.md` 的醒目位置。
 
 ---
 
@@ -333,6 +356,11 @@
 - [ ] **19.** `TODO.md` 的基线表容易过期（本次已从 45 文件 / 9 提交 / 4.9 MB 更新到
       46 / 25 / 5.0 MB）。**故意不做自动化**：强制 agent 同步提交数会被绕过，
       「提示而非失败」才有效——`check_docs.py` 的定位是「抓事实矛盾」，不是「抓数字过期」
+- [x] **20.** **重建两份在线 demo**（`docs/demo/index.html`、`docs/demo-en/index.html`）。
+      ✅ **已完成（2026-10-14，随 v2.2.0）**——它们曾停在 v2.1.0 的资产上，
+      缺了后来的**正文搜索**（左栏没有 `#qres` 面板、页脚也没有 `/ 搜索正文` 的按键提示），
+      而 README 与 Releases 页仍在把它们当门面引用。
+      卡点（第 10 条：demo 生成脚本没入库）一并解决：见上面第 10 条。
 
 ---
 

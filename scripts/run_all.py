@@ -20,9 +20,10 @@
     ② prepare_pdf.py    逐页大图（供人/agent 逐页核对）+ 内嵌缩略图
     ③ build.py          组装单文件 HTML
     ④ check_math.js     公式语法 / CJK / 标签配对 / 目录锚点 / 数量一致性
-    ⑤ check_ui.py       五类交互的接线（含标记上色的结构安全、笔记位置标签、正文字号调节）
+    ⑤ check_ui.py       六类交互的接线（含标记上色的结构安全、笔记位置标签、正文字号调节、正文搜索）
     ⑥ probe_marks.js    标记功能行为回归（真实入口 + DOM 结构断言）
     ⑥b probe_font.js    正文字号调节回归（档位 / localStorage / MIN·MAX 钳制）
+    ⑥c probe_find.js    正文搜索回归（索引 / 命中 / 跳转高亮 / Esc 还原 / 与笔记互不干扰）
     ⑦ probe_doc.js      交付体检（内容进度 / 缩略图一致性 / 断链）
     ⑧ shot.py ×3        首屏 / 首段概述卡 / 侧栏收起（截图失败只告警，不算失败）
 
@@ -237,6 +238,10 @@ def main():
     R.step('⑥b 字号调节回归 probe_font.js',
            [py, os.path.join(HERE, 'probe.py'), html,
             os.path.join(KIT, 'templates', 'probe_font.js')],
+           parse=parse_probe, fatal=True)
+    R.step('⑥c 正文搜索回归 probe_find.js',
+           [py, os.path.join(HERE, 'probe.py'), html,
+            os.path.join(KIT, 'templates', 'probe_find.js')],
            parse=parse_probe, fatal=True)
     R.step('⑦ 交付体检 probe_doc.js',
            [py, os.path.join(HERE, 'probe.py'), html,

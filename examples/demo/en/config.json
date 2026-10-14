@@ -1,0 +1,136 @@
+{
+  "out": "../../../docs/demo-en/index.html",
+  "embed_pdf": false,
+  "title": "Logistic Regression · Annotated Walkthrough (Demo · 8-page excerpt)",
+  "brand": "Logistic Regression",
+  "course": "",
+  "sidebar_title": " · Annotated Walkthrough (Demo)",
+  "sidebar_sub": "",
+  "topbar_title": "Logistic Regression · Annotated Walkthrough · Demo (P1–P8)",
+  "shards": [
+    "content/00_intro.html",
+    "content/10_ov1.html",
+    "content/11_p01_p08.html",
+    "content/90_outro.html"
+  ],
+  "thumb_dir": "../_thumbs",
+  "thumb_pattern": "thumb_{n:02d}.jpg",
+  "katex_dir": "_katex",
+  "pages": [
+    [
+      1,
+      "Introduction to Artificial Intelligence — Logistic Regression Cover page"
+    ],
+    [
+      2,
+      "Supervised Learning learning a predictor from labeled examples"
+    ],
+    [
+      3,
+      "Supervised Learning — regression a variant with continuous labels"
+    ],
+    [
+      4,
+      "Outline the ladder of this lecture"
+    ],
+    [
+      5,
+      "Basic Rules of Probability the entire toolbox, in one page"
+    ],
+    [
+      6,
+      "Bayes' Rule updating old beliefs with new evidence"
+    ],
+    [
+      7,
+      "Bayes' Rule Applied to Machine Learning naming the four terms"
+    ],
+    [
+      8,
+      "Three Fundamental Questions a map of probabilistic modeling"
+    ]
+  ],
+  "groups": [
+    [
+      "Start",
+      [
+        [
+          "#cover",
+          "Cover & about this demo"
+        ],
+        [
+          "#demo-notice",
+          "About this demo"
+        ],
+        [
+          "#primer",
+          "Before you read: probability crash course"
+        ]
+      ]
+    ],
+    [
+      "Part 1 · Probability foundations (P1–P8)",
+      [
+        [
+          "#ov1",
+          "Section overview"
+        ],
+        [
+          "#p01",
+          "1. Cover: Introduction to AI · Logistic Regression"
+        ],
+        [
+          "#p02",
+          "2. Supervised learning: learn a predictor"
+        ],
+        [
+          "#p03",
+          "3. Supervised learning: regression (continuous labels)"
+        ],
+        [
+          "#p04",
+          "4. Outline"
+        ],
+        [
+          "#p05",
+          "5. Basic rules of probability"
+        ],
+        [
+          "#p06",
+          "6. Bayes' rule"
+        ],
+        [
+          "#p07",
+          "7. Bayes' rule applied to machine learning"
+        ],
+        [
+          "#p08",
+          "8. Three fundamental questions: representation / inference / learning"
+        ]
+      ]
+    ],
+    [
+      "Reference & notes",
+      [
+        [
+          "#cheatsheet",
+          "One-page cheat sheet"
+        ],
+        [
+          "#glossary",
+          "Glossary"
+        ],
+        [
+          "#about",
+          "About this document"
+        ]
+      ]
+    ]
+  ],
+  "footer": [
+    "Annotated walkthrough · Demo (P1–P8 excerpt of 63)",
+    "The original deck is © its authors; the explanations and colored cards are additions of this document."
+  ],
+  "search_placeholder": "Search body · title · page (/)",
+  "nav_foot": "Shortcuts: <b>J</b>/<b>K</b> next/prev · <b>/</b> search text · <b>M</b> highlight · <b>B</b> sidebar · <b>T</b> thumbnails · <b>N</b> notes"
+}

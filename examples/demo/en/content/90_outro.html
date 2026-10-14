@@ -1,0 +1,158 @@
+<section class="card" id="cheatsheet">
+  <h2>One-page cheat sheet: formulas &amp; takeaways</h2>
+  <p class="lead">Every formula from the full document, gathered for revision or side-by-side checking against the original. Formula on the left, source page on the right.</p>
+
+  <h4>Probability basics</h4>
+  <table class="tbl">
+    <thead><tr><th>Formula</th><th>Meaning</th><th>Page</th></tr></thead>
+    <tbody>
+      <tr><td><script type="math/tex">p(X,\mathcal{M})=p(X\mid\mathcal{M})p(\mathcal{M})</script></td><td>Product rule (joint = conditional × marginal)</td><td><a href="#p05">P5</a></td></tr>
+      <tr><td><script type="math/tex">p(X)=\int p(X\mid\mathcal{M})p(\mathcal{M})\,\mathrm{d}\mathcal{M}</script></td><td>Sum / integral rule</td><td><a href="#p05">P5</a></td></tr>
+      <tr><td><script type="math/tex">p(\mathcal{M}\mid X)=\dfrac{p(\mathcal{M})p(X\mid\mathcal{M})}{p(X)}</script></td><td>Bayes' theorem</td><td><a href="#p06">P6</a></td></tr>
+    </tbody>
+  </table>
+
+  <h4>Naive Bayes</h4>
+  <table class="tbl">
+    <thead><tr><th>Formula</th><th>Meaning</th><th>Page</th></tr></thead>
+    <tbody>
+      <tr><td><script type="math/tex">P(X_1\cdots X_d\mid Y)=\prod_{i=1}^{d}P(X_i\mid Y)</script></td><td>The "naive" independence assumption</td><td>P26</td></tr>
+      <tr><td><script type="math/tex">y^\star=\arg\max_{y}\ p(y)\prod_{i=1}^{d}p(x_i\mid y)</script></td><td>Naive Bayes classifier (working form)</td><td>P19/P26</td></tr>
+      <tr><td><script type="math/tex">\hat{q}_{kj}=\dfrac{N_k^{j}}{N_k}</script></td><td>MLE: count the frequencies</td><td>P27</td></tr>
+      <tr><td><script type="math/tex">\hat{q}_{kj}=\dfrac{N_k^{j}+\alpha}{N_k+2\alpha}</script></td><td>Laplace smoothing (against zero counts)</td><td>P32</td></tr>
+      <tr><td><script type="math/tex">\hat{q}_{kj}=\dfrac{N_k^{j}+\alpha_1-1}{N_k+\alpha_1+\alpha_2-2}</script></td><td>MAP (result under a Beta prior)</td><td>P34</td></tr>
+      <tr><td><script type="math/tex">\hat\theta^{MAP}=\arg\max_\theta P(D\mid\theta)P(\theta)</script></td><td>MAP is just "likelihood × prior"</td><td>P35</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Gaussian distributions</h4>
+  <table class="tbl">
+    <thead><tr><th>Formula</th><th>Meaning</th><th>Page</th></tr></thead>
+    <tbody>
+      <tr><td><script type="math/tex">p(x\mid\mu,\sigma^2)=\dfrac{1}{\sqrt{2\pi}\sigma}e^{-\frac{(x-\mu)^2}{2\sigma^2}}</script></td><td>Univariate Gaussian</td><td>P41</td></tr>
+      <tr><td><script type="math/tex">p(\mathbf{x}\mid\boldsymbol{\mu},\Sigma)=\dfrac{1}{(2\pi)^{d/2}|\Sigma|^{1/2}}e^{-\frac{1}{2}(\mathbf{x}-\boldsymbol{\mu})^{\top}\Sigma^{-1}(\mathbf{x}-\boldsymbol{\mu})}</script></td><td>Multivariate Gaussian</td><td>P43</td></tr>
+      <tr><td><script type="math/tex">\mu_{\mathrm{ML}}=\frac{1}{N}\sum_n x_n,\quad \sigma^2_{\mathrm{ML}}=\frac{1}{N}\sum_n(x_n-\mu_{\mathrm{ML}})^2</script></td><td>Gaussian MLE = sample mean / variance</td><td>P42</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Logistic regression (core)</h4>
+  <table class="tbl">
+    <thead><tr><th>Formula</th><th>Meaning</th><th>Page</th></tr></thead>
+    <tbody>
+      <tr><td><script type="math/tex">\sigma(v)=\dfrac{1}{1+e^{-v}}</script></td><td>Sigmoid (squashes reals into probabilities)</td><td>P46</td></tr>
+      <tr><td><script type="math/tex">P(y=1\mid\mathbf{x})=\sigma\!\left(\mathbf{w}^{\top}\mathbf{x}\right)</script></td><td>The logistic regression model (<script type="math/tex">\mathbf{x}</script> augmented)</td><td>P48</td></tr>
+      <tr><td><script type="math/tex">\log\frac{P(Y=1\mid\mathbf{x})}{P(y=0\mid\mathbf{x})}=\mathbf{w}^{\top}\mathbf{x}</script></td><td>Log-odds = linear function</td><td>P47</td></tr>
+      <tr><td><script type="math/tex">\mathbf{w}^{\top}\mathbf{x}=0</script></td><td>Decision boundary: a hyperplane (linear classifier)</td><td>P47</td></tr>
+      <tr><td><script type="math/tex">\mathcal{L}(\mathbf{w})=\sum_i\left[y_i\mathbf{w}^{\top}\mathbf{x}_i-\log\!\left(1+e^{\mathbf{w}^{\top}\mathbf{x}_i}\right)\right]</script></td><td>Log conditional likelihood (the objective to maximize)</td><td>P52</td></tr>
+      <tr><td><script type="math/tex">\nabla_{\mathbf{w}}\mathcal{L}=\sum_i(y_i-\mu_i)\mathbf{x}_i=X(\mathbf{y}-\boldsymbol{\mu})</script></td><td>Gradient (<script type="math/tex">\mu_i=\sigma(\mathbf{w}^{\top}\mathbf{x}_i)</script>)</td><td>P55/P60</td></tr>
+      <tr><td><script type="math/tex">\mathbf{w}_{t+1}=\mathbf{w}_t+\eta\sum_i\mathbf{x}_i(y_i-\mu_i^t)</script></td><td>Gradient-ascent update</td><td>P55</td></tr>
+      <tr><td><script type="math/tex">H=-XRX^{\top},\ R_{ii}=\mu_i(1-\mu_i)</script></td><td>Hessian matrix</td><td>P60</td></tr>
+      <tr><td><script type="math/tex">\mathbf{w}_{t+1}=(XRX^{\top})^{-1}XR\mathbf{z}</script></td><td>IRLS update (equivalent to Newton's method)</td><td>P61</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Three one-liners to remember</h4>
+  <ol class="lst">
+    <li><b>Logistic regression is a linear classifier</b> — its decision boundary is a hyperplane (P63).</li>
+    <li><b>It learns parameters by maximum conditional likelihood</b> — no closed form, but the objective is concave, so gradient methods reach the global optimum (P63).</li>
+    <li><b>NB and LR make different assumptions</b> — NB models <script type="math/tex">P(X\mid Y)</script>; LR assumes a functional form for <script type="math/tex">P(Y\mid X)</script> and makes no assumption about <script type="math/tex">P(X\mid Y)</script> (P63).</li>
+  </ol>
+</section>
+
+<section class="card" id="glossary">
+  <h2>Glossary</h2>
+  <p class="lead">In order of first appearance. Page numbers jump back to the explanation.</p>
+  <table class="tbl gloss">
+    <thead><tr><th>Term</th><th>One-line explanation</th><th>First seen</th></tr></thead>
+    <tbody>
+      <tr><td>supervised learning</td><td>learning a predictive function from "input + correct answer" data</td><td><a href="#p02">P2</a></td></tr>
+      <tr><td>feature space / label space</td><td>the set of inputs the model sees / the set of answers to predict</td><td><a href="#p02">P2</a></td></tr>
+      <tr><td>regression / classification</td><td>labels are continuous values / discrete categories</td><td><a href="#p03">P3</a></td></tr>
+      <tr><td>conditional probability</td><td>how likely one event is, given that another holds</td><td><a href="#p05">P5</a></td></tr>
+      <tr><td>joint probability</td><td>how likely two things are to occur together</td><td><a href="#p05">P5</a></td></tr>
+      <tr><td>product / sum rule</td><td>the two basic relations between joint, marginal and conditional</td><td><a href="#p05">P5</a></td></tr>
+      <tr><td>Bayes' theorem</td><td>updating beliefs with evidence: posterior ∝ prior × likelihood</td><td><a href="#p06">P6</a></td></tr>
+      <tr><td>prior / likelihood / posterior</td><td>belief before data / how plausibly the data arises under the parameter / belief after data</td><td><a href="#p07">P7</a></td></tr>
+      <tr><td>likelihood</td><td><script type="math/tex">p(D\mid\theta)</script> with the data fixed and the parameter treated as the variable</td><td><a href="#p07">P7</a></td></tr>
+      <tr><td>empirical distribution</td><td>the distribution counted straight from the data (the histogram)</td><td>P11</td></tr>
+      <tr><td>kernel density estimation (KDE)</td><td>the trick that smooths a histogram into a curve</td><td>P11</td></tr>
+      <tr><td>decision boundary</td><td>where the two class probabilities are equal; cross it and the prediction flips</td><td>P15</td></tr>
+      <tr><td>generative model</td><td>models <script type="math/tex">P(X\mid Y)</script> and <script type="math/tex">P(Y)</script>, and can thus "generate" data</td><td>P16</td></tr>
+      <tr><td>discriminative model</td><td>models only <script type="math/tex">P(Y\mid X)</script>, indifferent to how inputs arise</td><td>P51</td></tr>
+      <tr><td>conditional independence</td><td>given the class, features do not influence each other</td><td>P17</td></tr>
+      <tr><td>naïve Bayes assumption</td><td>features are conditionally independent given the class (rarely true, always useful)</td><td>P17</td></tr>
+      <tr><td>Bayes' decision rule</td><td>pick the class with the largest posterior probability</td><td>P19</td></tr>
+      <tr><td>Bayes error</td><td>the lowest error rate no classifier can beat</td><td>P20</td></tr>
+      <tr><td>curse of dimensionality</td><td>more features → data requirements explode exponentially</td><td>P23</td></tr>
+      <tr><td>maximum likelihood estimation (MLE)</td><td>pick the parameter making the data most likely; the result is just counting</td><td>P28</td></tr>
+      <tr><td>maximum a posteriori (MAP)</td><td>pick the most probable parameter, combining prior and data</td><td>P35</td></tr>
+      <tr><td>zero-counts problem</td><td>a feature never seen in a class drives its probability estimate to 0</td><td>P32</td></tr>
+      <tr><td>Laplace / additive smoothing</td><td>add a small positive number to every count to avoid zeros</td><td>P32</td></tr>
+      <tr><td>Beta distribution</td><td>a distribution on [0,1] used as a prior for probability parameters</td><td>P33</td></tr>
+      <tr><td>non-informative prior</td><td>a uniform prior; MAP degenerates to MLE under it</td><td>P37</td></tr>
+      <tr><td>Gaussian / normal distribution</td><td>the bell curve, determined by mean and variance</td><td>P41</td></tr>
+      <tr><td>covariance matrix</td><td>describes each dimension's spread and the correlations between dimensions</td><td>P43</td></tr>
+      <tr><td>isotropic / diagonal / general</td><td>three levels of simplification for the covariance matrix</td><td>P43</td></tr>
+      <tr><td>marginal is Gaussian</td><td>integrate out some dimensions of a multivariate Gaussian and it stays Gaussian</td><td>P45</td></tr>
+      <tr><td>logistic function / sigmoid</td><td><script type="math/tex">1/(1+e^{-v})</script>, squashing reals into (0,1) probabilities</td><td>P46</td></tr>
+      <tr><td>log-odds / logit</td><td><script type="math/tex">\log\frac{p}{1-p}</script>; in logistic regression, the linear score</td><td>P47</td></tr>
+      <tr><td>augmented vector</td><td>append a constant-1 component to the input, folding the bias into the weights</td><td>P48</td></tr>
+      <tr><td>reference class</td><td>the class with score 0 in multi-class settings; hence only K−1 weight vectors</td><td>P49</td></tr>
+      <tr><td>maximum conditional likelihood</td><td>compute likelihood only for <script type="math/tex">P(Y\mid X)</script>, sidestepping <script type="math/tex">P(X)</script></td><td>P51</td></tr>
+      <tr><td>closed-form solution</td><td>a solution computed directly by an explicit formula; logistic regression has none</td><td>P53</td></tr>
+      <tr><td>concave / convex function</td><td>bowl upside-down / bowl right-side-up; guarantees no fake local optima</td><td>P53</td></tr>
+      <tr><td>gradient ascent / descent</td><td>walk along the slope to make the function larger / smaller</td><td>P54</td></tr>
+      <tr><td>step-size / learning rate <script type="math/tex">\eta</script></td><td>how big each step is; too large oscillates, too small crawls</td><td>P54</td></tr>
+      <tr><td>over-fitting</td><td>learning the noise in the training data too, hurting generalization</td><td>P56</td></tr>
+      <tr><td>regularization</td><td>penalizing large weights to curb over-fitting</td><td>P56</td></tr>
+      <tr><td>Newton / Newton-Raphson method</td><td>finding zeros with tangent lines; far faster than gradient methods for optimization</td><td>P58</td></tr>
+      <tr><td>Hessian matrix</td><td>the square matrix of second derivatives — the curvature</td><td>P59</td></tr>
+      <tr><td>IRLS</td><td>iteratively reweighted least squares; equivalent to Newton's method</td><td>P61</td></tr>
+      <tr><td>exponential family</td><td>the common format shared by many distributions; Bernoulli, Gaussian and Beta are members</td><td>Suppl. A</td></tr>
+      <tr><td>generalized linear model (GLM)</td><td>response distribution + linear predictor + link function</td><td>Suppl. B</td></tr>
+      <tr><td>canonical link</td><td>the link function equal to the natural parameter; Bernoulli pairs with the logit</td><td>Suppl. B</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card" id="about">
+  <h2>About this document</h2>
+  <div class="about-grid">
+    <div>
+      <h4>Source file</h4>
+      <ul class="lst">
+        <li><b>File name:</b> 1-Logistic Regression(1).pdf</li>
+        <li><b>Location:</b><span class="gloss"> (the local path of the source file is omitted in this demo)</span></li>
+        <li><b>Title:</b> Introduction to Artificial Intelligence — Logistic Regression</li>
+        <li><b>Author:</b> Su Hang (Tsinghua University)</li>
+        <li><b>Pages:</b> 63 (exported from PowerPoint, created 2026-09-22)</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Coverage</h4>
+      <ul class="lst">
+        <li><b>Main text:</b> page-by-page explanations strictly following the original page order, each with its thumbnail and page link. <b>This demo includes only P1–P8</b> (the full version covers pages 1–63).</li>
+        <li><b>Primer:</b> the "before you read" crash-course cards are an addition of this document, absent from the original.</li>
+        <li><b>Supplements A / B:</b> exponential family &amp; generalized linear models — mentioned in the original outline (P4) but never developed; supplemented separately here, <em>without occupying original page numbers</em>.</li>
+        <li><b>Reference section:</b> the cheat sheet and glossary are retrieval tools added by this document.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h4>Three quirks of the original worth knowing before reading</h4>
+  <ol class="lst">
+    <li><b>Page 55 has a blue block covering content.</b> The Sigmoid definition <script type="math/tex">\psi(v)=1/(1+e^{-v})</script> is hidden behind a blue rectangle — an artifact of animations/images exported from the original PPT. This document reconstructed the covered formula from the PDF text layer (see that page's explanation).</li>
+    <li><b>Pages 11–15 use red/blue inconsistently.</b> The diagrams there reuse older handouts: the red curve is sometimes on the left, sometimes on the right, not always matching the page-10 legend (red = Katydids, blue = Grasshoppers). The explanations rely on the <em>numbers</em> annotated on each page (10:2, 3:9, 6:6), never on color position.</li>
+    <li><b>Page 20 integrates from −1 to 1.</b> The original writes <script type="math/tex">\int_{-1}^{1}</script> (features are normalized to that range in the deck); more generally one would integrate over the whole range of <script type="math/tex">x</script>. Preserved as-is, with a note.</li>
+  </ol>
+
+  <h4>Technical notes</h4>
+  <ul class="lst">
+    <li>Formulas are rendered by <b>KaTeX</b> offline, fonts embedded as data URIs — <b>open this file with no network and the formulas still render</b>; nothing is loaded from the web.</li>
+    <li>Page thumbnails are compressed renders of the original PDF, for side-by-side reading; click a thumbnail to zoom, or open the original PDF to inspect details.</li>
+    <li>This is a single-file HTML: move, copy and share it offline freely (don't extract the images or fonts separately).</li>
+    <li><b>The full version embeds the entire original PDF into the HTML</b>, so copying it to any device (USB stick, another computer, a phone) keeps the original readable: each page's "open the original" link opens the embedded copy and tries to jump to that page, and the top bar has a "save the original PDF" button.
+    <b>This demo does not include the original deck</b> (its copyright is not held by this project), so every "open this page in the original PDF" button appears in a disabled state.
+    <span class="gloss">(Note: page anchors on <code>blob:</code> links may land on page 1 in a few browsers; in that case just flip to the indicated page manually. The thumbnails in the text are unaffected.)</span></li>
+  </ul>
+</section>

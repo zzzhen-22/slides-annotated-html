@@ -2,7 +2,7 @@
 
 > 给想理解这套流程的人看——无论接下来动手的是你还是 AI agent。
 > 可照抄的完整命令与 Agent 执行规范在 `SKILL.md`；写讲解的质量标准在 `references/content-quality.md`；
-> 45 条真实踩坑记录在 `references/pitfalls.md`。
+> 46 条真实踩坑记录在 `references/pitfalls.md`。
 
 ## 一屏看懂
 
@@ -93,14 +93,16 @@ python scripts/run_all.py "<课件>.pdf" --out <同一目录> --skip-init --skip
 | 校验 | 抓什么问题 |
 |---|---|
 | `check_math.js` | 公式能不能渲染、中文有没有混进公式、标签配对、缺字 |
-| `check_ui.py` | 五类交互的「接线」是否完好（静态，不开浏览器） |
+| `check_ui.py` | 六类交互的「接线」是否完好（静态，不开浏览器） |
 | `probe.py` + `probe_marks.js` | 划词标记**有没有把DOM 结构改坏**（截图看不出 `<mark>` 里混进块级元素这种事） |
 | `probe.py` + `probe_font.js` | 字号调节的档位 / localStorage / 边界钳制是否正常 |
+| `probe.py` + `probe_find.js` | 正文搜索：索引与命中数对不对、跳转高亮只加元素不改结构、Esc 后逐字复原、与笔记高亮互不干扰 |
 | `probe.py` + `probe_doc.js` | 交付体检：待补页面 N/M、缺缩略图、目录断链、缺字 |
 | `shot.py` | 长相与真实交互状态 |
 
-上表`check_ui.py` 说的「五类交互」是：目录逐级折叠、每节概述卡、侧栏收起（缩略图自动放大）、
-划词标记 → 笔记抽屉、正文字号 A−/A＋ 调节。五项都在 README 顶部特性列表里列了。
+上表`check_ui.py` 说的「六类交互」是：目录逐级折叠、每节概述卡、侧栏收起（缩略图自动放大）、
+划词标记 → 笔记抽屉、正文字号 A−/A＋ 调节、正文搜索（搜正文、命中列表可跳转并临时高亮）。
+六项都在 README 顶部特性列表里列了。
 
 ## 为什么是这个目录结构
 

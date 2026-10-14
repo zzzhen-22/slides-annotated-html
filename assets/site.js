@@ -74,10 +74,10 @@
       if (co) co.addEventListener('click', function () { self.setAll(true); });
       var q = $('#q');
       if (q) {
-        q.addEventListener('input', function () { self.filter(q.value); });
-        q.addEventListener('keydown', function (ev) {
-          if (ev.key === 'Escape') { q.value = ''; self.filter(''); q.blur(); }
-        });
+        /* 输入交给 Find：它会建正文索引、渲染 #qres 结果面板；
+           产物若来自旧外壳（没有 #qres），Find 内部会自动退化成「只过滤目录标题」。 */
+        q.addEventListener('input', function () { Find.run(q); });
+        q.addEventListener('keydown', function (ev) { Find.key(q, ev); });
       }
       this.syncToggles();
     },
@@ -663,11 +663,20 @@
     return { quote: q, prefix: proj.str.slice(0, ia).replace(INVIS_G, ' ').replace(/\s+/g, ' ').trim().slice(-24) };
   }
 
-  function newMark(nid) {
+  /* 造一个高亮元素。cls 两种取值：
+       'hl'（默认）—— 「我的标记」，带 data-nid 供笔记系统定位、可点击编辑；
+       'q-hit'      —— 正文搜索的**临时命中高亮**，不带 data-nid、不进笔记系统，
+                       清空查询时被 clearHits() 全部拆除。
+     两者共用同一套「只在文字节点内部动手」的封装（铁律①），
+     但类名严格分开 —— 笔记的 unwrapAll / audit / restoreAll 只认 mark.hl，
+     因此搜索高亮绝不会被误当成笔记（反之亦然）。 */
+  function newMark(nid, cls) {
     var mk = document.createElement('mark');
-    mk.className = 'hl';
-    mk.setAttribute('data-nid', nid);
-    mk.title = '点击查看／编辑这条笔记';
+    mk.className = cls || 'hl';
+    if (mk.className === 'hl') {
+      mk.setAttribute('data-nid', nid);
+      mk.title = '点击查看／编辑这条笔记';
+    }
     return mk;
   }
   /* 上色过程的追踪开关（排查「为什么这条边记拆成了 N 个 mark」用）：
@@ -679,7 +688,7 @@
       且绝不会惊动块级结构（铁律 ①）。返回是否成功。
       **刻意不用 extractContents 兜底**：它会把被「部分包含」的元素克隆进 mark，
       unwrap 之后留下克隆残骸，反复标记/删除会不断堆积。宁可多拆几个 mark。 */
-  function wrapOne(a, b, nid) {
+  function wrapOne(a, b, nid, cls) {
     var r = document.createRange();
     try {
       r.setStart(a.node, a.s);
@@ -687,7 +696,7 @@
       if (r.collapsed) return false;
       trace('  try 「' + brief(a.node.nodeValue.slice(a.s, a.s + 18)) + '」→ 「' +
         brief(b.node.nodeValue.slice(Math.max(0, b.e - 18), b.e)) + '」');
-      r.surroundContents(newMark(nid));
+      r.surroundContents(newMark(nid, cls));
       trace('    ok');
       return true;
     } catch (e) { trace('    ' + e.name); return false; }
@@ -698,22 +707,25 @@
       surroundContents 报 InvalidStateError（部分包含 <span class="katex">），
       于是拆到四个单节点 mark —— 这是**有意的保守选择**：
       宁可多拆，也不用 extractContents（那条路会克隆元素、留下残骸）。 */
-  function wrapGroup(items, nid) {
+  function wrapGroup(items, nid, cls) {
     if (!items.length) return 0;
-    if (items.length === 1) return wrapOne(items[0], items[0], nid) ? 1 : 0;
-    if (wrapOne(items[0], items[items.length - 1], nid)) return 1;
+    if (items.length === 1) return wrapOne(items[0], items[0], nid, cls) ? 1 : 0;
+    if (wrapOne(items[0], items[items.length - 1], nid, cls)) return 1;
     var h = Math.floor(items.length / 2);
-    return wrapGroup(items.slice(0, h), nid) + wrapGroup(items.slice(h), nid);
+    return wrapGroup(items.slice(0, h), nid, cls) + wrapGroup(items.slice(h), nid, cls);
   }
   /** 结构安全的上色：把 range 拆成「文字节点级」的片段，
       按最近的块级祖先分组，每组交给 wrapGroup 收敛。
       纯空白片段直接跳过 —— 那是「标记处多出一个换行」的元凶之一。
       返回实际生成的 mark 数量。 */
-  function wrapRange(range, nid) {
+  function wrapRange(range, nid, cls) {
     var anc = range.commonAncestorContainer;
     var root = (anc && anc.nodeType === 1) ? anc : (anc ? anc.parentNode : null);
     if (!root || !root.ownerDocument) return 0;
     var proj = projOf(root);
+    /* 已经上过色的片段要跳过，否则同一次操作会把 mark 套进 mark。
+       两种高亮各查各的祖先：'hl' 认自己的 nid，'q-hit' 认类名。 */
+    var skipSel = (cls === 'q-hit') ? 'mark.q-hit' : ('mark.hl[data-nid="' + nid + '"]');
     var segs = [], i;
     for (i = 0; i < proj.parts.length; i++) {
       var p = proj.parts[i], n = p.node;
@@ -726,8 +738,7 @@
       if (n === range.endContainer) e = range.endOffset;
       if (e <= s) continue;
       if (isBlankStr(n.nodeValue.slice(s, e))) continue;
-      if (n.parentNode && n.parentNode.closest &&
-        n.parentNode.closest('mark.hl[data-nid="' + nid + '"]')) continue;
+      if (n.parentNode && n.parentNode.closest && n.parentNode.closest(skipSel)) continue;
       segs.push({ node: n, s: s, e: e });
     }
     if (!segs.length) return 0;
@@ -739,7 +750,7 @@
       else { cur = { blk: blk, items: [segs[i]] }; groups.push(cur); }
     }
     var made = 0;
-    for (i = 0; i < groups.length; i++) made += wrapGroup(groups[i].items, nid);
+    for (i = 0; i < groups.length; i++) made += wrapGroup(groups[i].items, nid, cls);
     return made;
   }
   function restore(m) {
@@ -1117,6 +1128,349 @@
     return { ok: ok, fail: fail };
   };
 
+  /* ======================= 8b. 正文搜索 =======================
+     和「目录标题过滤」（Toc.filter）的分工与配合：
+       · Toc.filter  —— 只匹配**目录条目文字**，命中项留在左栏目录里。
+                         正文一条都没命中时回退到它，让「标题命中」照样可见；
+                         老外壳（没有 #qres 的产物）也走这条路。
+       · Find        —— 建一次**正文索引**，匹配每一节的可见文字（跳过 KaTeX 隐藏副本），
+                         在 #qres 面板里给出「页码 + 标题 + 上下文片段」，点一条即跳转，
+                         并在正文里把**该节内命中词的每一处**临时高亮。
+     与笔记系统共存的四条约束（踩过的坑都在这）：
+       ① 高亮元素用 <mark class="q-hit">，与笔记的 <mark class="hl"> 严格分开 ——
+          笔记的 unwrapAll / audit / restoreAll 只认 mark.hl，两者永不互相误伤；
+       ② 只对**单个文字节点内部**的一段动手（沿用 wrapRange 的铁律①，不搬元素）；
+          跨内联边界的命中不给它套 mark，改让所在块级元素闪一下背景（.q-flash）；
+       ③ 清空查询时把所有 mark.q-hit 拆掉并对父节点 normalize()，正文回到原样
+          （否则文本节点会被反复切碎，笔记定位的候选会越来找越碎）；
+       ④ 索引惰性建（首次输入才建），一节一个条目，只存小写全文，不存 DOM。
+     ========================================================== */
+
+  /** 在 root 里把 term 的**全部**命中包成 <mark class=cls>，返回生成的 mark 数。
+      只在单个文字节点内部匹配 —— 这是唯一不需要动元素、因而绝对安全的粒度。
+      倒序处理每个节点内的命中：先包后面的，前面的下标才不受 splitText 影响。 */
+  function wrapTextHits(root, term, cls) {
+    if (!root || !term) return 0;
+    var t = String(term).toLowerCase();
+    if (!t) return 0;
+    var nodes = [];
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) {
+        if (!n.nodeValue || !n.nodeValue.length) return NodeFilter.FILTER_REJECT;
+        var p = n.parentNode;
+        if (p && p.closest &&
+          (p.closest(SKIP_SEL) || p.closest('mark.hl, mark.q-hit'))) {
+          return NodeFilter.FILTER_REJECT;      // KaTeX 隐藏副本 / 已上色的片段
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var n;
+    while ((n = w.nextNode())) nodes.push(n);
+    var made = 0;
+    nodes.forEach(function (node) {
+      var s = node.nodeValue, low = s.toLowerCase();
+      if (low.length !== s.length) return;      // 极小概率的长度变化，直接跳过最稳
+      var from = 0, p, hits = [];
+      while ((p = low.indexOf(t, from)) >= 0) { hits.push(p); from = p + t.length; }
+      for (var k = hits.length - 1; k >= 0; k--) {
+        try {
+          var r = document.createRange();
+          r.setStart(node, hits[k]);
+          r.setEnd(node, hits[k] + t.length);
+          var mk = document.createElement('mark');
+          mk.className = cls;
+          r.surroundContents(mk);
+          made++;
+        } catch (e) { /* 不该发生：单节点内的 Range 一定可包围。真发生就跳过 */ }
+      }
+    });
+    return made;
+  }
+
+  /** 哪一块是「命中的那一块」—— 用于高亮的兜底反馈（跨内联边界时套不上 mark）。 */
+  function hitBlockOf(sec, terms) {
+    var blocks = $$('p, li, td, th, h3, h4, .note, .tip, .flag, .quote', sec);
+    for (var i = 0; i < blocks.length; i++) {
+      var t = (blocks[i].textContent || '').toLowerCase();
+      for (var k = 0; k < terms.length; k++) if (t.indexOf(terms[k]) >= 0) return blocks[i];
+    }
+    return null;
+  }
+
+  var Find = {
+    idx: null,          // [{sec,id,page,title,text,lower}]，惰性建
+    items: [],          // 当前结果行（与 #qres 里的 .qhit 一一对应）
+    terms: [],          // 当前查询词（已小写、去重）
+    on: -1,             // 键盘选中的行号
+    MAX_ROWS: 120,
+    PER_SEC: 3,         // 每节最多列几条片段
+
+    /** 把查询拆成词：空白分隔，多词是**且**的关系。CJK 无空格，整串就是一个词。 */
+    split: function (raw) {
+      var seen = {}, out = [];
+      String(raw == null ? '' : raw).toLowerCase()
+        .replace(/[\s\u200b-\u200f\u202a-\u202e\u2060\ufeff]+/g, ' ')
+        .split(' ')
+        .forEach(function (t) { if (t && !seen[t]) { seen[t] = 1; out.push(t); } });
+      return out;
+    },
+
+    /** 一节的显示名：页章节给「P12 · 标题」，卡片给它的 h2。 */
+    titleOf: function (sec) {
+      var h = $('.pg-head h3', sec) || $('h2', sec) || $('h3', sec);
+      var t = '';
+      if (h) t = (h.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!t) t = (sec.getAttribute('data-page') ? ('原文件 P' + sec.getAttribute('data-page')) : sec.id);
+      return t.length > 46 ? (t.slice(0, 45) + '…') : t;
+    },
+
+    build: function () {
+      var idx = [];
+      $$('section[id]').forEach(function (sec) {
+        var sp = squash(projOf(sec).str, 'space');
+        if (!sp.s || isBlankStr(sp.s)) return;      // 空节（纯图占位/分隔）不进索引
+        idx.push({
+          sec: sec, id: sec.id,
+          page: sec.getAttribute('data-page') || '',
+          title: Find.titleOf(sec),
+          text: sp.s, lower: sp.s.toLowerCase()
+        });
+      });
+      this.idx = idx;
+      return idx;
+    },
+
+    search: function (terms) {
+      var idx = this.idx || this.build();
+      var out = [], i, k;
+      for (i = 0; i < idx.length; i++) {
+        var e = idx[i], ok = true, anchor = null;
+        for (k = 0; k < terms.length; k++) {
+          var at = e.lower.indexOf(terms[k]);
+          if (at < 0) { ok = false; break; }
+          if (anchor == null) anchor = terms[k];
+        }
+        if (!ok) continue;
+        var titleHit = 0;
+        for (k = 0; k < terms.length; k++) if (e.title.toLowerCase().indexOf(terms[k]) >= 0) titleHit = 1;
+        var from = 0, n = 0, pos;
+        while (n < this.PER_SEC && (pos = e.lower.indexOf(anchor, from)) >= 0) {
+          out.push({
+            e: e, at: pos, len: anchor.length, titleHit: titleHit,
+            prefix: e.text.slice(Math.max(0, pos - 24), pos)
+          });
+          from = pos + anchor.length; n++;
+        }
+      }
+      /* 标题命中的节排前面，其余保持文档序（稳定排序：比较函数只用 titleHit）。 */
+      out.forEach(function (r, n) { r.seq = n; });
+      out.sort(function (a, b) { return (b.titleHit - a.titleHit) || (a.seq - b.seq); });
+      return out;
+    },
+
+    /** 片段：命中处前后各留一段上下文，窗口内的**所有**查询词都上高亮。 */
+    snippet: function (r) {
+      var text = r.e.text;
+      var from = Math.max(0, r.at - 34);
+      var to = Math.min(text.length, r.at + r.len + 46);
+      var head = (from > 0 ? '…' : '') + text.slice(from, to) + (to < text.length ? '…' : '');
+      var lo = head.toLowerCase();
+      var cuts = [], k, f, p;
+      for (k = 0; k < this.terms.length; k++) {
+        f = 0;
+        while ((p = lo.indexOf(this.terms[k], f)) >= 0) {
+          cuts.push([p, p + this.terms[k].length]);
+          f = p + this.terms[k].length;
+        }
+      }
+      cuts.sort(function (a, b) { return a[0] - b[0]; });
+      var frag = document.createDocumentFragment(), cur = 0;
+      cuts.forEach(function (c) {
+        if (c[0] < cur) return;
+        if (c[0] > cur) frag.appendChild(document.createTextNode(head.slice(cur, c[0])));
+        var mk = document.createElement('mark');
+        mk.className = 'q-hit';
+        mk.textContent = head.slice(c[0], c[1]);
+        frag.appendChild(mk);
+        cur = c[1];
+      });
+      if (cur < head.length) frag.appendChild(document.createTextNode(head.slice(cur)));
+      return frag;
+    },
+
+    render: function () {
+      var box = $('#qres');
+      if (!box) return 0;
+      var self = this;
+      var rows = this.search(this.terms);
+      this.items = rows;
+      this.on = -1;
+      box.innerHTML = '';
+      var pages = {}, acc = 0;
+      rows.forEach(function (r) { if (!pages[r.e.id]) { pages[r.e.id] = 1; acc++; } });
+      var sum = document.createElement('div');
+      sum.className = 'qsum';
+      sum.textContent = rows.length
+        ? ('正文命中 ' + rows.length + ' 处 · 涉及 ' + acc + ' 页' +
+           (rows.length > this.MAX_ROWS ? '（只列前 ' + this.MAX_ROWS + ' 条）' : '') +
+           '　↑↓ 选择 · Enter 跳转 · Esc 清除')
+        : ('正文里没有「' + this.terms.join(' ') + '」。换个更短的词试试；' +
+           '下面目录只剩标题命中的条目。');
+      box.appendChild(sum);
+      if (rows.length) {
+        var shown = rows.slice(0, this.MAX_ROWS), lastId = null;
+        shown.forEach(function (r, i) {
+          var d = document.createElement('div');
+          d.className = 'qhit';
+          if (r.e.id !== lastId) {
+            var h = document.createElement('div');
+            h.className = 'qp';
+            h.textContent = (r.e.page ? ('P' + r.e.page + ' · ') : '') + r.e.title;
+            d.appendChild(h);
+            lastId = r.e.id;
+          }
+          var s = document.createElement('div');
+          s.className = 'qs';
+          s.appendChild(self.snippet(r));
+          d.appendChild(s);
+          d.addEventListener('click', function () { self.goto(i); });
+          box.appendChild(d);
+        });
+      }
+      box.hidden = false;
+      box.classList.add('on');
+      return rows.length;
+    },
+
+    /* 没有正文命中时：把目录交还给用户，只留标题过滤（老行为） */
+    fallbackToToc: function (raw) {
+      var nav = $('.toc-nav');
+      if (nav) nav.classList.remove('off');
+      Toc.filter(raw);
+    },
+
+    run: function (input) {
+      var raw = input ? String(input.value || '') : '';
+      var box = $('#qres');
+      if (!box) { Toc.filter(raw); return 0; }   // 老外壳：退化成「只过滤目录标题」
+      this.terms = this.split(raw);
+      this.clearHits();
+      if (!this.terms.length) {
+        box.hidden = true;
+        box.classList.remove('on');
+        box.innerHTML = '';
+        this.items = [];
+        var nav = $('.toc-nav');
+        if (nav) nav.classList.remove('off');
+        return 0;
+      }
+      var n = this.render();
+      var nav2 = $('.toc-nav');
+      if (!n) {
+        this.fallbackToToc(raw);
+      } else if (nav2) {
+        nav2.classList.add('off');   // 正文命中优先，目录让位给结果面板
+      }
+      return n;
+    },
+
+    /** 跳到第 i 条结果：拆掉上一批高亮 → 高亮本节所有命中 → 滚到第一处命中。 */
+    goto: function (i) {
+      var r = this.items[i];
+      if (!r) return false;
+      this.on = i;
+      this.syncActive();
+      this.clearHits();          // 只保留「当前这一节」的高亮，避免整篇越点越花
+      var sec = r.e.sec;
+      var made = 0, k;
+      for (k = 0; k < this.terms.length; k++) {
+        made += wrapTextHits(sec, this.terms[k], 'q-hit');
+      }
+      var mk = $('mark.q-hit', sec);
+      if (mk && mk.scrollIntoView) {
+        mk.scrollIntoView({ block: 'center' });
+      } else {
+        /* 命中跨了内联元素边界（例如「1×1 卷积」被 <script> 公式切成两半）：
+           套不上 mark 就让所在块闪一下，至少告诉读者「在这一段里」。 */
+        var blk = hitBlockOf(sec, this.terms);
+        if (blk) {
+          if (blk.scrollIntoView) blk.scrollIntoView({ block: 'center' });
+          blk.classList.add('q-flash');
+          setTimeout(function () { blk.classList.remove('q-flash'); }, 1500);
+        } else if (sec.scrollIntoView) {
+          sec.scrollIntoView({ block: 'start' });
+        }
+      }
+      return true;
+    },
+
+    clearHits: function () {
+      $$('mark.q-hit').forEach(function (mk) {
+        var p = mk.parentNode;
+        if (!p) return;
+        while (mk.firstChild) p.insertBefore(mk.firstChild, mk);
+        p.removeChild(mk);
+        if (p.normalize) p.normalize();     // 合并被切碎的文本节点，别让候选越来越碎
+      });
+      $$('.q-flash').forEach(function (b) { b.classList.remove('q-flash'); });
+    },
+
+    syncActive: function () {
+      var self = this;
+      var box = $('#qres');
+      $$('.qhit', box).forEach(function (el, i) {
+        el.classList.toggle('on', i === self.on);
+        if (i !== self.on || !box) return;
+        var er = el.getBoundingClientRect(), br = box.getBoundingClientRect();
+        if (er.top < br.top || er.bottom > br.bottom) {
+          box.scrollTop += (er.top - br.top) - box.clientHeight * 0.3;
+        }
+      });
+    },
+
+    move: function (d) {
+      var rows = $$('.qhit', $('#qres'));
+      if (!rows.length) return;
+      var i = this.on < 0 ? (d > 0 ? 0 : rows.length - 1) : (this.on + d);
+      if (i < 0) i = 0;
+      if (i >= rows.length) i = rows.length - 1;
+      this.on = i;
+      this.syncActive();
+    },
+
+    /** 搜索框的键盘处理（挂在 #q 上；全局 Esc 在 initChrome 里，输入框会被它跳过）。 */
+    key: function (input, ev) {
+      if (ev.key === 'ArrowDown') { ev.preventDefault(); this.move(1); return; }
+      if (ev.key === 'ArrowUp') { ev.preventDefault(); this.move(-1); return; }
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        this.goto(this.on < 0 ? 0 : this.on);
+        return;
+      }
+      if (ev.key === 'Escape') {
+        input.value = '';
+        this.run(input);
+        input.blur();
+      }
+    },
+
+    /** 无头测试用：把当前状态摊平成纯数据。 */
+    stat: function () {
+      var box = $('#qres');
+      return {
+        terms: this.terms.slice(),
+        indexed: this.idx ? this.idx.length : 0,
+        rows: this.items.length,
+        shown: $$('.qhit', box).length,
+        open: !!(box && box.classList.contains('on')),
+        hits: $$('mark.q-hit').length,
+        notes: $$('mark.hl').length,
+        active: this.on
+      };
+    }
+  };
+
   /* ======================= 9. 进度条 / 回到顶部 / 快捷键 ======================= */
   function initChrome() {
     var bar = $('#progress'), top = $('#toTop');
@@ -1146,6 +1500,19 @@
       if (k === 'n') { e.preventDefault(); Notes.toggleDrawer(); return; }
       if (k === 't') { e.preventDefault(); var tb = $('#thumbToggle'); if (tb) tb.click(); return; }
       if (k === 'b') { e.preventDefault(); var nb = $('#navToggle'); if (nb) nb.click(); return; }
+      /* 「/」对焦搜索框 —— 侧栏被收起时先展开，否则聚焦了也看不见（有焦点却无处可看最难解释） */
+      if (k === '/') {
+        e.preventDefault();
+        var qq = $('#q');
+        if (!qq) return;
+        var navOff = MOBILE.matches
+          ? !document.body.classList.contains('nav-shown')
+          : document.body.classList.contains('nav-hidden');
+        if (navOff) { var nb2 = $('#navToggle'); if (nb2) nb2.click(); }
+        qq.focus();
+        if (qq.select) qq.select();
+        return;
+      }
       if (k === 'j' || k === 'k') {
         var secs = $$('section[id]');
         var y = window.scrollY + 90, cur = 0;
@@ -1256,7 +1623,7 @@
 
   /* 无头测试入口 */
   window.__doc = {
-    notes: Notes, toc: Toc, font: Font,
+    notes: Notes, toc: Toc, font: Font, find: Find,
     markSelection: markSelection,
     openEmbeddedPdf: openEmbeddedPdf,
     pdfBlob: pdfBlob,

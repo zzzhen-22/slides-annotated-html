@@ -1,0 +1,167 @@
+<section class="cover" id="cover">
+  <p class="cover-kicker">在线 Demo · 节选 8 页</p>
+  <h1>Logistic Regression<br><span>逻辑回归 · 逐页精解</span></h1>
+  <p class="cover-sub">由 pdf-slides-annotated-html 生成的真实产物节选</p>
+  <ul class="cover-meta">
+    <li><b>完整版</b><span>63 页逐页讲解；本 demo 节选开头 8 页（P1–P8）</span></li>
+    <li><b>本页可交互</b><span>目录折叠 · 划词标记 · 笔记导出 · 快捷键</span></li>
+    <li><b>形态</b><span>单文件 HTML，公式离线渲染，断网可开</span></li>
+    <li><b>素材版权</b><span>原课件版权归原作者所有，此处仅用于演示输出效果</span></li>
+  </ul>
+</section>
+
+<section class="card" id="demo-notice">
+  <h2>关于这份 demo：它是节选，不是完整文档</h2>
+  <p class="lead">这份 demo 从《逻辑回归 · 逐页精解》里<b>节选了开头 8 页</b>，目的是让你在<b>不装任何依赖</b>的前提下，先看清这套工具做出来的东西长什么样、能不能用。左侧目录里的每一项都对应真实存在的一页。</p>
+
+  <h3>保留下来的部分</h3>
+  <ul class="lst">
+    <li>封面与这份说明</li>
+    <li>「阅读前必读」的五张<b>折叠卡</b>（前置知识，演示 <code>details</code> 折叠样式）</li>
+    <li>第一节的<b>本节概述卡</b>（核心问题 / 读完应能 / 与前后节关系）</li>
+    <li><b>P1–P8 逐页讲解</b>：左侧是中文讲解、右侧贴着原页缩略图，含公式、表格与四类提示卡</li>
+    <li>结尾的<b>一页纸速查表</b>与术语表</li>
+  </ul>
+
+  <h3>为了控制体积与版权而移除的部分</h3>
+  <ul class="lst">
+    <li>其余 55 页（完整版共 63 页）</li>
+    <li><b>内嵌的原课件 PDF</b> —— 原课件版权不属于本项目，因此 demo 里每页的「打开原 PDF 该页」按钮已被移除；完整版会把它整份内嵌，换设备也能点开对照</li>
+    <li>指向未包含页面的跳转链接（已降级为纯文本，避免点了没反应）</li>
+  </ul>
+
+  <div class="tip">
+    <b>建议试这三件事（各 10 秒）：</b>
+    ① 点左侧目录里任一标题 → 目录可逐级折叠，折叠状态会被记住；
+    ② 在正文里<b>划选一句话</b> → 选好后点浮出的「标记」，或直接按 <b>M</b> 键 → 右侧弹出笔记抽屉，可以写备注、跳回原文、导出 Markdown；
+    ③ 按 <b>B</b> 收起左侧目录 → 正文拉宽，右侧的原页缩略图会自动从 268 px 放大到 400 px。
+  </div>
+
+  <div class="note">
+    <b>快捷键：</b><b>J</b>/<b>K</b> 翻页 · <b>M</b> 标记选中 · <b>B</b> 侧栏 · <b>T</b> 缩略图 · <b>N</b> 笔记 · <b>Esc</b> 关闭。
+    标记与笔记存在你自己的浏览器里，不会上传。
+  </div>
+
+  <div class="flag">
+    <b>版权声明：</b>本 demo 用于演示的原始课件为《Introduction to Artificial Intelligence · Logistic Regression》（苏航，清华大学，63 页），<b>版权归原作者与所属机构所有</b>；
+    此处仅作为「工具输出效果」的示例引用，并未重新分发完整课件。若权利人希望移除，请联系仓库作者，会立即处理。
+  </div>
+</section>
+
+<section class="card primer" id="primer">
+  <h2>阅读前必读：概率论零基础速成（补充）</h2>
+  <p class="lead">原课件默认读者已学过概率论与微积分，所以第 5 页一上来就用 <script type="math/tex">p(X \mid \mathcal{M})</script> 这样的写法。如果你没学过，先花十分钟把下面九张卡片过一遍，后面就不会卡壳。<b>已经学过的可以直接跳到正文。</b>每张卡片都可以点开／收起。</p>
+
+  <details class="pill" open>
+    <summary>① 随机变量、概率：概率到底是个什么东西</summary>
+    <div class="pill-body">
+      <p><b>随机变量</b>就是把一次随机试验的结果记成一个数。比如「掷一枚硬币」的结果记成 <script type="math/tex">X</script>，正面记 <script type="math/tex">X=1</script>、反面记 <script type="math/tex">X=0</script>——这个 <script type="math/tex">X</script> 就是随机变量。注意它必须大写，因为它是「还没定下来的量」；而 <script type="math/tex">x</script>（小写）表示它<em>已经取到</em>的某个具体值。</p>
+      <p><b>概率</b> <script type="math/tex">P(X=x)</script>（简写 <script type="math/tex">p(x)</script>）就是这个取值出现的可能性大小，取值一定在 0 到 1 之间，而且所有可能取值的概率加起来必须是 1：</p>
+      <p class="eq"><script type="math/tex; mode=display">\sum_{x} p(x) = 1</script></p>
+      <p>如果取值是连续的（比如身高、温度），「恰好等于某个值」的概率是 0，这时改叫<b>概率密度</b>，求和就换成积分 <script type="math/tex">\int p(x)\,\mathrm{d}x = 1</script>。密度本身可以大于 1（例如第 45 页那张图里，条件密度的峰值到了 8 左右），只有「积分出来的面积」才是概率。这一点初学时最容易弄混。</p>
+    </div>
+  </details>
+
+  <details class="pill">
+    <summary>② 联合概率、边缘概率、条件概率：三个最核心的概念</summary>
+    <div class="pill-body">
+      <p>原文件第 5 页只用了三行字带过这三个概念，但它们后面全程都在用。</p>
+      <table class="tbl">
+        <thead><tr><th>写法</th><th>读作</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td><script type="math/tex">p(X)</script></td><td>X 的概率</td><td>X 取某个值的可能性</td></tr>
+          <tr><td><script type="math/tex">p(X \mid \mathcal{M})</script></td><td>给定 M 时 X 的条件概率</td><td>在「已知 M 成立」这个前提下，X 取某个值的可能性</td></tr>
+          <tr><td><script type="math/tex">p(X, \mathcal{M})</script></td><td>X 与 M 的联合概率</td><td>X 和 M 同时取到各自某个值的可能性</td></tr>
+        </tbody>
+      </table>
+      <p><b>乘法法则（product rule）</b>把三者串起来：</p>
+      <p class="eq"><script type="math/tex; mode=display">p(X, \mathcal{M}) = p(X \mid \mathcal{M})\,p(\mathcal{M})</script></p>
+      <p>用「先发生 M，再在 M 的条件下发生 X」来理解最顺：两件事同时发生，等于先让 M 发生、再让 X 在 M 之下发生。</p>
+      <p><b>加法（求和）法则</b>反过来把联合概率「压」成边缘概率——把不关心的那个变量所有可能取值都加起来（连续情形就是积分）：</p>
+      <p class="eq"><script type="math/tex; mode=display">p(X) = \sum_{\mathcal{M}} p(X, \mathcal{M}) = \int p(X \mid \mathcal{M})\,p(\mathcal{M})\,\mathrm{d}\mathcal{M}</script></p>
+    </div>
+  </details>
+
+  <details class="pill">
+    <summary>③ 独立与条件独立：朴素贝叶斯那一页在赌什么</summary>
+    <div class="pill-body">
+      <p>两件事 <b>独立</b>，意思是「知道一件事发生与否，对另一件事的可能性毫无影响」。数学上写成 <script type="math/tex">p(X,Y)=p(X)p(Y)</script>，等价于 <script type="math/tex">p(X\mid Y)=p(X)</script>。</p>
+      <p><b>条件独立</b>稍微绕一点：<script type="math/tex">p(X_1, X_2 \mid Y) = p(X_1\mid Y)\,p(X_2\mid Y)</script>。意思是——本来 <script type="math/tex">X_1</script> 和 <script type="math/tex">X_2</script> 是有关联的，但<em>一旦知道了 Y</em>，这种关联就消失了。</p>
+      <div class="tip">
+        <b>打个比方：</b>「地面湿」和「有人撑伞」高度相关（看到其中一个，另一个的可能性就变大）。但它们并不互相导致，真正的共同原因是「下雨了」。所以<em>在已知「下雨」的条件下</em>，这两件事就互相独立了——这就是条件独立。
+      </div>
+      <p>第 17 页的朴素贝叶斯假设，正是假设所有特征在「已知类别」的条件下互相独立。这个假设通常并不成立（第 31 页专门吐槽了这一点），但换来的好处极其可观——第 26 页会算给你看。</p>
+    </div>
+  </details>
+
+  <details class="pill">
+    <summary>④ 似然：为什么同一个乘积，换个角度看就变了名字</summary>
+    <div class="pill-body">
+      <p>这是全篇出现频率最高、也最容易懵的一个词。</p>
+      <p>我们已经拿到了数据 <script type="math/tex">D</script>（这是既成事实）。现在问：「参数 <script type="math/tex">\theta</script> 取多少时，最能让 <em>我手上这份数据</em> 显得不意外？」这个 <script type="math/tex">p(D\mid\theta)</script> 作为 <script type="math/tex">\theta</script> 的函数，就叫 <b>似然（likelihood）</b>。</p>
+      <p>注意：同一个数学表达式 <script type="math/tex">p(D\mid\theta)</script>，当 <script type="math/tex">D</script> 固定、看成 <script type="math/tex">\theta</script> 的函数时，它叫「似然」；当 <script type="math/tex">\theta</script> 固定、看成 <script type="math/tex">D</script> 的函数时，它叫「条件概率」。<b>换的是视角，不是公式。</b></p>
+      <p>还有一个关键前提：<b>数据点之间是独立同分布的</b>（i.i.d.）。于是整份数据的似然就是每个样本似然的连乘——这正是第 25 页那个 <script type="math/tex">\prod</script> 的来历：</p>
+      <p class="eq"><script type="math/tex; mode=display">p(\{x_i,y_i\}\mid\theta)=\prod_{i=1}^{N} p(x_i,y_i\mid\theta)</script></p>
+      <p>连乘容易数字下溢（几十个小于 1 的数相乘很快就变成 0），所以大家统一改取对数，把连乘变连加——这就是第 29、52 页「等价的取对数」一步的原因。</p>
+    </div>
+  </details>
+
+  <details class="pill">
+    <summary>⑤ 四个必须认识的分布：伯努利、类别、高斯、贝塔</summary>
+    <div class="pill-body">
+      <p><b>伯努利分布（Bernoulli）</b>——只有两种结果（成功／失败、1／0）。用参数 <script type="math/tex">\theta</script> 表示「取 1」的概率：</p>
+      <p class="eq"><script type="math/tex; mode=display">p(x\mid\theta)=\theta^{x}(1-\theta)^{1-x},\quad x\in\{0,1\}</script></p>
+      <p>这个写法很妙：<script type="math/tex">x=1</script> 时 <script type="math/tex">\theta^{1}(1-\theta)^{0}=\theta</script>；<script type="math/tex">x=0</script> 时 <script type="math/tex">\theta^{0}(1-\theta)^{1}=1-\theta</script>。一个式子把两种情况都写了。第 29 页把它推广成 <script type="math/tex">\theta^{\alpha_1}(1-\theta)^{\alpha_0}</script>，其中 <script type="math/tex">\alpha_1,\alpha_0</script> 就是把数据里 1 和 0 出现的次数数出来。</p>
+      <p><b>高斯分布（正态分布）</b>——钟形曲线，第 41、43 页的主角。两个参数：<script type="math/tex">\mu</script>（中心在哪）和 <script type="math/tex">\sigma^2</script>（胖瘦）。</p>
+      <p><b>贝塔分布（Beta）</b>——专门用来描述「一个 0 到 1 之间的概率参数 <script type="math/tex">\theta</script> 本身该是多少」，所以它天然适合当伯努利的先验。第 33 页那张彩色曲线图就是它的不同形态。</p>
+      <p><b>类别分布</b>——伯努利推广到 <script type="math/tex">K</script> 类，用在第 16、17 页的「鸟／哺乳动物」和多分类逻辑回归上。</p>
+    </div>
+  </details>
+
+  <details class="pill">
+    <summary>⑥ 导数、偏导与梯度：为什么求极值要「求导等于零」</summary>
+    <div class="pill-body">
+      <p>一元函数 <script type="math/tex">f(\theta)</script> 的<b>导数</b> <script type="math/tex">\frac{\mathrm{d}f}{\mathrm{d}\theta}</script> 表示曲线在某点的陡峭程度，也即「<script type="math/tex">\theta</script> 稍微变大一点，<script type="math/tex">f</script> 会变多少」。在山的最高点，坡是平的，所以：</p>
+      <p class="eq"><script type="math/tex; mode=display">\frac{\mathrm{d}f}{\mathrm{d}\theta}=0\ \text{ (at the extremum)}</script></p>
+      <p>第 30 页求 MLE，第 59 页求逻辑回归的最优点，用的都是这一条。</p>
+      <p>参数变多（比如 <script type="math/tex">\mathbf{w}=(w_0,w_1,\dots,w_d)</script>）以后，「对某一个变量求导而把其余当常数」就叫<b>偏导</b> <script type="math/tex">\partial f/\partial w_j</script>；把所有这些偏导竖着排成一个向量，就叫<b>梯度</b>：</p>
+      <p class="eq"><script type="math/tex; mode=display">\nabla_{\mathbf{w}}\mathcal{L}(\mathbf{w})=\left(\frac{\partial\mathcal{L}}{\partial w_0},\dots,\frac{\partial\mathcal{L}}{\partial w_d}\right)^{\!\top}</script></p>
+      <p>梯度指的方向是「函数上升最快的方向」，所以想变大就顺着它走（梯度上升），想变小就反着走（梯度下降）。第 54 页的更新公式就是这么来的。</p>
+      <p>再往上还有<b>二阶导数</b>（Hessian 矩阵），它描述坡度的变化快慢，牛顿法（第 58–60 页）用它算出一整步该迈多大。</p>
+    </div>
+  </details>
+
+  <details class="pill">
+    <summary>⑦ 向量、点积和转置：那个 <script type="math/tex">\mathbf{w}^\top\mathbf{x}</script> 到底在算什么</summary>
+    <div class="pill-body">
+      <p>逻辑回归全程围绕一个量打转：</p>
+      <p class="eq"><script type="math/tex; mode=display">\mathbf{w}^\top\mathbf{x} = w_1x_1+w_2x_2+\cdots+w_dx_d</script></p>
+      <p>这就是两个向量的<b>点积</b>（内积），结果是一个数。可以这样读它：把每个特征 <script type="math/tex">x_j</script> 乘上对应的权重 <script type="math/tex">w_j</script>，再全部加起来。权重是正的，说明这个特征变大就倾向于让结果变大；权重接近 0，说明这个特征无关紧要。</p>
+      <p>上标 <script type="math/tex">\top</script> 是<b>转置</b>，作用是把竖着的列向量躺下来变成横着的行向量，这样一个行向量乘一个列向量，维度才对得上，结果才是一个数（而不是一个矩阵）。</p>
+      <p>所以 <script type="math/tex">\mathbf{w}^\top\mathbf{x}+w_0</script> 本质上就是中学学的「加权求和再加偏置」，只不过写在向量记号里显得吓人。当它等于 0 时，就是分类的分界线——第 47 页的结论。</p>
+    </div>
+  </details>
+
+  <details class="pill">
+    <summary>⑧ 凸函数与凹函数：为什么「凹」是好消息</summary>
+    <div class="pill-body">
+      <p><b>凸函数</b>长得像碗（开口朝上），碗里放个球一定会滚到唯一的最低点；<b>凹函数</b>长得像倒扣的碗，球一定会滚到唯一的最高点。</p>
+      <p>这个形状的意义在于：<b>没有「假的」局部最优</b>。你随便从哪一点出发往上爬，只要一直往上走，最后一定到全局最高点，不会卡在某个小坑里出不来。</p>
+      <p>第 53 页说「坏消息：没有闭式解；好消息：<script type="math/tex">\mathcal{L}(\mathbf{w})</script> 是凹函数」——正是在说：虽然算不出一个公式直接得到答案，但用迭代法一定收敛到唯一最优解，这件事是有保证的。</p>
+      <p>第 54 页那张三维曲面图画的是 <script type="math/tex">-\mathcal{L}(\mathbf{w})</script>（凹函数取负就变成碗状的凸函数），红点就是迭代过程中一步步往下滚的位置。</p>
+    </div>
+  </details>
+
+  <details class="pill">
+    <summary>⑨ 指数与对数：几个马上要用的性质</summary>
+    <div class="pill-body">
+      <ul class="lst">
+        <li><script type="math/tex">e^{a+b}=e^{a}e^{b}</script></li>
+        <li><script type="math/tex">\ln(ab)=\ln a+\ln b</script>（把连乘变连加，所以处处取对数）</li>
+        <li><script type="math/tex">\ln e^{a}=a</script></li>
+        <li><script type="math/tex">\frac{\mathrm{d}}{\mathrm{d}v}e^{v}=e^{v}</script>，以及 <script type="math/tex">\frac{\mathrm{d}}{\mathrm{d}v}\ln v=\frac{1}{v}</script>（第 30 页就靠这两条）</li>
+        <li><script type="math/tex">e^{0}=1</script>，且 <script type="math/tex">e^{-v}</script> 恒大于 0——所以 <script type="math/tex">\frac{1}{1+e^{-v}}</script> 永远落在 0 和 1 之间，天生就是个概率（第 46 页）</li>
+      </ul>
+    </div>
+  </details>
+</section>
