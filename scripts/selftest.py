@@ -7,7 +7,6 @@
 
 为什么要它：套件号称「自包含、换个课件也能跑」，那就得有一条**不依赖任何已有项目**
 的证据链。这里用 PyMuPDF 现造一份 6 页的小 PDF（不需要联网、不需要外部素材），
-然后调用 run_all.py 走完 建骨架 → 渲染 → 构建 → 四项体检 → 截图，
 最后按输出里的关键词判定 PASS/FAIL。
 
 **四条自查线**（互相独立，缺一条就少一类保障）：
@@ -323,6 +322,28 @@ def course_path(base):
         checks.append(('⑤ 体检确实铺开了（讲/链接/术语/要点都 > 0）', False))
     checks.append(('⑤ .xref 跨讲卡被真的检查到', '检查了 1 条 .xref 外链' in out_ck))
 
+    # ⑤b 公式渲染链（pitfalls 第 49/50 条的守卫）。
+    # 这两条断言各有分工，缺一不可：
+    #   · 空转守卫：样例里必须**真的有公式**（否则下面两条永远为真、等于没测）；
+    #   · 链路断言：内联了 KaTeX、且可见正文里没有〔公式〕占位符。
+    # 只内联 KaTeX 而抽取器把公式塌成占位符（第 50 条），或标签写坏了截断脚本
+    # （第 49 条），都会被第二条抓住。
+    entry_p = os.path.join(course, 'index.html')
+    raw = open(entry_p, encoding='utf-8').read() if os.path.exists(entry_p) else ''
+    # 公式标签在产物里是 `<script type="math/tex">`；主页导出到 cdata 时 `<` 会转义
+    n_src = len(re.findall(r'<script\b[^>]*\btype="math/tex', raw, re.I))
+    n_esc = raw.count(r'math/tex')
+    checks.append(('⓪ 课程样例：要点/术语里确实带了公式（空转守卫）',
+                   n_src + n_esc > 0))
+    checks.append(('⑤ 入口页内联了 KaTeX', 'katex.min.js' in raw or 'katex.render' in raw))
+    # 可见正文（挖掉 script / style / **HTML 注释**）里不许剩〔公式〕——那是留给检索索引的记号。
+    # ⚠ 必须用 coursekit.body_html()，与 course_check.py 的判据**同源**：自己写个粗糙的
+    # 「剥 script」正则会漏挖注释，而 `course-shell.html` 的注释里正好有「〔公式〕」这个词，
+    # 于是误报（2026-10-15 实测踩到）。判据同源是这个套件反复吃过的教训（pitfalls 第 43/44 条）。
+    import coursekit  # noqa: E402  （HERE 已在模块顶部加进 sys.path）
+    vis = coursekit.body_html(raw)
+    checks.append(('⑤ 可见正文里没有〔公式〕占位符', '〔公式〕' not in vis))
+
     # ④ 反向注入：坏锚点必须被抓到
     checks.append(reverse_check_course(course, prod_rel))
     return checks
@@ -355,7 +376,9 @@ def patch_course_lecture(lec_dir):
         tag = '<section class="pg" id="%s" data-page="%s">' % (pid, pid[1:].lstrip('0'))
         html = html.replace(tag, tag[:-1] + extra + '>', 1)
 
-    # b) #keypoints：三条真要点（首条带 data-topic，验证要点↔术语互链）
+    # b) #keypoints：三条真要点（首条带 data-topic，验证要点↔术语互链）。
+    #    第 4 条**带公式**：它是「要点/术语里的公式能不能在主页渲染」这条链的断言对象
+    #    （pitfalls 第 50 条 —— 抽取器/汇总层漏搬富文本字段时，公式会静默退化成〔公式〕）。
     old = re.search(r'<ol class="kpl"[\s\S]*?</ol>', html)
     if old:
         new = ('<ol class="kpl">\n'
@@ -365,10 +388,14 @@ def patch_course_lecture(lec_dir):
                'Smoothing exists to keep an unseen outcome from getting probability zero.</li>\n'
                '    <li data-at="#p05">'
                'The smoothing constant trades confidence for robustness.</li>\n'
+               '    <li data-at="#p05">'
+               'Estimate <script type="math/tex">\\hat{p}=\\frac{c+\\alpha}{N+\\alpha K}'
+               '</script> with a small alpha.</li>\n'
                '  </ol>')
         html = html[:old.start()] + new + html[old.end():]
 
-    # c) #glossary：两行真术语。**必须在 glossary 卡内定位**（产物有多个 <tbody>）
+    # c) #glossary：两行真术语（第二行释义带公式）。**必须在 glossary 卡内定位**
+    #    （产物有多个 <tbody>）
     gi = html.find('id="glossary"')
     if gi >= 0:
         tb = re.search(r'<tbody>[\s\S]*?</tbody>', html[gi:])
@@ -380,7 +407,7 @@ def patch_course_lecture(lec_dir):
                    '<td><a href="#p03">P3</a></td></tr>\n'
                    '      <tr data-concept="laplace-smoothing">'
                    '<td>Smoothing</td><td>Laplace smoothing</td>'
-                   '<td>Add a small constant to every count.</td>'
+                   '<td>Add <script type="math/tex">\\alpha</script> to every count.</td>'
                    '<td><a href="#p04">P4</a></td></tr>\n'
                    '    </tbody>')
             a, b = gi + tb.start(), gi + tb.end()

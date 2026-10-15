@@ -19,6 +19,43 @@
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  /* ======================= ⓪ KaTeX 渲染 =======================
+     要点表与术语总表里带着各讲产物里的公式标签（type="math/tex" 的内联
+     script 块，由 coursekit.html_rich 原样保留下来），这里把它们换成渲染好的
+     公式 —— 否则页面上只会看到一坨 LaTeX 源码。
+
+     ⚠ 本段注释**故意不写字面的起止标签**：这段代码是要被内联进 HTML 的，
+     注释里一旦出现闭合标签，解析器会把它当成这个 script 元素的结尾而提前收尾，
+     整页脚本就此报废（2026-10-15 真实事故）。course_site.py 生成期会拦住这种写法。
+
+     为什么渲染函数**必须现在执行、而不是等 DOMContentLoaded**：
+     Kp.build() 靠 li.textContent 建索引与过滤，要是那时公式还没渲染，
+     取到的就是 LaTeX 源码；渲染完再改 DOM 又会让 Kp.items 里的文本过期。
+     所以顺序是：先渲染公式 → 再 build 索引。**顺序反了过滤就会失灵。**
+     ===================================================================== */
+  function renderMath(root) {
+    if (typeof katex === 'undefined') return 0;
+    var n = 0;
+    $$('script[type^="math/tex"]', root).forEach(function (el) {
+      var display = /mode=display/.test(el.getAttribute('type') || '');
+      var tex = el.textContent || '';
+      var span = document.createElement('span');
+      try {
+        katex.render(tex, span, {
+          displayMode: display, throwOnError: false,
+          strict: false, trust: false, output: 'htmlAndMathml'
+        });
+      } catch (err) {
+        /* 渲染失败**不许静默吃掉公式** —— 退回显示源码，让人看得见哪里错了 */
+        span.textContent = tex;
+        span.className = 'katex-failed';
+      }
+      if (el.parentNode) el.parentNode.replaceChild(span, el);
+      n++;
+    });
+    return n;
+  }
+
   /* ======================= ① 要点过滤 ======================= */
   var Kp = {
     items: [],          // [{li, lec, text}]
@@ -296,9 +333,14 @@
   }
 
   function boot() {
+    /* ⚠ 顺序不能反：先渲染公式，再建要点索引。
+       Kp.build() 读的是 li.textContent —— 公式没渲染完就读，索引里存的是
+       LaTeX 源码；等公式渲染好，文本变了、索引没变，过滤就会按错误的词去匹配。 */
+    var nMath = renderMath(document);
     initTop();
     initKp();
     initFind();
+    return nMath;
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
@@ -307,6 +349,7 @@
   window.__course = {
     kp: Kp,
     find: CFind,
+    renderMath: renderMath,
     state: function () {
       return {
         lectures: $$('.klec').length,
@@ -316,7 +359,16 @@
         indexedPages: CFind.idx.length,
         glossaryRows: $$('#glossary tbody tr').length,
         progressRows: $$('#progress tbody tr').length,
-        emptyShown: !!(($('#kpEmpty') || {}).hidden === false)
+        emptyShown: !!(($('#kpEmpty') || {}).hidden === false),
+        /* 公式体检用：渲染出来的公式数 / 尚未渲染的残留 / 渲染失败数 */
+        mathRendered: $$('.katex').length,
+        mathLeft: $$('script[type^="math/tex"]').length,
+        mathFailed: $$('.katex-failed').length,
+        /* 已渲染的正文里还有没有占位符（不该有 —— 那是给检索索引用，不该显示） */
+        placeholderLeft: (function () {
+          var txt = $$('#keypoints, #glossary').map(function (x) { return x.textContent; }).join('');
+          return (txt.match(/〔公式〕/g) || []).length;
+        })()
       };
     }
   };

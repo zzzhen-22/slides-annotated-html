@@ -43,6 +43,7 @@ if hasattr(sys.stderr, 'reconfigure'):
 SHELL = os.path.join(KIT, 'assets', 'course-shell.html')
 CSS_F = os.path.join(KIT, 'assets', 'course.css')
 JS_F = os.path.join(KIT, 'assets', 'course.js')
+KATEX_DIR = os.path.join(KIT, 'vendor', 'katex')
 
 SECTIONS = [('map', '课程地图'), ('keypoints', '要点总结'), ('search', '跨讲检索'),
             ('glossary', '术语总表'), ('progress', '进度看板')]
@@ -140,7 +141,11 @@ def render_keypoints(lectures, kp_by_id, course_dir):
                 if tp:
                     extra += ('<a class="kp-topic" href="#glossary" title="在术语总表里看这个概念">⟡%s</a>'
                               % e(tp))
-                rows.append('<li>%s%s</li>' % (e(p.get('text') or ''), extra))
+                # 要点正文用**富文本**渲染（保留公式标签）——换成转义后的 text 会让
+                # 要点里的 σ / ρ / ‖w‖ 显示成占位符〔公式〕，那样主页就读不懂了。
+                # 回退到转义的 text 是为了兼容旧索引（没有 html 字段时也不至于丢内容）。
+                rich = p.get('html') or e(p.get('text') or '')
+                rows.append('<li>%s%s</li>' % (rich, extra))
             body = '<ol class="kpl">\n%s\n</ol>' % '\n'.join(rows)
         else:
             # **未写完的讲次要显式占位，绝不静默省略** —— 空白会让人以为遗漏了，
@@ -179,7 +184,13 @@ def render_glossary(terms, lec_by_id, course_dir):
             seen_link = '<span class="dim">（未定位）</span>'
         alias = '、'.join(t.get('aliases') or [])
         conf = t.get('conflicts') or []
-        name = '<b>%s</b>' % e(t.get('zh') or '?')
+        # 术语名 / English / 释义三列都用**富文本**渲染（保留公式标签）。
+        # 术语表里写公式是常见做法（本套件自带 demo 的术语表里就有 9 处），
+        # 用转义后的纯文本会让它们全变成〔公式〕。回退到 text 兼容旧索引。
+        zh_html = t.get('zh_html') or e(t.get('zh') or '')
+        en_html = t.get('en_html') or e(t.get('en') or '')
+        def_html = t.get('def_html') or e(t.get('def') or '')
+        name = '<b>%s</b>' % zh_html
         if not t.get('zh'):
             name = '<b class="dim">（缺中文名）</b>'
         note = ''
@@ -191,8 +202,8 @@ def render_glossary(terms, lec_by_id, course_dir):
             '<tr data-concept="%s"><td>%s<br><span class="mono dim">%s</span></td>'
             '<td>%s</td><td>%s%s</td><td>%s</td>'
             '<td class="see">%s</td></tr>'
-            % (e(t.get('id') or ''), name, e(t.get('id') or ''), e(t.get('en') or ''),
-               e(t.get('def') or ''), note, seen_link,
+            % (e(t.get('id') or ''), name, e(t.get('id') or ''), en_html,
+               def_html, note, seen_link,
                e('、'.join(t.get('seen') or []) or '—')))
     return ('<table class="tbl"><thead><tr>'
             '<th style="width:19%%">术语</th><th style="width:15%%">English</th><th>一句话定义</th>'
@@ -253,12 +264,73 @@ def notice_of(max_text, full, size_note):
         base = ('本页内联的是<b>每页全文</b>，所以可以在一个框里搜遍全课程。'
                 '文件因此偏大，低配机器打开会慢一些。')
     else:
-        base = ('本页内联的是<b>每页正文的前 %d 字</b>，且公式只保留占位符、不参与检索。' % max_text)
-    return (base + ' 换句话说：<b>找不到不等于没有</b> —— 精确全文搜索请打开对应讲次，'
+        base = ('本页内联的是<b>每页正文的前 %d 字</b>。' % max_text)
+    return (base + ' <b>索引里的公式只留占位符</b>（LaTeX 源码塞进索引没法读），'
+            '所以搜不到公式本身 —— 但要点表与术语总表里的公式是正常渲染的。'
+            ' 换句话说：<b>找不到不等于没有</b> —— 精确全文搜索请打开对应讲次，'
             '用它自己的搜索框（那一份是全量的）。' + (size_note or ''))
 
 
-def build(course_dir, course, index, glossary, keypoints, max_text, full):
+def load_katex():
+    """从 `vendor/katex/` 取离线 KaTeX（字体已转 data URI），返回 (css, js)。
+
+    **为什么课程主页也要内联 KaTeX**：要点表与术语总表里带着各讲产物里的公式
+    （`<script type="math/tex">`）。不内联的话，这些公式在主页上会显示成
+    LaTeX 源码，或者更糟 —— 显示成抽取时留下的占位符〔公式〕。
+    `html_text` 生成的那个占位符是给**检索索引**用的（把 LaTeX 塞进摘要是灾难），
+    首页要显示的是 `html_rich` 保留下的公式标签，两者分工不同、不可互替。
+
+    体积代价：css + js 约 630 KB。首页正文索引本身只有约 160 KB，
+    加完仍远低于 SIZE_LIMIT（3 MB），且换来的是「断网也能看公式」。
+    文件缺失时**降级而不是报错**：公式渲染不了，但正文照样读得到。
+    """
+    css = os.path.join(KATEX_DIR, 'katex.offline.css')
+    js = os.path.join(KATEX_DIR, 'katex.min.js')
+    missing = [f for f in (css, js) if not os.path.exists(f)]
+    if missing:
+        print('  [warn] 缺 vendor/katex/%s —— 课程主页的公式将不会渲染。'
+              '先跑 scripts/katex_offline.py 生成。' % '、'.join(os.path.basename(f) for f in missing))
+        return '', ''
+    c = open(css, encoding='utf-8').read()
+    j = open(js, encoding='utf-8').read()
+    # 这里也要拦一道：katex.min.js 里理论上不该出现闭合标签，出现了就是内联会炸。
+    _assert_no_script_end('katex.min.js', j)
+    return c, j
+
+
+# 内联 JS 的**闭合标签护栏**。
+#
+# 为什么要单独做这个检查：`__JS__` / `__KATEX_JS__` 是把整个 .js 文件原样塞进
+# `<script>…</script>` 里的。只要文件里**任何位置**（包括注释、字符串字面量）
+# 出现闭合标签，HTML 解析器就会把它当成 script 元素的结尾 —— 后面全部代码降级成
+# 页面文本，整页交互报废，而生成期一切正常、只有浏览器里才看得出来。
+#
+# 2026-10-15 真实事故：course.js 的注释里为了举例写了字面的起止标签（说明公式标签
+# 长什么样），内联后把脚本提前截断；同一个字符串还让「挖 script」的正则非贪婪匹配
+# 从假标签起算、配对错位，害得静态体检误报「正文里有〔公式〕占位符」。
+RE_SCRIPT_END_ANY = re.compile(r'</\s*script', re.I)
+# 允许的写法：转义后的 `<\/script`（JS 里的合法等价写法）。
+RE_SCRIPT_END_ESCAPED = re.compile(r'<\\/script|\\u003c/script|\\x3c/script', re.I)
+
+
+def _assert_no_script_end(name, text):
+    """内联 JS 里出现未转义的闭合标签就报错 —— 它会静默截断整页脚本。"""
+    bare = RE_SCRIPT_END_ESCAPED.sub('', text)
+    if RE_SCRIPT_END_ANY.search(bare):
+        raise SystemExit(
+            '%s 含未转义的脚本闭合标签（裸的 "<" + "/script"）—— '
+            '内联进 <script> 会提前闭合它，整页脚本报废。\n'
+            '    改法：注释/字符串里写成 "<" + "\\" + "/script" 这种拆开的形式，'
+            '或者用 \\u003c 替代那个 "<"，干脆不写字面标签更好。' % name)
+
+
+def check_no_script_end_in_assets():
+    """生成前先扫一遍待内联的资产（shell 本身除外，它要的就是真标签）。"""
+    for f in (CSS_F, JS_F):
+        _assert_no_script_end(os.path.basename(f), open(f, encoding='utf-8').read())
+
+
+def build(course_dir, course, index, glossary, keypoints, max_text, full, katex=('', '')):
     lec_by_id = {x.get('id'): x for x in (course.get('lectures') or [])}
     kp_by_id = {x.get('id'): x for x in ((keypoints or {}).get('lectures') or [])}
     lectures = course.get('lectures') or []
@@ -276,6 +348,9 @@ def build(course_dir, course, index, glossary, keypoints, max_text, full):
     # `<` 必须转义：万一正文里出现字面 "</script"，内联标签会被提前截断、整页脚本报废。
     data_json = data_json.replace('<', '\\u003c')
 
+    # 待内联的两个 JS/CSS 资产先过一遍闭合标签护栏（见 _assert_no_script_end 的说明）。
+    check_no_script_end_in_assets()
+
     repl = {
         '__COURSE__': e(course.get('name') or '课程合集'),
         '__SUBTITLE__': e(' · '.join(x for x in [course.get('instructor') or '',
@@ -289,6 +364,8 @@ def build(course_dir, course, index, glossary, keypoints, max_text, full):
         '__PROGRESS__': render_progress(lectures, None),
         '__NOTICE__': notice_of(max_text, full, ''),
         '__DATA__': data_json,
+        '__KATEX_CSS__': katex[0],
+        '__KATEX_JS__': katex[1],
         '__CSS__': open(CSS_F, encoding='utf-8').read(),
         '__JS__': open(JS_F, encoding='utf-8').read(),
         '__FOOT__': '本页只做索引与聚合，正文仍归各讲的产物文件 —— 点课程地图里的讲次即可打开。',
@@ -302,7 +379,29 @@ def build(course_dir, course, index, glossary, keypoints, max_text, full):
     left = [k for k in repl if k in html]
     if left:
         raise SystemExit('还有未替换的占位符: %s' % left)
+    check_script_tags_balanced(html)
     return html
+
+
+def check_script_tags_balanced(html):
+    """生成后数一遍 script 起止标签，不配对就**当场报错**。
+
+    为什么不靠上面那道资产级护栏、还要再数一次：资产级只看 .js/.css 文件，
+    而截断也可能来自别处（比如某个渲染函数把带标签的正文拼进了 script 里，
+    或者将来有人在 shell 里写错）。**成品自检**是最后一道、也是最接近真相的一道。
+
+    判据刻意选得简单：`<script` 出现次数 == `</script` 出现次数。
+    唯一合法的例外是课程索引那段 —— 它内联的是 JSON，生成时已把 `<` 转成 \\u003c，
+    所以那里的公式标签不会以裸 `<` 出现，不影响计数。
+    """
+    n_open = len(re.findall(r'<script\b', html, re.I))
+    n_close = len(re.findall(r'</script\s*>', html, re.I))
+    if n_open != n_close:
+        raise SystemExit(
+            '生成的 index.html 里 script 标签不配对（%d 个开 / %d 个闭）—— '
+            '多半是有内联的内容里出现了未转义的脚本闭合标签，浏览器会在此提前闭合脚本。\n'
+            '    排查：注释或字符串里写了字面的起止标签，把那个 "<" 转义掉即可。'
+            % (n_open, n_close))
 
 
 def main():
@@ -338,13 +437,14 @@ def main():
                 % (n_lec, n_pages, FULL_GATE[0], FULL_GATE[1], a.max_text))
 
     max_text = max(20, a.max_text)
-    html = build(course_dir, course, index, glossary, keypoints, max_text, a.full)
+    katex = load_katex()
+    html = build(course_dir, course, index, glossary, keypoints, max_text, a.full, katex)
     size = len(html.encode('utf-8'))
     downgraded = False
     if not a.full and size > SIZE_LIMIT and max_text > MAX_TEXT_FLOOR:
         # 自动降级 + 明示。体积这种指标不该只靠估算守住（设计稿 §5.6）。
         max_text = MAX_TEXT_FLOOR
-        html = build(course_dir, course, index, glossary, keypoints, max_text, a.full)
+        html = build(course_dir, course, index, glossary, keypoints, max_text, a.full, katex)
         size = len(html.encode('utf-8'))
         downgraded = True
 

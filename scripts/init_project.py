@@ -52,7 +52,6 @@
     · 写讲解内容（这是这个套件唯一不能自动化的部分，质量靠 references/content-quality.md）
 
 产出后：
-    python run_all.py <课件.pdf> --out <同一个目录> --skip-init   # 一键：渲染+构建+三项体检+截图
 """
 import argparse
 import json
@@ -742,7 +741,6 @@ def main():
         '# 先自查环境（python / node / 浏览器 是否就位）',
         '"$PY" "$KIT/scripts/kitpath.py"',
         '',
-        '# 一键（渲染逐页图 + 构建 + 四项体检 + 截图）',
         '"$PY" "$KIT/scripts/run_all.py" "%s" --out "%s" --skip-init' % (pdf, out_dir),
         '',
         '# 或分步',

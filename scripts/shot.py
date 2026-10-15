@@ -68,6 +68,7 @@ def build_cmd(browser, prof, out, url, size, wait, mode):
         '--hide-scrollbars',
         '--virtual-time-budget=%d' % wait,
         '--window-size=%s' % size,
+    ] + kitpath.browser_flags(browser) + [   # 去提权开关（Windows 必需，见 kitpath 注释）
         '--screenshot=%s' % out,
         url,
     ]
@@ -79,18 +80,30 @@ def selftest(browser):
     d = long_path(_tf.mkdtemp(prefix='shotselftest-'))
     try:
         r = subprocess.run([browser, '--headless=new', '--no-sandbox', '--disable-gpu',
-                            '--no-first-run', '--user-data-dir=%s' % os.path.join(d, 'p'),
-                            '--dump-dom', 'about:blank'],
+                            '--no-first-run', '--user-data-dir=%s' % os.path.join(d, 'p')]
+                           + kitpath.browser_flags(browser)
+                           + ['--dump-dom', 'about:blank'],
                            capture_output=True, text=True, timeout=90)
         got = len((r.stdout or '').strip())
         print('自检: 退出码=%s 输出字节=%d %s' % (r.returncode, got,
                                             '✔ 浏览器可用' if got else '✘ 浏览器无响应'))
+        if not got:
+            print('  ⚠ 「退出码 0 + 0 字节」几乎一定是去提权问题，而不是浏览器坏了。')
+            print('    本套件已自动附带 --do-not-de-elevate；仍失败说明当前用的是 Edge。')
+            print('    实测：Chrome + 该参数可用，Edge 两者皆不可用 —— 换 Chrome 并设：')
+            print('      KIT_BROWSER=%s' % _chrome_hint())
         return got > 0
     except Exception as e:  # noqa: BLE001
         print('自检异常: %s' % e)
         return False
     finally:
         shutil.rmtree(d, ignore_errors=True)
+
+
+def _chrome_hint():
+    """给一条可以直接照抄的 KIT_BROWSER 设置（Chrome 用户级安装优先）。"""
+    p = kitpath._first_existing_extra_win()
+    return p or r'C:\Program Files\Google\Chrome\Application\chrome.exe'
 
 
 def main():
@@ -174,9 +187,12 @@ def main():
             print('    1) python shot.py --selftest            # 先确认浏览器本身是否可用')
             print('    2) 换一个 profile 名字再试               # 排除脏 profile')
             print('    3) 确认 profile 不在工作盘、路径不含 8.3 短名（如 SHENYU~1）')
-            print('    4) 本机 Edge 若正开着，长时间批量调用后可能整体失灵 ——')
-            print('       实测失效后 --dump-dom / --version 也全部无输出，需等 Edge')
-            print('       自身恢复或重启系统。此时改用静态检查脚本兜底，不要反复重试。')
+            print('    4) **首选怀疑对象：去提权**。Chromium 认为进程在提升的完整性级别时，')
+            print('       会派生去提权子进程、父进程立刻退出 —— 表现为「0 字节 + 退出码 0」。')
+            print('       本套件已自动加 --do-not-de-elevate。若「退出码 0 + 0 字节」仍在，')
+            print('       说明当前用的是 Edge —— 实测 Edge 在 headless 下两者皆不可用，')
+            print('       换成 Chrome 即可：')
+            print('         set KIT_BROWSER=%s' % _chrome_hint())
             print('    5) 切勿直接 taskkill msedge —— 用户自己的浏览器也是同名进程，')
             print('       先用 Win32_Process 查 CommandLine 过滤 headless 再动。')
             raise SystemExit('截图失败')

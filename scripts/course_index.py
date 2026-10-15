@@ -40,6 +40,14 @@ if hasattr(sys.stderr, 'reconfigure'):
 MAX_PAGE_TEXT = 4000        # 单页正文的存储上限（防病态页把索引撑爆）
 MAX_KEYPOINTS = 10          # 超过就告警：要点不是速查表（设计稿 §5.8）
 
+# **抽取器版本**：改了 coursekit 的抽取逻辑（加了字段、改了清洗方式）就 +1。
+# 增量缓存的 key 只看了「产物内容的哈希」——产物没变就不会重抽。但这只覆盖了
+# 「输入变了」，没覆盖「算法变了」：升级抽取器后旧缓存会被原样复用，
+# 新字段全是空的，而且**流水线全绿**、只有页面显示可疑。
+# 2026-10-15 真实事故：给要点/术语加了 html（保留公式）字段，产物哈希没变，
+# 增量命中后主页拿不到 html，公式继续显示成〔公式〕。
+EXTRACTOR_VERSION = 2
+
 
 def load_prev(path):
     """读上一次的 index.json，用于增量复用。读不到就当没有。"""
@@ -64,6 +72,7 @@ def extract(course_dir, lec, prev, force):
         'done_pages': lec.get('done_pages') or 0,
         'product': prod_rel,
         'hash': '',
+        'extractor': EXTRACTOR_VERSION,
         'pages': [],
         'keypoints': [],
         'glossary': [],
@@ -74,7 +83,10 @@ def extract(course_dir, lec, prev, force):
     h = coursekit.file_hash(prod)
     entry['hash'] = h
     old = prev.get(lid) or {}
-    if not force and old.get('hash') == h:
+    # 缓存两条都要满足才复用：产物内容没变 **且** 抽取器版本一致。
+    # 只判哈希的话，抽取器一升级、旧缓存就带着「缺字段」的结构被复用下去。
+    if (not force and old.get('hash') == h
+            and old.get('extractor') == EXTRACTOR_VERSION):
         return old, warn                      # 增量命中：原样复用
 
     html = coursekit.read_text(prod) or ''
@@ -127,6 +139,9 @@ def build_glossary(entries, prev_glossary):
     · first / seen 由 data-concepts 的分布自动算，不手写
     · zh / en / def 取自各讲的术语表那一行；**多讲不一致时记进 conflicts**，
       由 course_check.py 报 FAIL（术语漂移是必须拦住的，否则同一概念两讲两个名字）
+    · zh_html / en_html / def_html 是上面三列的**富文本版**（保留公式标签），
+      给主页显示用。只带纯文本的话，术语表里写了的公式会在主页上退化成〔公式〕——
+      2026-10-15 真实事故：抽取器加了 html 字段、汇总层忘了搬，主页照旧显示占位符。
     · aliases 是唯一的手写字段，从上一版 glossary.json 里原样带过来
     """
     alias = {}
@@ -140,13 +155,20 @@ def build_glossary(entries, prev_glossary):
         for g in e['glossary']:
             cid = g['id']
             if cid not in terms:
-                terms[cid] = {'zh': [], 'en': [], 'def': [], 'seen': []}
+                terms[cid] = {'zh': [], 'en': [], 'def': [],
+                              'zh_html': [], 'en_html': [], 'def_html': [],
+                              'seen': []}
                 order.append(cid)
             t = terms[cid]
             for key in ('zh', 'en', 'def'):
                 v = (g.get(key) or '').strip()
                 if v and v not in t[key]:
                     t[key].append(v)
+                # 富文本版随纯文本一起收集：**同源同序**，首项天然对应同一讲同一行，
+                # 不会出现「zh 取自 L01、zh_html 取自 L03」这种错配。
+                hv = (g.get(key + '_html') or '').strip()
+                if hv and hv not in t[key + '_html']:
+                    t[key + '_html'].append(hv)
             for p in e['pages']:
                 if cid in p['concepts']:
                     ref = '%s:%s' % (lid, p['id'])
@@ -165,6 +187,10 @@ def build_glossary(entries, prev_glossary):
             'zh': t['zh'][0] if t['zh'] else '',
             'en': t['en'][0] if t['en'] else '',
             'def': t['def'][0] if t['def'] else '',
+            # 富文本三列（保留公式标签），供主页显示；空则由渲染端回退到转义纯文本
+            'zh_html': t['zh_html'][0] if t['zh_html'] else '',
+            'en_html': t['en_html'][0] if t['en_html'] else '',
+            'def_html': t['def_html'][0] if t['def_html'] else '',
             'aliases': alias.get(cid, []),
             'first': t['seen'][0] if t['seen'] else '',
             'seen': t['seen'],

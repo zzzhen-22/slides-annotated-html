@@ -189,6 +189,21 @@ def main():
     chk('course.js 暴露无头测试入口 window.__course', 'window.__course' in js)
     chk('course.js 有导出 Markdown（kp.markdown）', 'markdown: function' in js)
     chk('course.js 的检索索引立刻建（不懒建，防探针读到假故障）', 'CFind.build();' in js)
+    chk('course.js 会渲染公式（要点表/术语总表里的 KaTeX）', 'renderMath' in js and 'katex.render' in js)
+    # 顺序断言要拿 **boot() 函数体内的调用处** 比，不能拿 `initKp()` 字面量 ——
+    # 它首次出现是 `function initKp() {` 这个**定义**（在 renderMath 调用之前），
+    # 用字面量找会把正确的代码误判成「顺序反了」。
+    _m_boot = re.search(r'\bfunction\s+boot\s*\(\s*\)\s*\{', js)
+    _ok_order = False
+    if _m_boot:
+        _tail = js[_m_boot.end():]
+        _a = re.search(r'\brenderMath\s*\(\s*document\s*\)', _tail)
+        _b = re.search(r'\binitKp\s*\(\s*\)', _tail)
+        _ok_order = bool(_a and _b and _a.start() < _b.start())
+    chk('course.js 渲染公式在 build 要点索引之前（顺序反了过滤会按源码匹配）', _ok_order,
+        '' if _ok_order else 'boot() 里要先 renderMath(document) 再 initKp()')
+    chk('course-shell.html 内联了 KaTeX 的 CSS 与 JS 两个占位符',
+        '__KATEX_CSS__' in shell and '__KATEX_JS__' in shell)
     for sid in ('map', 'keypoints', 'search', 'glossary', 'progress'):
         chk('course-shell.html 含区块 #%s' % sid, ('id="%s"' % sid) in shell)
 
@@ -291,6 +306,20 @@ def main():
         chk('入口页内联数据（cdata）可解析', ok_c)
         chk('入口页内联讲次数 = course.json 讲次数', ok_c and n_site == len(lectures),
             '%d vs %d' % (n_site, len(lectures)) if ok_c else '')
+
+        # 公式能不能渲染 —— 防的具体事故（2026-10-15）：
+        # 课程主页没内联 KaTeX，各讲汇总来的公式全显示成〔公式〕占位符。
+        # 生成期断言全绿，只有人打开页面才看得见，所以必须在静态层也拦一道。
+        n_math = len(re.findall(r'<script\b[^>]*\btype="math/tex', raw, re.I))
+        has_katex = 'katex.min.js' in raw or 'katex.render' in raw
+        chk('入口页内联了 KaTeX（公式才渲染得出来）', has_katex,
+            '' if has_katex else 'index.html 里找不到 KaTeX —— 跑 course_site.py 重新生成')
+        # 可见正文里不许出现占位符〔公式〕（那是给检索索引留的记号，不该显示）
+        vis = coursekit.body_html(raw)
+        ph = vis.count('〔公式〕')
+        chk('可见正文里没有〔公式〕占位符', ph == 0,
+            '%d 处（正文里有 %d 个待渲染公式）—— 抽取器把公式塌成了占位符，渲染链断了'
+            % (ph, n_math) if ph else '%d 个公式已保留为可渲染标签' % n_math)
 
     # ---------------------------------------------------------- ③ 术语一致性
     print()

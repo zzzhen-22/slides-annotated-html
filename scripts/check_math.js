@@ -76,7 +76,6 @@ const comments = [];
 body = body.replace(/<!--[\s\S]*?-->/g, (m) => { comments.push(m); return ''; });
 const tags = ['section', 'div', 'p', 'table', 'thead', 'tbody', 'tr', 'td', 'th',
   'details', 'summary', 'figure', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4',
-  'aside', 'main', 'nav', 'span', 'b', 'em', 'a', 'code', 'button', 'textarea', 'mark'];
 let unbalanced = [];
 tags.forEach(t => {
   const o = (body.match(new RegExp('<' + t + '[\\s>]', 'g')) || []).length;

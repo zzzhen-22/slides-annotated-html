@@ -6,7 +6,6 @@
     python check_docs.py          # 静默跑完，只报PASS / FAIL
     python check_docs.py -v       # 额外打印派生出的口径明细（调口径时用）
 
-它查六件事，全是「人眼容易漏、机器一次查完」的：
     ① 文件存在性：文档里提到的脚本/资产/目录是不是真的存在（删了没改文档）
     ② 数字口径：「N 类交互」在五处文档 + check_ui.py docstring 里是不是同一个 N
     ③ 关键功能名：check_ui 声明的每一项交互，功能名在中文文档里能不能找到
@@ -285,7 +284,6 @@ def check_pitfalls():
 
     # 裸总数口径：「pitfalls.md（N 条」的 N 都等于真实条数（含英文 README 的对应写法）
     count_bad = []
-    for rel in ('README.md', 'README.en.md', 'SKILL.md', 'docs/workflow.md', 'TODO.md'):
         for m in RE_PIT_COUNT.finditer(read(rel)):
             n = int(m.group(1) or m.group(2))
             if n != len(nums):

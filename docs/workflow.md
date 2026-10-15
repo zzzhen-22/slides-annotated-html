@@ -2,7 +2,6 @@
 
 > 给想理解这套流程的人看——无论接下来动手的是你还是 AI agent。
 > 可照抄的完整命令与 Agent 执行规范在 `SKILL.md`；写讲解的质量标准在 `references/content-quality.md`；
-> 48 条真实踩坑记录在 `references/pitfalls.md`。
 
 ## 一屏看懂
 
@@ -97,7 +96,6 @@ python scripts/run_all.py "<课件>.pdf" --out <同一目录> --skip-init --skip
 | 校验 | 抓什么问题 |
 |---|---|
 | `check_math.js` | 公式能不能渲染、中文有没有混进公式、标签配对、缺字 |
-| `check_ui.py` | 六类交互的「接线」是否完好（静态，不开浏览器） |
 | `probe.py` + `probe_marks.js` | 划词标记**有没有把DOM 结构改坏**（截图看不出 `<mark>` 里混进块级元素这种事） |
 | `probe.py` + `probe_font.js` | 字号调节的档位 / localStorage / 边界钳制是否正常 |
 | `probe.py` + `probe_find.js` | 正文搜索：索引与命中数对不对、跳转高亮只加元素不改结构、Esc 后逐字复原、与笔记高亮互不干扰 |

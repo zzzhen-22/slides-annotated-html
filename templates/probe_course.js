@@ -17,7 +17,7 @@
    ⚠ **探针验不了、也不该假装验的**：跨文件可达性（链接指向的那份产物里到底有没有 #pNN）。
      那是 scripts/course_check.py 的活 —— 它能在磁盘上把两边对起来，探针只能看当前这一页。
    ========================================================================== */
-window.addEventListener('load', function () { setTimeout(run, 900); });
+window.addEventListener('load', function () { setTimeout(run, 950); });
 
 var out = [];
 var fail = 0;
@@ -54,6 +54,33 @@ function run() {
     T('① 结构自洽（地图/要点块/进度行 = 内联索引里的讲次数）',
       mapRows + ' / ' + kpBlocks + ' / ' + pRows + ' vs ' + lecs.length + (ok1 ? '  ✔' : '  ✘'));
     if (!ok1) bad('三个区块的讲次数对不上内联索引 —— 生成时漏了某个区块，或某一讲被跳过');
+
+    /* ---------- 1.5 公式渲染（要点表 / 术语总表里的 KaTeX） ----------
+       防的是这个具体事故（2026-10-15 真实发生）：课程主页没内联 KaTeX，
+       各讲汇总来的公式全显示成抽取时留下的占位符〔公式〕——生成期全绿，
+       只有人打开页面才看得见。所以这里三条断言，缺一条都拦不住它。 */
+    var st = (C.state ? C.state() : {});
+    var hasMath = $$('#keypoints script[type^="math/tex"], #glossary script[type^="math/tex"]').length;
+    var rendered = $$('#keypoints .katex, #glossary .katex').length;
+    var leftSrc = st.mathLeft || 0;
+    var failed = st.mathFailed || 0;
+    var phLeft = st.placeholderLeft || 0;
+    T('①b 可见区公式（源码标签 / 已渲染 / 未渲染残留）',
+      hasMath + ' 个源码 → ' + rendered + ' 个已渲染，残留 ' + leftSrc +
+      ((leftSrc === 0) ? '  ✔' : '  ✘'));
+    if (leftSrc !== 0) {
+      bad('要点表/术语总表里还有 ' + leftSrc + ' 个没渲染的公式标签 —— ' +
+          '课程主页多半没内联 KaTeX（course_site.py 的 load_katex 取不到 vendor/katex？）');
+    }
+    T('①b 公式渲染失败数', failed + (failed ? '  ✘（退回显示了 LaTeX 源码）' : '  ✔'));
+    if (failed) bad('有 ' + failed + ' 个公式渲染失败 —— 页面上会显示 LaTeX 源码，检查公式是否含非法命令');
+    /* 占位符〔公式〕是**给检索索引用的**，不该出现在可见正文里 */
+    T('①b 可见正文里的占位符〔公式〕', phLeft + (phLeft ? '  ✘' : '  ✔'));
+    if (phLeft) {
+      bad('要点表/术语总表里出现了 ' + phLeft + ' 处〔公式〕占位符 —— ' +
+          '这是抽取器给检索索引留的记号，显示出来说明渲染链路断了');
+    }
+    if (rendered && typeof katex === 'undefined') bad('页面渲染了公式却没有 katex 全局对象');
 
     /* ---------- 2. 要点总结：条数与「显式占位」 ---------- */
     var items = 0, holds = 0, emptyBlocks = [];

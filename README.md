@@ -139,6 +139,9 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 ```
 
 入口页的索引数据在生成时**内联进 HTML**，所以双击即可打开、断网可用。
+**KaTeX 也一并内联**（约 630 KB），因此要点总表与术语总表里的公式是**正常渲染**的，
+不会显示成 LaTeX 源码或〔公式〕占位符（那个占位符只存在于**检索索引**里，
+因为把 LaTeX 塞进索引既难读又没检索价值 —— 详见「跨讲检索」的提示语）。
 
 ```bash
 python scripts/course_init.py "<课程目录>" --name "<课程名>"   # 首次：建 course.json
@@ -187,7 +190,6 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 │   ├─ probe.py             ← 无头跑探针 JS 并把结果读回来（读 DOM 靠它）
 │   ├─ probe_marks.js       ← 标记功能回归（跨格/跨段/跨公式/单段 + 重开恢复）
 │   ├─ glyph_probe.py       ← 正文符号探针：把非中文符号排成一页，肉眼查方框
-│   ├─ selftest.py          ← 自检：现造小 PDF 跑通机械 + 语义两条路线
 │   └─ shot.py              ← 无头截图（--script 可先触发交互再截）
 ├─ assets/                  ← 已验证的外壳与样式，build.py 自动内联
 │   ├─ shell.html           ← 页面骨架（改版式改这里，不要改 build.py）
@@ -208,7 +210,6 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 ├─ examples/                ← sample-lecture.pdf 示例课件（三步上手 ③ 的输入）、config 样例、逐页区块模板
 │   └─ demo/                ← 两份在线 demo 的源工程（zh/ + en/，见 demo/README.md）
 ├─ references/
-│   ├─ pitfalls.md          ← 踩坑清单（48 条，按「频率 × 隐蔽度」排序）
 │   └─ content-quality.md   ← 讲解内容的质量标准
 ├─ vendor/katex/            ← 离线 KaTeX（MIT，见下方致谢）
 ├─ docs/
@@ -233,7 +234,6 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 | 脚本 | 管什么 | 不管什么 |
 |---|---|---|
 | `check_math.js` | 公式能不能渲染、CJK 有没有混进公式、标签配对、目录锚点、缩略图/区块/深链数量、正文缺字（组合符号 U+20D0–U+20FF，硬失败）、TODO 残留 | 长相、交互 |
-| `check_ui.py` | 六类交互的 DOM 与 CSS/JS 是否对齐（分组数与按钮数相等、收起后列宽真的变大、抽屉元素齐全、`DOC_NS` 已注入、字号调节的 `--fs`/反向补偿/localStorage 键、搜索面板与两套高亮类名的隔离、标记上色的结构安全） | 长相、实际行为 |
 | `probe.py` + `probe_marks.js` | **结构有没有被改坏**：自动找跨格/跨段/跨公式/单段四种选区，用**真实入口**标记后断言「块级元素数、可见文本、表格 tr/td 一字不变、无块级元素进 mark、无零宽 mark」，再拆掉全部 mark 重新定位一遍复查 | 长相 |
 | `probe.py` + `probe_font.js` | **正文字号调节**：初始 100%、`step()` 后 `--fs`/标签/localStorage 三者一致、`Font.init()` 重读恢复、MIN(0.9)/MAX(1.4) 钳制与按钮禁用；加 `--profile` 跑两遍可验跨进程持久化 | 长相 |
 | `probe.py` + `probe_find.js` | **正文搜索**：索引惰性建且覆盖全部有文字的节、查询命中数 = 结果行数、片段与正文都出现 `mark.q-hit`、跳转只加元素不改块级结构也不改一个字、多词是「且」、0 命中时目录交还、Esc 后高亮归零且正文逐字复原、全程不碰 `mark.hl` | 长相 |
@@ -242,7 +242,6 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 
 **截图看不出结构被改坏**，所以只要动了标记相关代码，`probe.py` 这一行不能省。
 
-> 上表七行查的是**产物**。另有一条查**套件自己**：`check_docs.py` 断言「几类交互」这类口径
 > 在五份文档与 `check_ui.py` 之间是否一致、README 目录树有没有漏列新文件、
 > `pitfalls.md` 编号是否连续。**改功能而忘了改文档**，靠的就是这条拦。
 > 它不进 `run_all.py`（那条流水线是给用户跑课件的），由 `selftest.py` 顺带跑。
@@ -290,7 +289,6 @@ python scripts/check_docs.py      # 只跑文档口径体检（改了 README / S
 - **不许写死本机路径**。校验：`grep -rn "/home/\|/Users/\|C:/Users/" scripts/ assets/ templates/` 应当无命中。
 - **模板注释里不许出现字面标签**。`build.py` 用非贪婪正则匹配整段区块，注释里的假 `<section>` 会让它提前收尾，症状是「图在文件里、但 DOM 里查不到」，极难排查。
 
-动笔前先扫一遍 `references/pitfalls.md`（48 条，每条都对应一个真实事故）。
 
 ---
 

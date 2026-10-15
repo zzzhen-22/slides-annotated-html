@@ -114,6 +114,57 @@ def _browser_candidates():
     return c
 
 
+# 本机浏览器为「用户级安装」时的补充探测位置（上表已含 LOCALAPPDATA，这里兜底）。
+_BROWSER_EXTRA_WIN = (
+    r'AppData\Local\Google\Chrome\Application\chrome.exe',
+    r'AppData\Local\Microsoft\Edge\Application\msedge.exe',
+)
+
+
+def browser_flags(browser):
+    """返回调用该浏览器做无头任务时应加的**额外命令行参数**。
+
+    目前只有一个、但是**必需**的：`--do-not-de-elevate`。
+
+    ---- 为什么必需（2026-10-15 实机实测，Windows） ----
+    现象：`--dump-dom` / `--screenshot` 全部「空转」—— 退出码 0、stdout 0 字节、
+    stderr 0 字节、不生成截图，看起来像浏览器坏了或页面有问题。加 `--enable-logging=stderr`
+    才看到真因：
+
+        VERBOSE1:base\\win\\elevation_util.cc  RunDeElevated: Started process, PID: …
+        Histogram: Windows.AutoDeElevateResult
+
+    Chromium 启动时若认为当前进程处于「提升的完整性级别」（Windows 的 UAC 提权语境，
+    某些宿主进程/沙箱会给出这种令牌），会**派生一个去提权的子进程、父进程立刻退出**。
+    我们 `subprocess.run` 抓到的是那个马上退出的父进程 —— 于是「退出码 0 + 无输出」。
+    真正的渲染结果在子进程里，句柄已经跟丢了。
+
+    `--do-not-de-elevate` 让 Chromium 原地运行、不要重启，输出就正常回来了。
+
+    ---- 实测的有效范围 ----
+      · Chrome（用户级安装）+ `--do-not-de-elevate`  → **可用**（拿到 DOM）
+      · Chrome 不加该参数                            → 空转
+      · Edge（无论加不加）                           → 全部空转（另有其因，见 shot.py 的排查提示）
+    所以本函数只负责「把该加的加上」，具体用哪个浏览器由 browser_exe 决定；
+    遇到 Edge 空转时按 shot.py 的提示换 Chrome。
+
+    非 Windows 平台返回空列表（该参数是 Windows 专属；在别的平台传了也无害，
+    但没必要往命令行里塞无法识别的开关）。
+    """
+    if not IS_WIN:
+        return []
+    return ['--do-not-de-elevate']
+
+
+def _first_existing_extra_win():
+    home = os.path.expanduser('~')
+    for rel in _BROWSER_EXTRA_WIN:
+        p = os.path.join(home, rel)
+        if os.path.exists(p):
+            return p
+    return None
+
+
 def browser_exe(required=True):
     """找 Chromium 系浏览器：环境变量 KIT_BROWSER → PATH → 常见安装位置。"""
     hit = _env('KIT_BROWSER', 'CHROME_PATH', 'BROWSER_EXE')
@@ -123,7 +174,7 @@ def browser_exe(required=True):
         hit = shutil.which(name)
         if hit:
             return hit
-    hit = _first_existing(_browser_candidates())
+    hit = _first_existing(_browser_candidates()) or _first_existing_extra_win()
     if hit:
         return hit
     if required:

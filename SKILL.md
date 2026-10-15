@@ -84,7 +84,6 @@ PY="$(command -v python || command -v python3)"
 
 ## ⚡ 换新课件入口（B 路线 / 结构简单时）
 
-需求确认后一条命令把机械部分全做完（建骨架 → 渲染 → 组装 → 四项体检 → 截图）：
 
 ```bash
 KIT="$(cd "$(dirname "$0")" && pwd)"
@@ -138,7 +137,6 @@ PY="$(command -v python || command -v python3)"
 
 ## 验证与交付
 
-改完内容必须三校验 + 截图。`run_all.py` 的 ④–⑧ 已自动跑；手动复检或单独重跑：
 
 ```bash
 node  "$KIT/scripts/check_math.js" "输出.html" "_katex/katex.min.js"     # 公式/标签配对/目录锚点/缺字/TODO
@@ -171,6 +169,16 @@ node  "$KIT/scripts/check_math.js" "输出.html" "_katex/katex.min.js"     # 公
 ```
 
 **入口页断网可用**：索引数据在 `course_site.py` 生成时**内联进 HTML**，不 fetch JSON —— 双击即开。
+**KaTeX 也一并内联**（`vendor/katex/`，约 630 KB），所以要点总表与术语总表里的公式**正常渲染**。
+
+> ⚠ **要点与术语里可以直接写公式**（`<script type="math/tex">…</script>`），课程层会自动保留
+> 并在主页渲染。两个坑必须知道：
+> ① **`〔公式〕` 占位符只该出现在检索索引里**，不该出现在可见正文里。它由 `html_text()` 生成
+>    （把 LaTeX 塌成占位符，因为塞进索引既难读又没检索价值）；显示走的是另一个函数
+>    `html_rich()`（保留公式标签）。**两者不可互替**，抽取器与汇总层都必须同时带上两边。
+> ② **别在会被内联进 HTML 的 JS/CSS 里写字面的脚本起止标签**（含注释里举例）——
+>    解析器会把那个闭合标签当成脚本结尾、整页脚本报废。`course_site.py` 有生成期与成品两道护栏，
+>    但改 `assets/` 时自己也要留意。
 
 ### 一条命令同步整门课
 

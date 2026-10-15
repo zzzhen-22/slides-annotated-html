@@ -773,16 +773,10 @@
   var selBar = null;
   function hideSelBar() { if (selBar) selBar.classList.remove('on'); }
 
-  function copyText(t) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(t).catch(function () { fallbackCopy(t); });
-    } else fallbackCopy(t);
   }
   function fallbackCopy(t) {
     var ta = document.createElement('textarea');
-    ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); } catch (e) {}
     document.body.removeChild(ta);
   }
   function esc(s) {
@@ -1525,7 +1519,6 @@
     document.addEventListener('touchend', function () { setTimeout(function () { onSelectionEnd(null); }, 30); });
   }
 
-  /* ======================= 10. PDF 深链 ======================= */
   function initPdfLinks() {
     $$('a.pdf-link').forEach(function (a) {
       var p = a.getAttribute('data-page');
@@ -1535,7 +1528,6 @@
     });
   }
 
-  /* ======================= 11. 内嵌原文件（可选） =======================
      build.py 以 embed_pdf=true 生成时，#pdfB64 里装着原 PDF 的 base64。
      点每页的「打开原文件该页」→ 惰性解码成 Blob → 用 blob: URL 打开，带上 #page=N。
      为什么用 blob: 而不是 data:：浏览器会拦顶层 data: 导航，blob: 不会。

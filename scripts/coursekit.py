@@ -256,6 +256,10 @@ def course_name_hint(course_dir, dirs):
 # ---------------------------------------------------------------- ⑥ 产物抽取
 RE_CARD_OPEN = r'<section(?=[^>]*\bid="%s")[^>]*>'
 RE_SCRIPT = re.compile(r'<script[\s\S]*?</script>', re.I)
+# 公式的承载标签 `<script type="math/tex">行内</script>`。html_rich 要把它留下来 ——
+# 课程主页要**显示**公式，而 html_text 按设计换成占位符（那是给检索索引与摘要用的）。
+RE_MATH_SCRIPT = re.compile(
+    r'<script\b[^>]*\btype="math/tex[^"]*"[^>]*>[\s\S]*?</script>', re.I)
 RE_THUMB = re.compile(r'<figure class="thumb">[\s\S]*?</figure>', re.I)
 RE_TAG = re.compile(r'<[^>]+>')
 RE_ATTR = re.compile(r'\bdata-([a-z-]+)="([^"]*)"')
@@ -295,6 +299,71 @@ def html_text(fragment):
     s = (s.replace('&nbsp;', ' ').replace('&lt;', '<').replace('&gt;', '>')
           .replace('&amp;', '&').replace('&quot;', '"'))
     return re.sub(r'\s+', ' ', s).strip()
+
+
+# html_rich 允许放行的行内标签白名单（**不含 div/section/table 这类块级标签**）：
+# 只保留「强调 + 公式 + 换行」，其余一律转成纯文本。这样即便将来某个卡片里混进
+# 表格或脚本，也不会把主页结构撕开。
+RICH_KEEP = {'b', 'strong', 'em', 'i', 'code', 'sub', 'sup', 'br', 'span', 'mark'}
+
+
+def html_rich(fragment):
+    """把一段 HTML 变成「安全、可显示公式」的 HTML 片段 —— 供课程主页**显示**用。
+
+    **与 html_text 的分工**（两者不可互替，这是本函数存在的全部理由）：
+      · html_text  → 纯文本，公式塌成占位符〔公式〕。给**检索索引与摘要**用：
+        把 LaTeX 源码塞进索引既难读又占地方，且检索「〔公式〕」本来就没意义。
+      · html_rich  → 保留公式标签与行内强调。给**页面显示**用：
+        课程主页的要点表与术语表要让人看见 `ρ=2min_i r_i`，而不是「〔公式〕」。
+
+    做法：
+      ① 挖注释（同 html_text —— 注释里有字面标签，不挖会漏进输出）
+      ② 挖掉非公式的 `<script>`；**公式 `<script type="math/tex">` 原样保留**
+      ③ 挖掉缩略图 base64
+      ④ 只放行白名单内的行内标签，其余标签**剥壳留文**（不整段丢弃，避免静默丢内容）
+      ⑤ 中和危险属性：剥掉所有 `on*=` 事件与 `href="javascript:"`（产物来自本地、可信度中等，
+         但主页是要给别人打开的，成本几乎为零的加固没有理由不做）
+
+    ⚠ 调用方必须知道：本函数**不负责** HTML 转义 —— 它的输入是**本套件自己生成的产物**，
+    不是用户输入。所以只做「标签白名单 + 危险属性剥离」这层净化，不 escape 文本。
+    """
+    s = strip_comments(fragment or '')
+    # ② 先摘出公式标签占位，再挖 script，最后还原 —— 否则公式会被 RE_SCRIPT 一起吃掉
+    math_parts = []
+
+    def _stash(m):
+        math_parts.append(m.group(0))
+        return '\x00MATH%d\x00' % (len(math_parts) - 1)
+
+    s = RE_MATH_SCRIPT.sub(_stash, s)
+    s = RE_SCRIPT.sub('', s)
+    s = RE_THUMB.sub('', s)
+
+    # ④ 标签白名单：逐个标签判定，放行白名单，其余剥壳
+    def _tag(m):
+        raw = m.group(0)
+        name = (m.group(1) or '').lower()
+        if name in RICH_KEEP:
+            if raw.startswith('</'):
+                return '</%s>' % name
+            # 保留标签但只留下**无害属性**（这里只需 class / data-* 都不需要，
+            # 索性只保留标签名本身 —— 主页的样式按标签选，不按 class 选）
+            return '<%s>' % name
+        return ''                      # 其余标签剥掉壳，内容自然留下
+
+    s = re.sub(r'</?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>', _tag, s)
+    # ⑤ 兜底：万一有属性残留（上面已剥光，这里是双保险）
+    s = re.sub(r'\son[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)', '', s, flags=re.I)
+    s = re.sub(r'(href|src)\s*=\s*("|\')\s*javascript:[^"\']*\2', '', s, flags=re.I)
+
+    # 还原公式标签
+    def _unstash(m):
+        i = int(m.group(1))
+        return math_parts[i] if 0 <= i < len(math_parts) else ''
+
+    s = re.sub(r'\x00MATH(\d+)\x00', _unstash, s)
+    return s.strip()
+
 
 
 def _attrs(attr_text):
@@ -355,7 +424,10 @@ def keypoint_entries(html):
         if not text:
             continue
         at = a.get('data-at', '').lstrip('#')
-        out.append({'text': text, 'at': at, 'topic': a.get('data-topic', '')})
+        # `html` 是给**主页显示**的：保留公式标签，这样要点里的 σ、ρ、‖w‖ 能真的渲染出来，
+        # 而不是显示成占位符〔公式〕。`text` 仍然保留，用于检索 / 过滤 / 导出 Markdown。
+        out.append({'text': text, 'html': html_rich(m.group(2)),
+                    'at': at, 'topic': a.get('data-topic', '')})
     return out
 
 
@@ -365,6 +437,11 @@ def glossary_entries(html):
     zh / en / def **直接读这一行的三个单元格**，不猜、不抓标题、不留空 ——
     这张表的列头在 v1 就固定是「术语 ｜ English ｜ 一句话解释」，
     且 content-quality.md 已把它列为必写项。现成的结构化资产，不该再从别处推。
+
+    每列同时给出两个版本：
+      · `zh` / `en` / `def`              —— 纯文本（公式塌成〔公式〕），给术语冲突比对用
+      · `zh_html` / `en_html` / `def_html` —— 保留公式标签，给课程主页**显示**用
+    两版必须**同源**（同一次正则扫出），否则术语冲突检测会和页面显示打架。
     """
     card = card_html(html, 'glossary')
     if not card:
@@ -375,9 +452,13 @@ def glossary_entries(html):
         cid = a.get('data-concept', '').strip()
         if not cid:
             continue
-        cells = re.findall(r'<td\b[^>]*>([\s\S]*?)</td>', tr[1], re.I)
-        cells = [html_text(c) for c in cells] + ['', '', '']
-        out.append({'id': cid, 'zh': cells[0], 'en': cells[1], 'def': cells[2]})
+        cells = re.findall(r'<td\b[^>]*>([\s\S]*?)</td>', tr[1], re.I) + ['', '', '']
+        out.append({
+            'id': cid,
+            'zh': html_text(cells[0]), 'en': html_text(cells[1]), 'def': html_text(cells[2]),
+            'zh_html': html_rich(cells[0]), 'en_html': html_rich(cells[1]),
+            'def_html': html_rich(cells[2]),
+        })
     return out
 
 

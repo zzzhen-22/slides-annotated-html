@@ -177,6 +177,18 @@ table.tbl tr:hover td{background:var(--surface2)}
 #toTop.on{display:block}
 #toTop:hover{border-color:var(--accent-line);color:var(--accent2)}
 
+/* ---------- 公式（要点表 / 术语总表里的 KaTeX） ---------- */
+/* 公式比正文小半号：表格单元格里的行内公式按正文尺寸走会顶开行高，
+   术语总表有 99 行，行高失控会让这张表变难扫。 */
+#keypoints .katex, #glossary .katex{font-size:1.02em}
+/* 渲染失败时退回显示 LaTeX 源码 —— 用等宽 + 淡红底，让「哪里错了」一眼可见，
+   而不是静默留白（静默失败比显示源码更难查）。 */
+.katex-failed{
+  font-family:ui-monospace,Consolas,Menlo,monospace;font-size:.86em;
+  color:#a02020;background:#fdf0f0;border-radius:4px;padding:0 4px;
+  white-space:pre-wrap;
+}
+
 @media (max-width:760px){
   .cwrap{padding:14px 14px 50px}
   .card{padding:16px 16px;border-radius:12px}

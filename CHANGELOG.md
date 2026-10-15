@@ -6,6 +6,81 @@
 > **标签约定**：Releases 页只看 SemVer 标签（`vX.Y.Z`）。形如 `v2.0-semantic-outline-stepN`、
 > `v1.0-classic-pipeline` 的标签是**开发期快照**，不是正式发布，请勿当作版本号引用。
 
+## [v2.3.1] - 2026-10-15
+
+> 主题：**课程主页的公式渲染** + 无头浏览器「静默空转」的根治。
+> 两个 bug 都是「生成期全绿、打开页面才看得见」那一类，所以修的同时补了静态断言。
+
+### 修复 · 课程主页的公式显示成〔公式〕（issue 报告见下）
+
+- **现象**：`index.html` 的「要点总结」与「术语总表」里，公式全显示为占位符〔公式〕。
+- **根因（两层，各自独立、都会单独致病）**：
+  1. 课程页三件套（`course_site.py` / `course-shell.html` / `course.js`）**没有任何公式渲染能力**：
+     `coursekit.html_text()` 按设计把公式塌成〔公式〕供**检索索引用**，主页却直接把它当正文显示了。
+  2. `build_glossary()` 汇总术语时**只搬运 `zh`/`en`/`def` 纯文本**，新加的 `*_html` 富文本字段
+     没跟着汇总上去，渲染端回退到转义纯文本，公式又变回占位符。
+- **修复**：
+  - `scripts/coursekit.py` 新增 **`html_rich()`** 与 `RE_MATH_SCRIPT`：把一段 HTML 净化成
+    「安全、可显示公式」的片段（保留 `math/tex` 标签与行内强调、剥掉非公式 script 与缩略图 base64、
+    标签白名单、剥离 `on*=` 与 `javascript:`）。与 `html_text()` **分工不互替**：
+    前者给显示、后者给检索索引。要点抽取新增 `html` 字段、术语抽取新增 `zh_html`/`en_html`/`def_html`。
+  - `scripts/course_site.py` 新增 **`load_katex()`**：内联 `vendor/katex/katex.offline.css` +
+    `katex.min.js`（约 630 KB，字体已转 data URI）。缺文件时**降级告警而非报错**
+    （公式不渲染，但正文照样读得到）。成品 0.77 MB，远低于 3 MB 闸门。
+  - `assets/course-shell.html` 加 `__KATEX_CSS__` / `__KATEX_JS__` 占位符（CSS 放在最前防 FOUC）。
+  - `assets/course.js` 新增 **`renderMath(root)`**：把 `script[type^="math/tex"]` 换成
+    `katex.render(...)` 的结果，失败则标 `.katex-failed`。**必须在 `Kp.build()` 之前执行** ——
+    要点索引读的是 `li.textContent`，公式没渲染完就会索引到 LaTeX 源码，过滤随之失灵。
+  - `assets/course.css` 加公式字号与失败态样式。
+
+### 修复 · 内联 JS 的注释里写了字面闭合标签 → 整页脚本被提前闭合
+
+- **现象**：`course.js` 里一段**注释**为了举例写了字面的 `<script type="math/tex">…</script>`。
+  它被内联进 `<script>` 后，**HTML 解析器把那个闭合标签当成脚本结尾**，后面全部代码降级成页面文本。
+  连带 `body_html()` 挖 script 的非贪婪正则从假标签起算、配对错位，误报「可见正文里有〔公式〕占位符」。
+- **修复（三层）**：
+  - 改掉那处注释（`course.js` 段头已注明「故意不写字面起止标签」），`course-shell.html` 同类注释一并改；
+  - `course_site._assert_no_script_end()` —— 扫待内联的 `.js`/`.css`，出现未转义闭合标签即 `SystemExit`
+    （放行 `<\/script` 这类转义写法）；
+  - `course_site.check_script_tags_balanced()` —— 数**成品**里的 `<script` 与 `</script`，
+    不配对即报错。护栏建在可交付产物上，才能覆盖渲染函数拼串等别处引入的截断。
+- 详见 `references/pitfalls.md` 第 49 条。
+
+### 修复 · 抽取器升级后缓存被复用 → 新字段全空，而流水线全绿
+
+- `scripts/course_index.py` 新增 **`EXTRACTOR_VERSION = 2`**：增量缓存命中条件从「产物哈希一致」
+  升级为「产物哈希 **且** 抽取器版本一致」。此前抽取器加了字段、产物没变，旧缓存被原样复用，
+  新字段没机会生成（正是术语表公式退化的隐藏原因之一）。
+- `build_glossary()` 汇总时**成对收集**纯文本与富文本字段（同源同序 append），
+  杜绝「`zh` 取自 L01、`zh_html` 取自 L03」的错配。
+- 详见 `references/pitfalls.md` 第 50 条。
+
+### 修复 · 无头浏览器「退出码 0 + 0 字节 + 不产文件」的根治
+
+- **根因**：Chromium 启动时若认为进程处于「提升的完整性级别」（某些宿主进程/沙箱会给出这种令牌），
+  会**派生一个去提权的子进程、父进程立刻退出** —— `subprocess.run` 抓到的是那个马上退场的父进程，
+  渲染结果留在子进程里、句柄已跟丢。加 `--enable-logging=stderr --v=1` 才看得到
+  `RunDeElevated: Started process, PID: …` / `Histogram: Windows.AutoDeElevateResult`。
+- **修复**：`scripts/kitpath.py` 新增 **`browser_flags()`**（Windows 返回 `['--do-not-de-elevate']`），
+  `shot.py` / `probe.py` 自动带上；`browser_exe()` 的候选表补上 Chrome **用户级安装**路径
+  （`%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe`）。
+- **实测结论**：Chrome + `--do-not-de-elevate` 可用；Chrome 不加该参数、Edge（加不加都）不可用。
+  遇到仍报「0 字节」时按提示 `set KIT_BROWSER=<Chrome 路径>` 换浏览器。
+- `shot.py --selftest` 与失败提示已改成指向这个真因（此前怀疑「Edge 用久了会失灵、需重启」，
+  归因错误）。详见 `references/pitfalls.md` 第 29 条（已重写为三种成因）。
+
+### 新增 · 静态断言与自检覆盖
+
+- `scripts/course_check.py` ② 组新增：「入口页内联了 KaTeX」「可见正文里没有〔公式〕占位符」；
+  资源自检组新增：「course.js 会渲染公式」「渲染公式在 build 要点索引之前」（顺序断言修正为
+  取 `boot()` 函数体内的**调用**位置，而不是 `initKp` 字面量 —— 后者先撞上函数定义，会误报）。
+- `templates/probe_course.js` 新增 ①b 公式段：断言 `mathLeft === 0` / `mathFailed === 0` /
+  `placeholderLeft === 0`。
+- `scripts/selftest.py`：课程样例的要点与术语各补一条**带公式**的内容（空转守卫），
+  并断言主页内联了 KaTeX、可见正文无〔公式〕占位符。按第 48 条立的规矩，新检查必须配
+  「空转守卫」（断言对象非空）+「反向注入」（故意破坏必须被抓）。
+- `scripts/check_docs.py` ⑤ 组：pitfalls 口径同步到 **50 条**（README 两处 + workflow + TODO）。
+
 ## [v2.3.0] - 2026-10-14
 
 > 设计与施工计划见 [`docs/v2-course-collection.md`](docs/v2-course-collection.md)。

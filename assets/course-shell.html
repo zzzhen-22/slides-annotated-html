@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>__COURSE__</title>
 <style>
+/* 离线 KaTeX（字体已转 data URI）。放在本页最前，保证公式字体先就位——
+   否则公式会先按正文衬线体闪一下（FOUC），长文档滚动时很明显。 */
+__KATEX_CSS__
+</style>
+<style>
 __CSS__
 </style>
 </head>
@@ -81,6 +86,12 @@ __CSS__
 <!-- 课程索引（内联）。**必须内联**：file:// 是不透明源，fetch 同目录 JSON 会被 CORS 拦死，
      用户双击打开就是空白页（硬约束 C1）。下面的 "<" 已在生成时转义成 \u003c，不会截断本标签。 -->
 <script type="application/json" id="cdata">__DATA__</script>
+<!-- 离线 KaTeX 渲染引擎（内联，约 270 KB）。课程主页显示的要点与术语里含公式，
+     没有它就只会看到 LaTeX 源码或占位符〔公式〕。
+     注意本注释里**不写真标签**：写了会让「挖 script」的正则从假标签起算、配对错位。 -->
+<script>
+__KATEX_JS__
+</script>
 <script>
 __JS__
 </script>

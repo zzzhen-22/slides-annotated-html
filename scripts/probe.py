@@ -93,7 +93,12 @@ def main():
            '--disable-crash-reporter', '--disable-breakpad',
            '--user-data-dir=%s' % prof,
            '--virtual-time-budget=%d' % a.wait,
-           '--window-size=1500,1180', '--dump-dom', url]
+           '--window-size=1500,1180']
+    # 去提权开关（Windows 必需，理由见 kitpath.browser_flags 的注释：
+    # 不加的话 Chromium 会派生去提权子进程、父进程立刻退出，
+    # 我们只能抓到「退出码 0 + 0 字节」的假象）。
+    cmd += kitpath.browser_flags(find_browser())
+    cmd += ['--dump-dom', url]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=300,
                            encoding='utf-8', errors='replace')
