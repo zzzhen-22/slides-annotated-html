@@ -13,7 +13,7 @@
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 83 个文件（82 已跟踪 + 1 待提交的代码块探针） ｜ 11 MB（不含 `.git`） ｜ 37 个提交 |
+| 仓库 | 83 个文件（全部已跟踪） ｜ 11 MB（不含 `.git`） ｜ 41 个提交 |
 | 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**51 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
 | 图片资源 | ✅ 3 张（`docs/images/`，hero / notes / overview，各约 230 KB） |
 | 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.20 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.20 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。两份均已按 v2.2.0 重建，源工程在 `examples/demo/` |
@@ -22,8 +22,8 @@
 | 自检体系 | ✅ 四条线：`selftest.py` = 机械路线 + 语义路线 + **课程路线**（v2.3.0 新增：两份真实产物组成两讲课 → 课程层体检 + 反向注入）+ **文档口径**（`check_docs.py`，7 组断言）；**CI 已建**（第 3 条） |
 | CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（四条线） |
 | 代码块 | ✅ v2.4.1：`build.py` 构建期着色 + 标题栏注入 + 逐字自证；`site.js` 的 `initCodeCopy()` + `copyText()` 超时兜底；`templates/probe_codecopy.js` 专项探针（接进 `run_all.py` ⑥d）；`check_ui.py` ⑫ 组（条件式，无块时 SKIP） |
-| 版本号 | ✅ 最新 `v2.4.1`（`CHANGELOG.md` 已记到 v2.4.1「代码块能读、能抄」）；已发布 tag 停在 `v2.3.0`，v2.3.1 / v2.4.0 / v2.4.1 三段**待提交、待打 tag** |
-| tag 状况 | 11 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
+| 版本号 | ✅ 最新 `v2.4.2`（`CHANGELOG.md` 已记到 v2.4.2「版本口径统一 + 表格行数守护」）；**已发布 tag = `v2.4.2`**，v2.3.1 / v2.4.0 / v2.4.1 三段已在提交历史里但未单独打 tag（按发布时的决定，Releases 页只保留 v2.4.2） |
+| tag 状况 | 12 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
 | 跨平台 | 代码里有 macOS / Linux 分支；**Linux 已由 CI 覆盖**（ubuntu runner 装 `fonts-noto-cjk`），macOS 仍未真机验证（见第 7 条） |
 | 文档口径 | ✅ 无已知漂移；`check_docs.py` 新增「pitfalls 裸计数」断言（第 1、13 条完成，`check_docs.py` 常驻把关） |
 
