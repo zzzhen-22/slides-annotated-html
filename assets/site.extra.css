@@ -370,7 +370,54 @@ mark.q-hit{
   display:flex;align-items:center;justify-content:center;
 }
 
+/* ===================== 代码块（讲解里的源码 / 伪代码） =====================
+   为什么需要它：算法、强化学习、机器学习这几类课件，后半段常常整页都是可运行
+   源码。用普通段落承载会丢掉缩进与行结构 —— 而缩进本身就是 Python 的语法，
+   丢了就读不懂。所以代码必须走等宽、保留空白的容器。
+
+   推荐写法（外面的框负责标题栏，框里只放 pre）：
+
+     div.codeblk 加 data-lang 与 data-src 两个属性
+       pre.code 里直接写代码原文，缩进原样保留
+
+   · 框内源码是**可划词、可标记的普通文本**，与正文共用同一套选中与笔记逻辑，
+     不需要为它写任何额外脚本。
+   · 着色**不依赖任何高亮库** —— 单文件产物要断网可用，不能引 CDN。
+     需要时手工在代码里包一层 span：注释 / 字符串 / 关键字 / 数字四类。
+   · 本注释内不写字面标签、也不写待办标记字样：这段样式会被内联进产物的
+     样式区，而源码层体检查会把它们当成真内容（见 pitfalls 第 46 条同源教训）。 */
+.codeblk{
+  margin:15px 0;border:1px solid #dbe3ef;border-radius:10px;overflow:hidden;
+  background:#f7f9fc;
+}
+.codeblk-head{
+  display:flex;align-items:center;gap:9px;padding:7px 13px;
+  background:#eef2f8;border-bottom:1px solid #dbe3ef;
+  font-family:var(--mono);font-size:12px;color:#5a6b85;letter-spacing:.2px;
+}
+.codeblk-head b{font-weight:700;color:#3b4a63}
+.codeblk-head .code-src{margin-left:auto;font-size:11.5px;color:#8291a8}
+.codeblk pre.code{
+  margin:0;padding:14px 16px;background:transparent;color:#1f2937;
+  font-family:var(--mono);font-size:12.7px;line-height:1.72;
+  overflow-x:auto;white-space:pre;tab-size:4;-moz-tab-size:4;
+  -webkit-overflow-scrolling:touch;
+}
+/* 一两行的短代码：不占满整块，省纵向空间 */
+.codeblk.inline{display:inline-block;max-width:100%;vertical-align:middle;margin:9px 0}
+/* 被正文点名的那一行：加一层底色，读者对照正文一眼能找到。
+   刻意用行内高亮（不改 display）—— 行内元素不改变布局，划词与标记照常工作 */
+.code .ln-hl{background:#e3ebfb;box-shadow:0 0 0 2px #e3ebfb;border-radius:2px}
+.code .c{color:#7c8798;font-style:italic}
+.code .s{color:#1a6b52}
+.code .k{color:#7c3aed}
+.code .n{color:#b8352a}
+/* 提示框里的短代码别再把框撑开 */
+.note pre.code,.tip pre.code,.flag pre.code,.quote pre.code{margin:8px 0}
+
 @media print{
   .qres{display:none!important}
   mark.q-hit{background:#bfe3ff!important;box-shadow:none!important}
+  /* 打印时横向滚动条带不走内容，改成折行，宁可难看也不能丢代码 */
+  .codeblk pre.code{overflow:visible;white-space:pre-wrap;word-break:break-word}
 }

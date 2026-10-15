@@ -6,6 +6,37 @@
 > **标签约定**：Releases 页只看 SemVer 标签（`vX.Y.Z`）。形如 `v2.0-semantic-outline-stepN`、
 > `v1.0-classic-pipeline` 的标签是**开发期快照**，不是正式发布，请勿当作版本号引用。
 
+## [v2.4.0] - 2026-10-15
+
+> 主题：**给逐页讲解补上「代码块」这一等公民**。
+> 起因是实测一份含完整源码的课件（TensorFlow Actor-Critic 十页代码）时发现：
+> 套件原先只有行内 `<code>`，没有能承载多行源码的容器，
+> 讲解者只能把代码塞进 `<pre>` 里裸着或用引用卡片顶替，缩进与可读性都不达标。
+
+### 新增
+
+- **`assets/site.extra.css` 新增代码块样式族**（纯新增，不改任何既有选择器，向后兼容）：
+  - `.codeblk` + `.codeblk-head`：带标题栏的多行代码容器，标题栏右侧可挂源码出处
+    （`data-src` 属性，用 `.code-src` 显示）；
+  - `.codeblk.inline`：行内短命令形态（单行 pip / shell 命令用），不占满整行；
+  - `.code .ln-hl`：给被正文点名的那一行加底色，**用行内高亮而非改 `display`**，
+    以免破坏划词与标记的文本投影；
+  - `.code .c / .s / .k / .n`：注释 / 字符串 / 关键字 / 数字的轻量配色，
+    **不依赖任何高亮库**（断网可用，也不需要引入 hljs）；
+  - `@media print` 下 `white-space: pre-wrap` + `word-break: break-word`：
+    长行在打印与 PDF 导出时折行，不截断。
+- `SKILL.md` 与 `references/content-quality.md` 补「代码块怎么写」一节：
+  推荐写法是 `<div class="codeblk" data-lang="python" data-src="原文件 P24 · ...">`
+  内放 `<pre class="code">` 存源码原文。
+
+### 说明
+
+- **代码内容里的 HTML 特殊字符必须转义**（`<` `>` `&`），否则会被浏览器当标签吃掉；
+  实测最容易漏的是 `&gt; /dev/null`、`if running_reward &gt; threshold`、泛型 `List[tf.Tensor]`。
+- **源码请逐字照抄自页面图，不要照抄 PDF 文字层**：实测一份课件里
+  文字层的换行错乱、下标丢失、右括号被裁，直接采信必然写错。
+- 配方（源码怎么抄准、代码块怎么与公式混排）见 `references/pitfalls.md` 第 50 条附注。
+
 ## [v2.3.1] - 2026-10-15
 
 > 主题：**课程主页的公式渲染** + 无头浏览器「静默空转」的根治。
