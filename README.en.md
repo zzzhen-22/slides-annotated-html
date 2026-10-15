@@ -14,6 +14,7 @@ Feed it a slide deck (a lecture PPT exported to PDF, a tech talk, training mater
 - Explanations on the **left**, original page thumbnails on the **right** — no window switching
 - Formulas rendered by **KaTeX, fully offline** (fonts embedded as data URIs)
 - Six interactions: collapsible TOC / per-section overview cards / thumbnails auto-enlarge when the sidebar collapses / **highlight text → notes drawer** / **A− / A＋ to adjust body text size (level saved in your browser)** / **full-text search over the body (hit list with jump & highlight, not just a title filter)**
+- **Code blocks**: syntax colouring (comments / strings / keywords / numbers — applied at build time, **no highlighting library**), a header showing the language and source, and **one-click copy** (what lands on the clipboard is plain code, without the colouring markup)
 - Clearly separates "what the original says" from "what the explainer added" (green = intuition, blue = added derivation, red = source issue, gray = quotation)
 - Optionally **embed the original PDF** (base64) so page-deep links survive across devices
 
@@ -126,16 +127,27 @@ moving a lecture directory** — a broken course sequence is silent: the entry p
 
 Every deliverable must pass all of these — mechanical checks catch what screenshots cannot:
 
+| Check | Catches | Doesn't catch |
+|---|---|---|
+| `check_math.js` | formulas that cannot render, CJK inside math, broken anchors, missing glyphs (hard fail), leftover TODOs | looks, interactions |
+| `check_ui.py` | the six interactions' wiring — DOM / CSS / JS alignment (including the `--fs` scale variable, the `max-width` compensation, the font-size localStorage key, and the separation between the two highlight classes), plus one group for **code blocks** (every block has a header and a copy button, all four colour classes present, the button has success / failure states, hidden when printing, `toast` implemented) | looks, real behaviour |
+| `probe.py` + `probe_marks.js` | structural damage invisible in screenshots (e.g. block elements inside `<mark>`), via real-UI selection & assertion | looks |
+| `probe.py` + `probe_font.js` | **body text size control**: 100% on load, `--fs` / label / localStorage staying in sync after `step()`, restore via `Font.init()`, MIN(0.9)/MAX(1.4) clamping and button disabling; run twice with `--profile` to prove cross-session persistence | looks |
 | `probe.py` + `probe_find.js` | **full-text search**: lazy index over every non-empty section, hit count = result rows, `mark.q-hit` in both the snippet and the body, jumping only adds elements (block count and every character unchanged), multi-word queries are AND, the TOC is handed back on zero hits, Esc clears every highlight, and `mark.hl` is never touched | looks |
+| `probe.py` + `probe_codecopy.js` | **code blocks — readable and copyable**: every block has a header as its first child, syntax colours use only the four agreed classes, stripping every `<span>` leaves the text byte-identical to `textContent`, `codeOf()` returns clean source, and one real click is exercised; headless clipboards always fail, so the probe stubs a resolving `writeText` to cover the success path too | looks + copied content |
 | `probe.py` + `probe_doc.js` | **is the content actually finished**: pending pages N / M, pages missing a thumbnail, broken TOC anchors, leftover KaTeX `<script>` tags, TODO comments, missing-glyph risk | whether the explanations are *correct* |
+| `shot.py` | looks and real interaction states | details |
 
+> The eight rows above check the **output**. One more script checks the **suite itself**: `check_docs.py`
 > asserts that cross-document facts ("how many interactions?", which scripts a step runs, the
 > pitfalls numbering) stay in sync across the five docs and the code. It is what catches
 > "changed the feature, forgot the docs". It is not part of `run_all.py` (that pipeline runs a
 > user's deck); `selftest.py` runs it as part of its pass.
 
+Self-test: `python scripts/selftest.py` — builds a synthetic 6-page PDF and exercises every route (mechanical pipeline + semantic outline path + a two-lecture course layer), then checks the suite's own doc/code consistency; expect the final line `自检结果: PASS`.
 To check only the docs (fast — run this after editing README / SKILL.md or adding an interaction): `python scripts/check_docs.py`.
 
+These run automatically in CI: `.github/workflows/selftest.yml` runs the full `selftest.py` (all four checks) on every push to `main` and every PR, on both Ubuntu and Windows runners.
 
 ---
 

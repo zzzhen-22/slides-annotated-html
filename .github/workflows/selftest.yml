@@ -1,5 +1,6 @@
 name: selftest
 
+# 四条自查线（机械 / 语义 / 课程 / 文档口径）一次约 5 分钟，手动跑没人会天天做；
 # 这里让它在每次 push 到 main、以及每个 PR 上强制跑一遍，
 # PR 上的绿色 check 就是「项目还活着」的信号。
 #
@@ -8,6 +9,7 @@ name: selftest
 # 「正文缺字」等体检项就能在非 Windows 平台上也跑通。
 #
 # 注意：这里**只跑体检、不做发布**。GITHUB_TOKEN 是只读的，
+# 且本仓库 11 个 tag 里有 6 个是开发期快照，任何 push / release 都不该在 CI 里发生。
 
 on:
   push:
@@ -74,5 +76,6 @@ jobs:
       - name: Docs consistency
         run: python scripts/check_docs.py
 
+      # 完整四条自查线：机械路线 + 语义路线 + 课程路线 + 文档口径（内部还会再跑 check_docs.py）。
       - name: Full selftest
         run: python scripts/selftest.py

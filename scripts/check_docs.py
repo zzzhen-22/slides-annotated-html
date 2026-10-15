@@ -6,6 +6,7 @@
     python check_docs.py          # 静默跑完，只报PASS / FAIL
     python check_docs.py -v       # 额外打印派生出的口径明细（调口径时用）
 
+它查七件事，全是「人眼容易漏、机器一次查完」的：
     ① 文件存在性：文档里提到的脚本/资产/目录是不是真的存在（删了没改文档）
     ② 数字口径：「N 类交互」在五处文档 + check_ui.py docstring 里是不是同一个 N
     ③ 关键功能名：check_ui 声明的每一项交互，功能名在中文文档里能不能找到
@@ -14,6 +15,7 @@
       以及「pitfalls.md（N 条」的散文裸总数等于真实条数
     ⑥ 目录树：README 目录树里列的文件真实存在，且 scripts/ templates/ 下
        新增的 .py/.js 都被列进去了
+    ⑦ 校验表行数：README 校验表实际几行，散文中「上表 N 行」就得写几行
 
 为什么要它：2026-10-03 加字号功能时，代码改了、README 顶部 bullet 改了，
 但 README 中段 3 处 + SKILL.md + workflow.md + run_all.py 注释**共 6 处仍写「四类交互」**，
@@ -283,7 +285,14 @@ def check_pitfalls():
         print('      ✘ %s' % b)
 
     # 裸总数口径：「pitfalls.md（N 条」的 N 都等于真实条数（含英文 README 的对应写法）
+    # 扫描面含 docs/ 下的设计稿——2026-10-15 发现 v2-course-collection.md 头部仍写
+    # 「（48 条）」，而当时已是 51 条：它不在原来的 5 文件名单里，所以一直没被拦住。
     count_bad = []
+    count_srcs = ['README.md', 'README.en.md', 'SKILL.md', 'docs/workflow.md', 'TODO.md']
+    dd = os.path.join(KIT, 'docs')
+    if os.path.isdir(dd):
+        count_srcs += ['docs/' + f for f in sorted(os.listdir(dd)) if f.endswith('.md')]
+    for rel in count_srcs:
         for m in RE_PIT_COUNT.finditer(read(rel)):
             n = int(m.group(1) or m.group(2))
             if n != len(nums):
@@ -291,6 +300,51 @@ def check_pitfalls():
     chk('「pitfalls.md（N 条」的裸总数都等于真实条数', not count_bad,
         '' if not count_bad else '漂移 %d 处' % len(count_bad))
     for b in count_bad[:10]:
+        print('      ✘ %s' % b)
+
+
+# ─────────────────── ⑦ README 校验表行数 ↔ 散文里「上表 N 行」的说法
+# 为什么单列一组：README 校验表在 v2.4.1 从 7 行涨到 8 行（新增 probe_codecopy.js），
+# 但紧跟着的散文仍写「上表七行」（英文 seven rows）——表加了行、说法没跟着数。
+# ⑤ 只管 pitfalls 数字，② 只管「N 类交互」，都盖不到这个「表格行数」口径。
+RE_ROW_CN = re.compile(r'上表\s*([一二三四五六七八九十\d]+)\s*行')
+RE_ROW_EN = re.compile(r'\b(the\s+)?([a-z]+|\d+)\s+rows?\s+above\b', re.I)
+
+
+def count_table_rows(txt, start, end=None):
+    """数 start..end 之间以 `| \\`` 开头的表格数据行（一行一个校验脚本）。"""
+    i = txt.find(start)
+    if i < 0:
+        return None
+    j = txt.find(end, i) if end else -1
+    blk = txt[i:j] if j > 0 else txt[i:]
+    return len([ln for ln in blk.splitlines() if ln.startswith('| `')])
+
+
+def check_table_rows():
+    print()
+    print('=== ⑦ 校验表行数 ↔ 「上表 N 行」说法一致 ===')
+    zh = read('README.md')
+    en = read('README.en.md')
+    zh_rows = count_table_rows(zh, '## 三重校验', '\n### ')
+    en_rows = count_table_rows(en, '## Verification', '\n---')
+    chk('能从中文 README 数出校验表行数', zh_rows is not None, '%s 行' % zh_rows)
+    chk('能从英文 README 数出校验表行数', en_rows is not None, '%s 行' % en_rows)
+
+    bad = []
+    if zh_rows is not None:
+        for tok in RE_ROW_CN.findall(zh):
+            n = to_int(tok)
+            if n is not None and n != zh_rows:
+                bad.append('README.md → 「上表 %s 行」（实际 %d 行）' % (tok, zh_rows))
+    if en_rows is not None:
+        for m in RE_ROW_EN.finditer(en):
+            n = to_int(m.group(2))
+            if n is not None and n != en_rows:
+                bad.append('README.en.md → 「%s rows above」（实际 %d 行）' % (m.group(2), en_rows))
+    chk('「上表 N 行」的说法与表格实际行数相符', not bad,
+        '' if not bad else '漂移 %d 处' % len(bad))
+    for b in bad[:10]:
         print('      ✘ %s' % b)
 
 
@@ -360,6 +414,7 @@ def main():
     check_pipeline_coverage()
     check_pitfalls()
     check_tree()
+    check_table_rows()
     print()
     if verbose:
         for n in notes:

@@ -193,6 +193,7 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 │   ├─ probe.py             ← 无头跑探针 JS 并把结果读回来（读 DOM 靠它）
 │   ├─ probe_marks.js       ← 标记功能回归（跨格/跨段/跨公式/单段 + 重开恢复）
 │   ├─ glyph_probe.py       ← 正文符号探针：把非中文符号排成一页，肉眼查方框
+│   ├─ selftest.py          ← 自检：现造小 PDF 跑通机械 + 语义 + 课程 + 文档口径四条线
 │   └─ shot.py              ← 无头截图（--script 可先触发交互再截）
 ├─ assets/                  ← 已验证的外壳与样式，build.py 自动内联
 │   ├─ shell.html           ← 页面骨架（改版式改这里，不要改 build.py）

@@ -84,6 +84,7 @@ PY="$(command -v python || command -v python3)"
 
 ## ⚡ 换新课件入口（B 路线 / 结构简单时）
 
+需求确认后一条命令把机械部分全做完（建骨架 → 渲染 → 组装 → 全套体检 → 截图）：
 
 ```bash
 KIT="$(cd "$(dirname "$0")" && pwd)"
@@ -169,6 +170,7 @@ PY="$(command -v python || command -v python3)"
 
 ## 验证与交付
 
+改完内容必须跑全套校验 + 截图。`run_all.py` 的 ④–⑧ 已自动跑；手动复检或单独重跑：
 
 ```bash
 node  "$KIT/scripts/check_math.js" "输出.html" "_katex/katex.min.js"     # 公式/标签配对/目录锚点/缺字/TODO

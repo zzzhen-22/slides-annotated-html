@@ -9,19 +9,27 @@
 > **已完成条目已从正文移除**（不再跟踪），只留在文末「已完成索引」一行。  
 > 基线数据是 2026-10-03 实测，不是估算。
 
+## 当前基线（2026-10-15 实测）
 
 | 项目 | 现状 |
 |---|---|
+| 仓库 | 83 个文件（82 已跟踪 + 1 待提交的代码块探针） ｜ 11 MB（不含 `.git`） ｜ 37 个提交 |
+| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**51 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
 | 图片资源 | ✅ 3 张（`docs/images/`，hero / notes / overview，各约 230 KB） |
 | 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.20 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.20 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。两份均已按 v2.2.0 重建，源工程在 `examples/demo/` |
 | 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` + `demo/`（两份 demo 的源工程：config + content + 原页图） |
 | 依赖清单 | ✅ `requirements.txt`（`pymupdf` + `pillow`，不锁版本；`node` 与浏览器为可选/外部） |
+| 自检体系 | ✅ 四条线：`selftest.py` = 机械路线 + 语义路线 + **课程路线**（v2.3.0 新增：两份真实产物组成两讲课 → 课程层体检 + 反向注入）+ **文档口径**（`check_docs.py`，7 组断言）；**CI 已建**（第 3 条） |
 | CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（四条线） |
+| 代码块 | ✅ v2.4.1：`build.py` 构建期着色 + 标题栏注入 + 逐字自证；`site.js` 的 `initCodeCopy()` + `copyText()` 超时兜底；`templates/probe_codecopy.js` 专项探针（接进 `run_all.py` ⑥d）；`check_ui.py` ⑫ 组（条件式，无块时 SKIP） |
+| 版本号 | ✅ 最新 `v2.4.1`（`CHANGELOG.md` 已记到 v2.4.1「代码块能读、能抄」）；已发布 tag 停在 `v2.3.0`，v2.3.1 / v2.4.0 / v2.4.1 三段**待提交、待打 tag** |
+| tag 状况 | 11 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
 | 跨平台 | 代码里有 macOS / Linux 分支；**Linux 已由 CI 覆盖**（ubuntu runner 装 `fonts-noto-cjk`），macOS 仍未真机验证（见第 7 条） |
 | 文档口径 | ✅ 无已知漂移；`check_docs.py` 新增「pitfalls 裸计数」断言（第 1、13 条完成，`check_docs.py` 常驻把关） |
 
 ---
 
+## 已发布的大版本：v2.3.0「多课件课程合集」（2026-10-14）
 
 > **开工前先读 [docs/v2-course-collection.md](docs/v2-course-collection.md)，不要从零设计。**
 > 那是**修订版（v2.1）**，已经定好了：目录与数据模型（`course.json` / `glossary.json` / `keypoints`）、
@@ -41,6 +49,9 @@
 > `coursekit` / `course_init` / `course_index` / `course_brief` / `course_site` / `course_check` /
 > `run_course` + `assets/course-*` + `probe_course.js`；`build.py` 的区块正则已修 + 加硬断言；
 > `course_check.py` 接入 `selftest.py`，七种注入验收逐条 FAIL 通过）。
+> 详见 `CHANGELOG.md` 的 `[v2.3.0]`；后续增强见设计稿 §8「阶段 4 · 增强（可延后）」。
+> **v2.3.0 之后的两次小版本**：v2.3.1（课程主页公式渲染 + 无头空转根治）、
+> v2.4.0 / v2.4.1（代码块容器 → 能读、能抄）—— 详见 `CHANGELOG.md` 顶部两段。
 
 ---
 
@@ -169,6 +180,7 @@
   `KIT_BROWSER=/usr/bin/google-chrome`，Windows 留空交给 `kitpath` 自动找 Edge/Chrome。
 - workflow 结构：`kitpath.py` 环境自查 → `check_docs.py` 秒级快速失败 → `selftest.py` 完整三条线。
   时间上限 30 分钟（本地实测 5m34s，留足余量）；`fail-fast: false`，一个平台挂不取消另一个。
+- **不做发布**：`GITHUB_TOKEN` 只读，11 个 tag 里 6 个是开发快照，任何 push/release 都不进 CI。
 - 顺带白送第 7 条的 Linux 半边：装了 `fonts-noto-cjk` 后，缺字体检在非 Windows 平台也跑得通。
 - **首跑就抓到真 bug**：Windows runner（英文地区，stdout=cp1252）跑 `kitpath.py` 时 `print` 中文
   直接 `UnicodeEncodeError`，且它一挂、后面的 `check_docs` / `selftest` 因默认 `if: success()` 被跳过，
@@ -302,6 +314,7 @@
         重编号会让文档里「⑤ 之后是 ⑥」的说法失效，**收益 < 风险**，所以不动
       - 血泪教训见 `references/pitfalls.md` 第 45 条：**别用脚本按行号搬移源码块**
         （本轮试过，把 `def main()` 之前的文件头全吞了，靠 `git checkout` 还原）
+- [ ] **12.** 清理开发期 tag：11 个 tag 里 6 个是非 SemVer（`v2.0-semantic-outline-step3/4/5/6/12` + `v1.0-classic-pipeline`）。  
       要么删掉，要么在 `CHANGELOG.md` 里说明「step 标签是开发快照，Releases 页只看 SemVer tag」。  
       现在 Releases 页会把这 4 个和 `v2.0.0` / `v2.1.0` 平级列出，容易让人误以为是正式发布  
       **建议与第 6 条（CHANGELOG）一起做**——写CHANGELOG 时顺手说明标签约定，一次改两件事
@@ -433,6 +446,8 @@ P0 已经清空了，但**现在所有验证都靠人手动跑**——这轮的�
 | Windows cp1252 编码修复（全脚本 stdout UTF-8 + CI `PYTHONUTF8=1`） | 2026-10-07 |
 | `CHANGELOG.md`（Keep a Changelog，收编 v2.0.0/v2.1.0/v2.1.1 + 标签约定） | 2026-10-07（第 6 条） |
 | 发布 `v2.1.1`（annotated tag + GitHub Release） | 2026-10-07 |
+| 代码块「能读能抄」：构建期着色 + 标题栏 + 一键复制 + `probe_codecopy.js` + `check_ui` ⑫ 组 | 2026-10-15（v2.4.0 / v2.4.1） |
+| 全仓库口径普查：修 5 类落后于 v2.4.1 的漂移；`check_docs.py` 新增 ⑦ 组 + ⑤ 组扩到 `docs/` | 2026-10-15（v2.4.2） |
 
 已完成条目的**实测记录**没有丢：README 相关截图与体积实测在 `README.md`，
 构建纪律在 `SKILL.md`，具体踩坑（含反向测试的记录）在 `references/pitfalls.md`。
