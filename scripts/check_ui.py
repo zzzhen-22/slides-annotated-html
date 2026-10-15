@@ -14,6 +14,10 @@
     ⑥ 正文搜索：搜索框与结果面板、索引惰性建、临时高亮与笔记高亮的类名隔离、
        清空时拆除并 normalize、↑↓/Enter/Esc 键盘路径、搜索框是否真的接到 Find
 
+（⑦–⑫ 是「结构安全 / 附加功能」类检查，不计入上面的「六项交互」——
+   它们的编号延续历史顺序：⑦ 目录滚动、⑧ 标记上色、⑨ 位置标签、
+   ⑩ 字号调节、⑪ 正文搜索的补充、⑫ 代码块的标题栏与复制按钮。）
+
 浏览器失灵时（见 references/pitfalls.md 第 29 条）用它兜底，
 能覆盖"结构对不对"，覆盖不了"长得对不对"。
 """
@@ -256,6 +260,69 @@ def main():
     chk('JS 把搜索框接到 Find（不再只过滤目录）', 'Find.run(q)' in js)
     chk('JS 支持「/」对焦搜索框', "k === '/'" in js)
     chk('JS 搜索模块暴露给探针', 'find: Find' in js)
+
+    print()
+    print('=== ⑫ 代码块：标题栏 / 语法着色 / 一键复制 ===')
+    # 背景：课件后半段整页都是可运行源码，代码块必须能读（着色）、能抄（复制）。
+    # 三件事的分工要说清楚，否则改错地方会「看起来改了但没生效」：
+    #   · **着色与标题栏在构建期生成**（build.py 的 decorate_codeblocks）——
+    #     颜色跟着文件走，打印、另存、断网都还在，且不必引高亮库（单文件要断网可用）。
+    #   · **复制逻辑在运行时**（site.js 的 initCodeCopy），因为它要用剪贴板 API。
+    #   · 分片里只写「data-lang / data-src + pre.code」，标题栏一律不手写（20 块会写漏）。
+    # 计数必须用**精确**匹配：`'class="codeblk'` 这种前缀写法会把
+    # `class="codeblk-head"` 也算成代码块（实测 20 块被数成 40）。
+    # 这正是 pitfalls 第 44 条那类教训——断言要问「是不是我无法接受的样子」。
+    RE_BLK = r'<div class="codeblk(?: inline)?"'
+    n_blk = len(re.findall(RE_BLK, html))
+    n_head = html.count('class="codeblk-head"')
+    n_copy = html.count('class="code-copy"')
+    # **课件里没有源码是完全合法的形态**（自检用的合成 PDF 就没有）。
+    # 所以这一组整体是「条件式」：没有块就整组跳过，不能报 FAIL ——
+    # 这正是 pitfalls 第 44 条：断言要问「是不是我无法接受的样子」，
+    # 而不是「是不是我期望的样子」。早先写成 n_blk > 0 硬要求，
+    # 结果 selftest 的合成课件被判 6 项 FAIL（2026-10-15 实测）。
+    if n_blk == 0:
+        print('%-52s %s %s' % ('（本文档没有代码块，本组跳过）', 'SKIP', '0 块'))
+    else:
+        chk('每块都有标题栏（构建期注入）', n_head == n_blk and n_head > 0,
+            '%d 块 / %d 头部' % (n_blk, n_head))
+        chk('每块都有复制按钮', n_copy == n_blk and n_copy > 0, '%d 个' % n_copy)
+        # 「标题栏紧跟在块开标签之后」——查的是**注入位置**，不是数量（数量上一条已查）。
+        # 分片里手写标题栏这件事在构建期就被拦了：build.py 的 RE_CODEBLK 要求开标签后
+        # 紧跟 `<pre class="code">`，手写头部会让它失配，进而触发「声明 N 块只处理 M 块」
+        # 的硬闸门直接 SystemExit。所以产物层只需确认「注入的头部在该在的地方」。
+        # 注意 RE_BLK 以 `"` 收尾，后面还有 data-lang / data-src 等属性，必须补 `[^>]*`；
+        # 早先漏了这一步，正则永远匹配 0 次，把一条正确的结构误报成 FAIL。
+        chk('标题栏紧跟块开标签（构建期注入的位置正确）',
+            len(re.findall(RE_BLK + r'[^>]*>\s*<div class="codeblk-head">', html)) == n_blk,
+            '%d 块' % n_blk)
+        # 四类着色：注释 / 字符串 / 关键字 / 数字。
+        # 只查「至少各出现一次」——不着色时这几类一个都没有，一查就现形。
+        for cls, name in [('c', '注释'), ('s', '字符串'), ('k', '关键字'), ('n', '数字')]:
+            chk('  着色的 %s span' % name, ('<span class="%s">' % cls) in html)
+    # 下面这些查的是**套件资产**（CSS / JS），与本文档有没有代码块无关，永远要查。
+    chk('CSS 定义了四类着色与标题栏按钮样式',
+        all(('.code .%s{' % c) in css for c in 'cskn') and '.code-copy{' in css)
+    chk('CSS 的复制按钮含成功 / 失败两态', '.code-copy.done' in css and '.code-copy.fail' in css)
+    chk('打印时隐藏复制按钮（纸上按不了）',
+        re.search(r'@media print\{[\s\S]*?\.code-copy\{display:none', css) is not None)
+    chk('JS 有 initCodeCopy', 'function initCodeCopy' in js)
+    chk('JS 取的是 pre 的纯文本而不是 innerHTML（否则会把着色标记一起复制）',
+        'pre.textContent' in js or 'pre .textContent' in js)
+    chk('JS 复制有降级路径（剪贴板 API 不可用时用 execCommand）',
+        'navigator.clipboard' in js and 'execCommand' in js)
+    # 这条是实测踩出来的：`navigator.clipboard.writeText()` 在文档失焦时
+    # **既不 resolve 也不 reject**（无头浏览器 100% 复现），没有超时兜底的话
+    # 点按钮会毫无反馈 —— 按钮不变色、不弹提示，用户以为坏了。
+    chk('JS 复制带超时兜底（防止 writeText 永久 pending 时点了没反应）',
+        re.search(r'function copyText\([\s\S]{0,900}?setTimeout\(', js) is not None)
+    chk('JS 把代码块模块暴露给探针（可断言「按下去会复制到什么」）',
+        'initCodeCopy: initCodeCopy' in js and 'codeOf: function' in js)
+    chk('JS 在 boot 里挂上了复制逻辑', 'initCodeCopy();' in js)
+    # 顺手兜住 toast：site.js 历史上调用过 8 次 toast 却从未定义，
+    # 那些分支一执行就 ReferenceError —— 补上之后这里守住它不再丢。
+    chk('JS 定义了 toast（不再是有调用无实现）',
+        'function toast(' in js and re.search(r'^\.toast\{', css, re.M) is not None)
 
     print()
     print('=== 数量一致性 ===')

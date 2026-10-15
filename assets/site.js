@@ -773,15 +773,64 @@
   var selBar = null;
   function hideSelBar() { if (selBar) selBar.classList.remove('on'); }
 
+  /* 剪贴板：优先用异步 API（file:// 下多数浏览器可用），失败退回 execCommand。
+
+     **必须带超时**。`navigator.clipboard.writeText()` 在「文档没有焦点」时
+     既不会 resolve 也不会 reject —— Promise 永远挂着。无头浏览器里 100% 复现；
+     真实浏览器里，用户用键盘快捷键或脚本触发时同样会遇到。
+     没有超时的话，复制按钮点下去会**完全没有任何反馈**（不弹提示、按钮不变色），
+     用户只会以为按钮坏了。实测确认过这一点（probe 报 pending 直到超时）。
+     超时后走 execCommand 兜底：成功就报成功、失败就报失败，无论如何都有反馈。
+
+     `done(ok)` 可选回调，告诉调用方到底成没成。 */
+  function copyText(t, done) {
+    var fired = false;
+    function finish(ok) { if (!fired) { fired = true; if (done) done(!!ok); } return !!ok; }
     if (navigator.clipboard && navigator.clipboard.writeText) {
+      /* 600ms 足够：正常情况这个 Promise 是微秒级返回的，慢到这里说明它挂住了 */
+      var timer = setTimeout(function () { finish(fallbackCopy(t)); }, 600);
+      navigator.clipboard.writeText(t).then(
+        function () { clearTimeout(timer); finish(true); },
+        function () { clearTimeout(timer); finish(fallbackCopy(t)); });
+      return true;
+    }
+    return finish(fallbackCopy(t));
   }
   function fallbackCopy(t) {
     var ta = document.createElement('textarea');
+    ta.value = t; ta.style.position = 'fixed'; ta.style.top = '0';
+    ta.style.left = '0'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    if (ta.setSelectionRange) { try { ta.setSelectionRange(0, ta.value.length); } catch (e) {} }
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
     document.body.removeChild(ta);
+    return ok;
   }
   function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* 轻提示条。**这个函数此前一直缺失** —— site.js 里有 8 处 toast(...) 调用
+     （标记失败提示、Markdown 引用已复制、内嵌原文件打不开…），却没有任何定义，
+     跑到那些分支就是一个 ReferenceError，而且报错点离真正的写法很远、极难追。
+     模块加载期不会暴露（只在被调用时才炸），所以静态体检和截图都照不出来。
+     现在补上：单例 DOM、2.4 秒自动隐去，连点则重置计时。 */
+  var toastEl = null, toastTimer = 0;
+  function toast(msg) {
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.className = 'toast';
+      toastEl.setAttribute('role', 'status');
+      toastEl.setAttribute('aria-live', 'polite');
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = String(msg == null ? '' : msg);
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, 2400);
   }
 
   /* 把「当前选区」加入笔记。返回 true 表示成功。
@@ -1519,6 +1568,75 @@
     document.addEventListener('touchend', function () { setTimeout(function () { onSelectionEnd(null); }, 30); });
   }
 
+  /* ======================= 10. 代码块：一键复制 =======================
+     标题栏里的「复制」按钮由 build.py 在构建期注入（分片里不手写，20 个块改一处即可）。
+     这里只负责挂逻辑。
+
+     为什么要从 <pre> 的 textContent 取、而不是 innerHTML：
+     构建期给源码加了着色 <span>，innerHTML 会把标记一起复制走；
+     textContent 拿到的才是**看着一模一样的纯代码** —— 粘到编辑器里能直接跑。
+     注意一定取 pre 的而不是整个 .codeblk：头部那行「Python 原文件 P24 …」不该被复制。 */
+  function codeOf(blk) {
+    var pre = blk.querySelector('pre.code');
+    if (!pre) return '';
+    var t = pre.textContent || '';
+    if (t.indexOf('\u00a0') >= 0) t = t.replace(/\u00a0/g, ' ');   // 不间断空格换回普通空格
+    return t.replace(/\s+$/, '');                                  // 去掉尾部空白与空行
+  }
+  function markCopyBtn(btn, ok) {
+    var old = btn.getAttribute('data-label') || btn.textContent || '复制';
+    btn.setAttribute('data-label', old);
+    btn.textContent = ok ? '已复制' : '复制失败';
+    btn.classList.toggle('done', !!ok);
+    btn.classList.toggle('fail', !ok);
+    clearTimeout(btn._t);
+    btn._t = setTimeout(function () {
+      btn.textContent = btn.getAttribute('data-label');
+      btn.classList.remove('done', 'fail');
+    }, 1600);
+  }
+  function initCodeCopy() {
+    $$('.codeblk').forEach(function (blk) {
+      var head = blk.querySelector('.codeblk-head');
+      var btn = blk.querySelector('.code-copy');
+      /* 老文档 / 外部模板可能没有标题栏（这一版之前的产物就是这样）。
+         别让「有没有按钮」变成「代码能不能复制」的前提 —— 缺按钮就现场补一个。 */
+      if (!btn) {
+        if (!head) {
+          head = document.createElement('div');
+          head.className = 'codeblk-head';
+          var lb = document.createElement('b');
+          lb.textContent = (blk.getAttribute('data-lang') || 'code');
+          head.appendChild(lb);
+          blk.insertBefore(head, blk.firstChild);
+        }
+        btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'code-copy';
+        btn.setAttribute('data-copy', '1');
+        btn.textContent = '复制';
+        head.appendChild(btn);
+      }
+      /* 代码块整体不可选会让「选中 → 标记笔记」失效，所以刻意**不**禁用选择。
+         但按钮本身不该被划进选区：mousedown 时把默认行为拦掉即可。 */
+      btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();                 // 别让点击冒到卡片上触发「定位」
+        var t = codeOf(blk);
+        if (!t) { markCopyBtn(btn, false); toast('这块代码是空的，没东西可复制'); return; }
+        /* 复用统一入口：它自带 600ms 超时兜底，不会「点了没反应」。
+           早先这里自己写了一套 clipboard 分支，正好踩上「writeText 永久 pending」
+           那个坑 —— 无头下按钮永远不变色，真实场景里失焦时也一样。 */
+        copyText(t, function (ok) {
+          markCopyBtn(btn, ok);
+          toast(ok ? '已复制 ' + t.split('\n').length + ' 行代码' : '复制失败，请手动选中代码复制');
+        });
+      });
+    });
+  }
+
+  /* ======================= 11. PDF 深链 ======================= */
   function initPdfLinks() {
     $$('a.pdf-link').forEach(function (a) {
       var p = a.getAttribute('data-page');
@@ -1528,6 +1646,7 @@
     });
   }
 
+  /* ======================= 12. 内嵌原文件（可选） =======================
      build.py 以 embed_pdf=true 生成时，#pdfB64 里装着原 PDF 的 base64。
      点每页的「打开原文件该页」→ 惰性解码成 Blob → 用 blob: URL 打开，带上 #page=N。
      为什么用 blob: 而不是 data:：浏览器会拦顶层 data: 导航，blob: 不会。
@@ -1647,6 +1766,7 @@
     Drawer.init();
     Notes.restoreAll();
     initChrome();
+    initCodeCopy();
     initPdfLinks();
     initEmbeddedPdf();
     initDeepLink();       // 放最后：它要用到 #q / #qres 与 Find，前面都准备好才跑
@@ -1661,6 +1781,15 @@
     openEmbeddedPdf: openEmbeddedPdf,
     pdfBlob: pdfBlob,
     markBtnState: markBtnState,
+    /* 代码块：供无头探针断言「按钮已接线 + 复制到的确实是纯代码」。
+       探针不能真去点（headless 下没有剪贴板权限），所以额外给一个 codeOf，
+       让探针能直接读到「按下去会复制到的东西」并与 pre.textContent 对照。 */
+    initCodeCopy: initCodeCopy,
+    codeOf: function (i) {
+      var blks = $$('.codeblk');
+      return blks[i || 0] ? codeOf(blks[i || 0]) : null;
+    },
+    toast: toast,
     addNote: function (pid, quote, note) {
       var sec = document.getElementById(pid);
       var m = Notes.add({

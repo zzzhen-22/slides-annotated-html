@@ -161,6 +161,60 @@ def run_pipeline(cmd):
     return ''.join(buf), proc.poll()
 
 
+def inject_codeblock_sample(proj):
+    """往语义路线的骨架里塞一个含代码块的分片，返回是否成功。
+
+    为什么需要它：套件的合成 PDF 是纯文字页，天然没有源码，于是
+    `check_ui.py` 的「⑫ 代码块」组与 `probe_codecopy.js` 永远走 SKIP 分支 ——
+    自检一路全绿，可**代码块这条路一次都没被验证过**。这正是 pitfalls 第 48 条
+    「新样例没铺开就断言 → 体检 ALL PASS 其实什么都没查」。
+
+    塞进去的样块刻意覆盖几种容易被写错的形态：
+      · 四类着色都要出现（注释 / 字符串 / 关键字 / 数字），否则 ⑫ 组的
+        「着色 span 齐全」查不出来；
+      · 行尾注释（验证「注释上移」这条纪律没被破坏也能正常渲染）；
+      · `&gt;` 转义（历史最常漏的一个）。
+    """
+    content = os.path.join(proj, 'content')
+    if not os.path.isdir(content):
+        return False
+    # 挑「最后一个含 </section> 的分片」——90_outro.html 是收尾区（没有页面区块），
+    # 不能单纯按文件名取最后一个，否则插入点找不到、静默失败。
+    target, src = None, None
+    for f in sorted((x for x in os.listdir(content) if re.match(r'^\d+_.*\.html$', x)),
+                    reverse=True):
+        p = os.path.join(content, f)
+        s = open(p, encoding='utf-8').read()
+        if '</section>' in s:
+            target, src = p, s
+            break
+    if target is None:
+        return False
+    if 'codeblk' in src:                      # 幂等：已经有了就别重复塞
+        return True
+    blk = (
+        '\n    <div class="codeblk" data-lang="python" data-src="自检样例 · 代码块">\n'
+        '<pre class="code">import tensorflow as tf\n'
+        '\n'
+        '# 自检用的小片段：四类着色各出现一次\n'
+        'def discount(rewards, gamma=0.99):\n'
+        '    """Return the discounted sum (docstring)."""\n'
+        '    total = tf.constant(0.0)   # 行尾注释\n'
+        '    return total + 1\n'
+        '</pre>\n'
+        '    </div>\n'
+        '    <div class="codeblk inline" data-lang="bash" data-src="自检样例 · 转义">\n'
+        '<pre class="code">pip install -q gym &gt; /dev/null 2&gt;&amp;1</pre>\n'
+        '    </div>\n')
+    # 插在最后一个 </section> 之前，确保落在页面区块内部
+    idx = src.rfind('</section>')
+    if idx < 0:
+        return False
+    src = src[:idx] + blk + src[idx:]
+    open(target, 'w', encoding='utf-8', newline='').write(src)
+    return True
+
+
 def semantic_path(base, pdf):
     """语义路线：--stage plan → 校对 outline → 改写确认 → --outline 建骨架 → build → 三校验。
 
@@ -215,6 +269,13 @@ def semantic_path(base, pdf):
         _, rc2 = run_pipeline([sys.executable, '-u', os.path.join(HERE, 'init_project.py'),
                                pdf, '--out', sem, '--outline', outline_path])
         checks.append(('④ init --outline 建骨架退出码 0', rc2 == 0))
+        # ④a 往骨架里塞一个代码块，让「⑫ 代码块」组与 ⑥d 探针**真的跑一次**。
+        #     合成 PDF 本身没有源码，不塞的话那两组永远 SKIP —— 自检全绿，
+        #     但代码块这条路一次都没被验证过（pitfalls 第 48 条「空转守卫」）。
+        #     这里刻意包含四种需要处理的形态：注释、字符串、关键字、数字，
+        #     以及行尾注释与 `&gt;` 转义（最常漏的那个）。
+        checks.append(('④a 样例塞入代码块（供 ⑫/⑥d 真跑）',
+                       inject_codeblock_sample(sem)))
         out3, rc3 = run_pipeline([sys.executable, '-u', os.path.join(HERE, 'run_all.py'),
                                   pdf, '--out', sem, '--skip-init'])
         checks.append(('④ build + 体检退出码 0', rc3 == 0))
@@ -229,6 +290,25 @@ def semantic_path(base, pdf):
                            and any(x.startswith('2 ·') for x in seg_names)))
         checks.append(('④ 产物已生成', any(f.endswith('-逐页精解.html') for f in os.listdir(sem))))
         checks.append(('④ check_ui ALL PASS', re.search(r'ALL PASS', out3) is not None))
+        # 空转守卫：⑫ 组与 ⑥d 探针**确实跑了**（不是 SKIP）。
+        # 不能靠 out3 里的字面标签 —— run_all 的 parse_check_ui 只透传
+        # 「结果：ALL PASS」一行、parse_probe 按白名单前缀过滤，
+        # 细节标签都被吃掉了（实测用标签匹配会永远不命中）。
+        # 直接对**产物**取证最可靠：产物里真有注入过标题栏与着色 span，
+        # 就说明这两组走的是「真跑」分支而不是 SKIP。
+        prod = None
+        for f in os.listdir(sem):
+            if f.endswith('-逐页精解.html'):
+                prod = os.path.join(sem, f)
+                break
+        phtml = open(prod, encoding='utf-8').read() if prod else ''
+        # 产物里有注入过标题栏 + 四类着色 span ⇒ ⑫ 组走的是「真跑」分支
+        has_blk = 'class="codeblk-head"' in phtml and '<span class="c">' in phtml
+        checks.append(('④ ⑫ 代码块组真的跑了（非 SKIP）', has_blk))
+        # 探针侧：探针整体 PASS 且产物里确实有那两个样例块
+        checks.append(('④ ⑥d 代码块探针真的跑了（非 SKIP）',
+                       has_blk and '自检样例' in phtml
+                       and re.search(r'RESULT: PASS', out3) is not None))
         checks.append(('④ probe_marks PASS', re.search(r'RESULT: PASS', out3) is not None))
         checks.append(('④ probe_doc 报进度', re.search(r'内容进度', out3) is not None))
         checks.append(('④ run_all 判定全绿', re.search(r'机械部分全绿', out3) is not None))

@@ -15,6 +15,8 @@
 - **左侧**是逐页中文讲解，**右侧**贴着原页缩略图，不用来回切窗口
 - 公式用 **KaTeX 离线渲染**（字体已转 data URI 内嵌，**完全不联网**）
 - 六类交互：目录逐级折叠 / 每节概述卡 / 侧栏收起后缩略图自动放大 / **划词标记 → 笔记抽屉** / **正文字号 A−/A＋ 调节（存浏览器）** / **正文搜索（搜正文不只搜标题，命中列表可跳转并高亮）**
+- **代码块**：语法着色（注释/字符串/关键字/数字四类，**构建期上色、不引高亮库**）、
+  标题栏标注语言与来源、**一键复制**（复制到的是纯代码，不带着色标记）
 - 页面里明确区分「原文有什么」与「讲解者加了什么」（绿=直觉、蓝=补充推导、红=原稿问题、灰=原文引用）
 - 可选把**原 PDF 整份 base64 内嵌**，点页码直接跳原页，换设备也不失效
 - **多讲课程合集**：一门课十几份课件各留独立产物，另生一个课程入口页（课程地图 / 要点总表 /
@@ -115,6 +117,7 @@ python scripts/check_ui.py   "<输出.html>"                      # 六类交互
 python scripts/probe.py      "<输出.html>" scripts/probe_marks.js
 python scripts/probe.py      "<输出.html>" templates/probe_font.js
 python scripts/probe.py      "<输出.html>" templates/probe_find.js
+python scripts/probe.py      "<输出.html>" templates/probe_codecopy.js
 python scripts/probe.py      "<输出.html>" templates/probe_doc.js
 python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看长相
 ```
@@ -204,12 +207,14 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 │   ├─ probe_doc.js         ← 交付体检：待补页面 N/M、缺缩略图、目录断链、缺字
 │   ├─ probe_font.js        ← 字号调节回归（--profile 跑两遍验跨会话持久化）
 │   ├─ probe_find.js        ← 正文搜索回归（索引/命中/跳转高亮/Esc 还原/不碰笔记）
+│   ├─ probe_codecopy.js    ← 代码块回归（着色不改字/标题栏位置/复制按钮成功与失败两条路径）
 │   ├─ probe_course.js      ← 【课程层】课程入口行为探针（地图/要点表/检索/术语/进度/导出/过滤）
 │   ├─ harness_nav.js       ← 截图 harness：先触发目录交互再截
 │   └─ harness_markshot.js  ← 截图 harness：先划词标记再截
 ├─ examples/                ← sample-lecture.pdf 示例课件（三步上手 ③ 的输入）、config 样例、逐页区块模板
 │   └─ demo/                ← 两份在线 demo 的源工程（zh/ + en/，见 demo/README.md）
 ├─ references/
+│   ├─ pitfalls.md          ← 踩坑清单（51 条，按「频率 × 隐蔽度」排序）
 │   └─ content-quality.md   ← 讲解内容的质量标准
 ├─ vendor/katex/            ← 离线 KaTeX（MIT，见下方致谢）
 ├─ docs/
@@ -234,14 +239,17 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 | 脚本 | 管什么 | 不管什么 |
 |---|---|---|
 | `check_math.js` | 公式能不能渲染、CJK 有没有混进公式、标签配对、目录锚点、缩略图/区块/深链数量、正文缺字（组合符号 U+20D0–U+20FF，硬失败）、TODO 残留 | 长相、交互 |
+| `check_ui.py` | 六类交互的 DOM 与 CSS/JS 是否对齐（分组数与按钮数相等、收起后列宽真的变大、抽屉元素齐全、`DOC_NS` 已注入、字号调节的 `--fs`/反向补偿/localStorage 键、搜索面板与两套高亮类名的隔离、标记上色的结构安全），外加**代码块**一组（每块都有标题栏与复制按钮、四类着色 span 齐全、按钮有成功/失败态、打印时隐藏、`toast` 有实现） | 长相、实际行为 |
 | `probe.py` + `probe_marks.js` | **结构有没有被改坏**：自动找跨格/跨段/跨公式/单段四种选区，用**真实入口**标记后断言「块级元素数、可见文本、表格 tr/td 一字不变、无块级元素进 mark、无零宽 mark」，再拆掉全部 mark 重新定位一遍复查 | 长相 |
 | `probe.py` + `probe_font.js` | **正文字号调节**：初始 100%、`step()` 后 `--fs`/标签/localStorage 三者一致、`Font.init()` 重读恢复、MIN(0.9)/MAX(1.4) 钳制与按钮禁用；加 `--profile` 跑两遍可验跨进程持久化 | 长相 |
 | `probe.py` + `probe_find.js` | **正文搜索**：索引惰性建且覆盖全部有文字的节、查询命中数 = 结果行数、片段与正文都出现 `mark.q-hit`、跳转只加元素不改块级结构也不改一个字、多词是「且」、0 命中时目录交还、Esc 后高亮归零且正文逐字复原、全程不碰 `mark.hl` | 长相 |
+| `probe.py` + `probe_codecopy.js` | **代码块能不能读、能不能抄**：每块都有标题栏且是首个子元素、着色只用 `c/s/k/n` 四类不越界、**剥掉 span 后与 `textContent` 逐字一致**、`codeOf()` 取到的是干净纯代码、真按一次按钮看 UI 反馈；无头下剪贴板必然失败，探针额外 stub 出成功路径，把「已复制 N 行」与 `done` 态也覆盖上 | 长相 + 复制内容 |
 | `probe.py` + `probe_doc.js` | **内容写完了没有**：待补页面 N/M、缺缩略图的页、目录断链、KaTeX 残留 script、TODO 注释、正文缺字风险 | 讲解写得对不对 |
 | `shot.py` | 长相与真实交互状态 | 细节正确性 |
 
 **截图看不出结构被改坏**，所以只要动了标记相关代码，`probe.py` 这一行不能省。
 
+> 上表八行查的是**产物**。另有一条查**套件自己**：`check_docs.py` 断言「几类交互」这类口径
 > 在五份文档与 `check_ui.py` 之间是否一致、README 目录树有没有漏列新文件、
 > `pitfalls.md` 编号是否连续。**改功能而忘了改文档**，靠的就是这条拦。
 > 它不进 `run_all.py`（那条流水线是给用户跑课件的），由 `selftest.py` 顺带跑。
@@ -289,6 +297,7 @@ python scripts/check_docs.py      # 只跑文档口径体检（改了 README / S
 - **不许写死本机路径**。校验：`grep -rn "/home/\|/Users/\|C:/Users/" scripts/ assets/ templates/` 应当无命中。
 - **模板注释里不许出现字面标签**。`build.py` 用非贪婪正则匹配整段区块，注释里的假 `<section>` 会让它提前收尾，症状是「图在文件里、但 DOM 里查不到」，极难排查。
 
+动笔前先扫一遍 `references/pitfalls.md`（51 条，每条都对应一个真实事故）。
 
 ---
 

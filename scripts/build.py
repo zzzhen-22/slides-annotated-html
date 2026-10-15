@@ -58,6 +58,239 @@ REQUIRED = ['__KATEX_CSS__', '__CSS__', '__KATEX_JS__', '__TITLE__', '__BRAND__'
 RE_PG_TAG = re.compile(r'<section(?=[^>]*\bclass="pg")(?=[^>]*\bdata-page="\d+")[^>]*>')
 RE_PG_BLOCK = re.compile(RE_PG_TAG.pattern + r'.*?</section>', re.S)
 
+# ============================================================ 代码块后处理
+# 分片里写的形态（**只有源码，没有标题栏**）：
+#
+#   <div class="codeblk" data-lang="python" data-src="原文件 P24 · 模型定义">
+#   <pre class="code">class ActorCritic(...)</pre>
+#   </div>
+#
+# 构建期做三件事，把上面这段补成「能读、能抄、能复制」的完整代码块：
+#   ① **着色**：注释 / 字符串 / 关键字 / 数字四类上色。**不用任何高亮库** ——
+#      单文件产物要断网可用、不能引 CDN，所以自己在构建期扫一遍就够了。
+#      为什么放在构建期而不是运行时：颜色跟着文件走，打印、另存、断网都还在。
+#   ② **标题栏**：由 data-lang / data-src 生成语言标签、来源说明与「复制」按钮。
+#      （分片里不手写标题栏，避免 20 个块各写一遍、改起来漏改。）
+#   ③ **行高亮**：data-hl="12,18" 把指定行加底色，供正文点名某行时用。
+#
+# 两条纪律：
+#   · 着色**只加 <span>、不动一个字符**。产物里的文字投影（标记与笔记的定位口径）
+#     拼的是文字节点，切碎成多个 span 不影响它 —— 但一旦顺手改了字，笔记全失效。
+#     所以下面有 decorate_codeblocks 的自证断言：剥掉 span 后必须与原码逐字相同。
+#   · **幂等**：块里已经含 <span class="c/s/k/n"> 就整体跳过（尊重手工着色），
+#     已含 .codeblk-head 就不再注入标题栏。
+LANG_NAME = {'python': 'Python', 'py': 'Python', 'bash': 'Bash', 'sh': 'Bash',
+             'shell': 'Bash', 'text': '运行输出', 'output': '运行输出', 'plain': '纯文本'}
+# 只对「有语法」的语言着色；运行输出 / 纯文本不着色（给它们上色只会误导）。
+COLOR_LANGS = ('python', 'py', 'bash', 'sh', 'shell')
+
+PY_KW = frozenset((
+    'import from as def class return if elif else for while in not and or is None '
+    'True False with try except finally raise pass break continue lambda global '
+    'nonlocal yield assert del async await print').split())
+# print 严格说不是关键字，但它是这套代码里唯一高频出现的函数调用，
+# 不染一下，整块代码看起来全黑、层次立不起来。
+SH_KW = frozenset((
+    'sudo apt-get apt pip pip3 conda python python3 echo cd export mkdir rm cp mv '
+    'if then fi for do done while read source cat grep sed chmod systemctl').split())
+
+# 实体往返：分片里的代码是**已转义**的（`>` 写成 &gt;），而着色必须按真实字符来扫，
+# 否则 `&gt;` 会被当成字母串、`&` 会干扰；输出时再转义回去。往返恒等（已自证）。
+_ENT = {'&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&amp;': '&'}
+_RE_UNESC = re.compile(r'&(?:lt|gt|quot|#39|amp);')
+
+
+def _unesc(s):
+    return _RE_UNESC.sub(lambda m: _ENT[m.group(0)], s)
+
+
+def _esc(s):
+    return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+
+def _tokenize(src, kw):
+    """把一整段代码切成 [(类别, 文字)]，类别 ∈ ''(本色) / c 注释 / s 字符串 / k 关键字 / n 数字。
+
+    优先级：注释 > 字符串 > 关键字 > 数字。必须先认注释与字符串 ——
+    否则字符串里的 `#` 会被当注释、`if` 会被从字符串中间切开。
+
+    **对整段扫描而不是逐行扫描**：三引号文档字符串常常跨行
+    （整理版脚本开头的模块 docstring 就是），逐行扫会把它的中间几行
+    当普通代码着色，一片绿中间夹一段黑的，很难看。整段扫才能正确识别。
+    单引号 / 双引号字符串按 Python 语义**不跨行**：行内没闭合就到此为止，
+    免得一处笔误把后面整篇都染成字符串色。
+    """
+    out, buf, i, n = [], [], 0, len(src)
+
+    def flush():
+        if buf:
+            out.append(('', ''.join(buf)))
+            buf.clear()
+
+    while i < n:
+        ch = src[i]
+        if ch == '\n':                              # 换行原样保留（不并入被着色的片段）
+            flush()
+            out.append(('', '\n'))
+            i += 1
+            continue
+        if ch == '#':                               # 注释：到行尾为止
+            j = src.find('\n', i)
+            if j < 0:
+                j = n
+            flush()
+            out.append(('c', src[i:j]))
+            i = j
+            continue
+        if ch in '"\'':
+            q = ch
+            if src[i:i + 3] == q * 3:               # 三引号：可以跨行
+                j = src.find(q * 3, i + 3)
+                j = n if j < 0 else j + 3
+            else:
+                j = i + 1
+                while j < n:
+                    if src[j] == '\n':
+                        break                       # 单引号/双引号不跨行
+                    if src[j] == '\\':
+                        j += 2
+                        continue
+                    if src[j] == q:
+                        j += 1
+                        break
+                    j += 1
+            flush()
+            out.append(('s', src[i:j]))
+            i = j
+            continue
+        if ch.isalpha() or ch == '_':
+            j = i
+            while j < n and (src[j].isalnum() or src[j] == '_'):
+                j += 1
+            w = src[i:j]
+            if w in kw:
+                flush()
+                out.append(('k', w))
+            else:
+                buf.append(w)
+            i = j
+            continue
+        if ch.isdigit():
+            j = i
+            while j < n and (src[j].isdigit() or src[j] == '.'):
+                j += 1
+            flush()
+            out.append(('n', src[i:j]))
+            i = j
+            continue
+        buf.append(ch)
+        i += 1
+    flush()
+    return out
+
+
+def _colorize(src, lang):
+    """给一段（已转义的）源码着色。返回 (着色后的 HTML, 纯文字)。"""
+    if lang not in COLOR_LANGS:
+        return src, _unesc(src)
+    kw = PY_KW if lang in ('python', 'py') else SH_KW
+    plain = _unesc(src)
+    html = ''.join(_esc(t) if k == '' else '<span class="%s">%s</span>' % (k, _esc(t))
+                   for k, t in _tokenize(plain, kw))
+    return html, plain
+
+
+# 匹配一个代码块。**属性顺序不限**，class 允许带修饰（inline）。
+RE_CODEBLK = re.compile(
+    r'<div class="codeblk(?P<mods>[^"]*)"(?P<attrs>[^>]*)>\s*'
+    r'<pre class="code">(?P<src>[\s\S]*?)</pre>\s*</div>')
+RE_CODE_ATTR = re.compile(r'\bdata-(lang|src|hl|title)="([^"]*)"')
+
+
+def _hl_lines(spec):
+    """解析 data-hl="12, 18" → [12, 18]（非法项直接丢弃，不让一个手滑毁掉整个构建）"""
+    out = []
+    for x in re.split(r'[,\s]+', spec or ''):
+        if x.isdigit() and int(x) > 0:
+            out.append(int(x))
+    return out
+
+
+def decorate_codeblocks(body):
+    """给所有 .codeblk 补「着色 + 标题栏 + 行高亮」。返回 (新正文, 处理块数)。"""
+    # **先拦手写的标题栏**。RE_CODEBLK 要求 `<div class="codeblk...">` 后面紧跟
+    # `<pre class="code">`；分片里若自己写了标题栏，正则就失配、整块被**静默跳过**
+    # （不着色、不加按钮，而且不报错）—— 这种「悄悄不做」最难发现。
+    # 与其让它漏到下游，不如在这里硬失败。见 pitfalls 第 44 条。
+    n_pre_head = body.count('class="codeblk-head"')
+    if n_pre_head:
+        raise SystemExit(
+            '分片里出现了 %d 处手写的 codeblk-head —— 标题栏由 build.py 统一注入，'
+            '分片里只写 data-lang / data-src 即可。\n'
+            '  手写的标题栏会让代码块正则失配（该块会被静默跳过），必须删掉。' % n_pre_head)
+
+    stats = {'n': 0}
+
+    def repl(m):
+        mods, attrs, src = m.group('mods'), m.group('attrs'), m.group('src')
+        a = dict(RE_CODE_ATTR.findall(attrs))
+        lang = (a.get('lang') or '').lower()
+        stats['n'] += 1
+
+        colored, plain = src, _unesc(src)
+        # 幂等：块里已经有手写的着色 span 就整体跳过，不改人家的手笔
+        if '<span class="c"' not in src and '<span class="k"' not in src:
+            colored, plain = _colorize(src, lang)
+
+        hls = _hl_lines(a.get('hl'))
+        if hls:
+            lines = colored.split('\n')
+            for n in hls:
+                if 0 <= n - 1 < len(lines):
+                    lines[n - 1] = '<span class="ln-hl">%s</span>' % lines[n - 1]
+            colored = '\n'.join(lines)
+
+        # 标题栏：语言 / 来源 / 复制。src 为空则只留语言与复制。
+        name = a.get('title') or LANG_NAME.get(lang, lang or '代码')
+        parts = ['<div class="codeblk-head"><b>%s</b>' % _esc(name)]
+        if a.get('src'):
+            parts.append('<span class="code-src">%s</span>' % _esc(a['src']))
+        parts.append('<button class="code-copy" type="button" data-copy="1">复制</button>')
+        parts.append('</div>')
+        head = ''.join(parts)
+
+        return ('<div class="codeblk%s"%s>%s\n<pre class="code">%s</pre>\n</div>'
+                % (mods, attrs, head, colored))
+
+    new = RE_CODEBLK.sub(repl, body)
+
+    # ② 声明了 .codeblk 却一块都没被匹配到 —— 说明写法超出了 RE_CODEBLK 的容忍范围
+    #    （例如中间夹了别的元素、属性里有换行、`pre` 的 class 不叫 `code`）。
+    #    这种「悄悄不处理」最难发现：产物看起来有代码块，只是没颜色、没复制按钮。
+    #    断言问的是「是不是我无法接受的样子」——代码块没被处理，就是不能接受。
+    n_declared = len(re.findall(r'<div class="codeblk(?: inline)?"', body))
+    if n_declared != stats['n']:
+        raise SystemExit(
+            '声明了 %d 个代码块，但只处理了 %d 个 —— 有块没被 RE_CODEBLK 匹配上。\n'
+            '  代码块必须写成 <div class="codeblk" data-lang=".." data-src="..">\n'
+            '  紧接 <pre class="code">…</pre> 再闭 div，中间不要插别的元素。\n'
+            '  未被处理的块不会着色、也没有复制按钮，必须修掉。'
+            % (n_declared, stats['n']))
+
+    # ③ 自证：剥掉本函数注入的所有标签后，代码块里的文字必须与原码逐字相同。
+    # 「着色只加 span、不动字」是笔记能否继续定位的前提，不能靠自觉。
+    def strip_tags(s):
+        return re.sub(r'</?(?:span|button|b|div|pre)\b[^>]*>', '', s)
+
+    RE_SRC_INNER = re.compile(r'<pre class="code">([\s\S]*?)</pre>')
+    before = [_unesc(x) for x in RE_SRC_INNER.findall(body)]
+    after = [_unesc(strip_tags(x)) for x in RE_SRC_INNER.findall(new)]
+    if before != after:
+        raise SystemExit(
+            '代码块着色改变了源码文字（%d 块 → %d 块）—— 着色只允许加 <span>。\n'
+            '  这会让「选中代码 → 标记笔记」的定位全部失效，必须修掉。' % (len(before), len(after)))
+    return new, stats['n']
+
 
 def b64(path):
     with open(path, 'rb') as f:
@@ -193,6 +426,13 @@ def main():
     # ---------- 注入缩略图 ----------
     thumb_dir = rp(cfg.get('thumb_dir', '_extract'))
     pattern = cfg.get('thumb_pattern', 'thumb_{n:02d}.jpg')
+
+    # ---------- 代码块：着色 + 标题栏 + 行高亮 ----------
+    # 放在缩略图之前：这一步只动 .codeblk 内部，与逐页区块的注入互不干扰，
+    # 但先做可以让后面所有环节（体检、探针、截图）看到的都是最终形态。
+    body, n_code = decorate_codeblocks(body)
+    if n_code:
+        print('代码块后处理: %d 块（着色 / 标题栏 / 行高亮）' % n_code)
 
     def inject(m):
         block = m.group(0)

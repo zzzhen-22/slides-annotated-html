@@ -126,6 +126,38 @@ PY="$(command -v python || command -v python3)"
 - 别用 `&oiint;` `&iint;` 等非 HTML5 命名实体（浏览器不解码，原样显示）——直接写字符或放 KaTeX。
 - 四种提示框：`.tip` 绿=直觉、`.note` 蓝=补充、`.flag` 红=原稿问题、`.quote` 灰=原文引用。
   新增的解释放 `.note`/`.tip`，并在文首说明「灰底卡片是补充内容」。
+- **多行源码用代码块**（课件含实现代码时必须用，别塞进 `.quote`）：
+  ```html
+  <div class="codeblk" data-lang="python" data-src="原文件 P24 · 模型定义">
+  <pre class="code">class ActorCritic(tf.keras.Model):
+      self.common = layers.Dense(num_hidden_units, activation="relu")</pre>
+  </div>
+  ```
+  `data-src` 显示在标题栏右侧（写明源码出处）；单行命令用 `class="codeblk inline"` 形态。
+  - **标题栏与语法着色由 `build.py` 在构建期生成，分片里千万不要手写**：
+    它按 `data-lang` / `data-src` 注入 `.codeblk-head`（语言名 + 来源 + 一键复制按钮），
+    并按注释/字符串/关键字/数字四类给源码上色。**着色不用任何高亮库**
+    （单文件产物要断网可用），而且颜色写在产物里 —— 打印、另存、离线打开都还在。
+  - **分片里只需写**：`div.codeblk` + `data-lang` + `data-src` + `<pre class="code">` + 源码原文。
+    手写标题栏会被 `check_ui.py` 的「防双份」断言拦下来（也意味着改样式会漏掉手写的那几块）。
+  - 被正文点名的那一行用 `data-hl="12,18"`（行号从 1 数），构建期会加 `.ln-hl` 底色。
+  - **要解释某一行的代码，就把话写进代码块当注释 —— 但写在该行的上方，不要写行尾。**
+    代码块的可用宽度只有约 **72 个半角字符**（CJK 按 2 算），行尾注释很容易把行顶出容器，
+    读者得横向拖动才能读完，正好抵消了「注释便于阅读」的初衷；实测某份课件里
+    有 31 行因此溢出。写在上一行既能贴住被解释的代码，也天然与原稿自带的英文注释同构：
+    ```
+    # 用 tf.range 而不是 Python 的 range：图模式下必须用 TF 的循环原语
+    for t in tf.range(max_steps):
+    ```
+    注意**原稿自带的英文注释保持原样**（只补自己的中文讲解），改动原文注释会失真。
+  - **提示框与对照表不要和代码注释重复**：注释解决「这一行在干什么」，
+    `.tip` / `.note` 解决「为什么这样设计」，`公式 ↔ 代码` 对照表解决「这行对应哪条公式」。
+  - **源码里的 `<` `>` `&` 必须转义**，最常漏的是 `&gt;`（`> /dev/null`、`if a > b`、`List[tf.Tensor]`）。
+  - **源码逐字照抄页面图，不要照抄 PDF 文字层** —— 实测文字层会丢下标、裁掉行尾括号、把一行拆成两行。
+  - **「解释某一行」的话，写进代码里当注释**（`#` 开头），而不是分开写成正文表格：
+    读者复制走代码时代码本身就自解释。块内中文注释请用 `#` 紧跟代码语义，
+    并**明确标出哪些注释是讲解者加的**（本讲在分片头部统一注明「块内中文注释为本文档添加」）。
+  - 长行在 `@media print` 下会自动折行，不必手工断行。
 - 每个大节开头放一张「本节概述」卡（见 `examples/section-template.html`）；分片按节切，
   概述卡单独成 `NN_ovN.html`，紧跟其后的正文分片同序号。
 - 分片只放 `<section>`，**不放 `<footer>`**（页脚由外壳统一生成，否则出现两个）。
@@ -144,6 +176,7 @@ node  "$KIT/scripts/check_math.js" "输出.html" "_katex/katex.min.js"     # 公
 "$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/scripts/probe_marks.js"  # 标记回归（DOM 断言）
 "$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_font.js"  # 字号调节回归（档位 / localStorage）
 "$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_find.js"  # 正文搜索回归（命中 / 跳转高亮 / 不碰笔记）
+"$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_codecopy.js"  # 代码块回归（着色不改字 / 复制成功与失败两条路径）
 "$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_doc.js"  # 待补页面=0、断链、缺字
 "$PY" "$KIT/scripts/shot.py"       "输出.html" "_extract/shot.png"          # 截图看长相
 ```

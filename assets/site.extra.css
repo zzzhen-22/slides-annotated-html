@@ -396,7 +396,25 @@ mark.q-hit{
   font-family:var(--mono);font-size:12px;color:#5a6b85;letter-spacing:.2px;
 }
 .codeblk-head b{font-weight:700;color:#3b4a63}
+/* 来源说明与复制按钮都要靠右：谁在两者中**靠前**，谁吃掉全部剩余空间
+   （flex 里多个 auto 外边距会平分空隙，所以只能给一个）。
+   有来源时靠 code-src 的 margin-left:auto 把「来源 + 复制」整组推到右边；
+   没来源时（如运行输出块）改由复制按钮自己吃空间。 */
 .codeblk-head .code-src{margin-left:auto;font-size:11.5px;color:#8291a8}
+/* 「一键复制」按钮：由 build.py 注入、site.js 挂逻辑。
+   为什么放在标题栏而不是浮在代码右上角：标题栏本来就是「这块代码的元信息」，
+   复制是同一类操作；浮层按钮还会压住第一行代码，滚动时也容易和正文重叠。 */
+.code-copy{
+  flex:none;margin-left:auto;padding:3px 10px;border-radius:6px;
+  border:1px solid #cbd6e6;background:#fff;color:#4a5b76;
+  font-family:var(--mono);font-size:11px;line-height:1.6;cursor:pointer;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.codeblk-head .code-src + .code-copy{margin-left:9px}
+.code-copy:hover{background:#eaf1fd;border-color:#9fb8de;color:#2c5aa0}
+.code-copy:active{background:#dbe7fb}
+.code-copy.done{background:#e6f6ee;border-color:#9fd0b6;color:#1a6b52}
+.code-copy.fail{background:#fdeceb;border-color:#e6b0aa;color:#b8352a}
 .codeblk pre.code{
   margin:0;padding:14px 16px;background:transparent;color:#1f2937;
   font-family:var(--mono);font-size:12.7px;line-height:1.72;
@@ -420,4 +438,28 @@ mark.q-hit{
   mark.q-hit{background:#bfe3ff!important;box-shadow:none!important}
   /* 打印时横向滚动条带不走内容，改成折行，宁可难看也不能丢代码 */
   .codeblk pre.code{overflow:visible;white-space:pre-wrap;word-break:break-word}
+  /* 纸上点不了复制，按钮留着只会让人以为能按 */
+  .code-copy{display:none!important}
+  /* 代码块底色在打印时容易糊成一片灰，改成白底 + 细框，字迹更清 */
+  .codeblk{background:#fff}
+  .codeblk-head{background:#f2f4f8}
 }
+
+/* ===================== 轻提示条 toast（v2.4.1 补） =====================
+   为什么现在才加：site.js 里 8 处 toast(...) 调用**一直没有对应实现**
+   （标记失败、已复制 Markdown 引用、内嵌原文件打不开…），那些分支一跑到
+   就抛 ReferenceError。补函数时必须连样式一起补，否则只是「弹出一个无样式 div」——
+   照样看不见，等于没修。
+   摆放：屏幕底部居中、浮在正文之上、不吃点击（pointer-events:none）。 */
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translate(-50%,14px);
+  z-index:120;max-width:min(78vw,560px);
+  padding:9px 16px;border-radius:9px;
+  background:rgba(31,41,55,.94);color:#f8fafc;
+  font-size:13.5px;line-height:1.6;text-align:center;
+  box-shadow:0 8px 26px rgba(15,23,42,.26);
+  opacity:0;pointer-events:none;
+  transition:opacity .22s ease,transform .22s ease;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media print{.toast{display:none!important}}
