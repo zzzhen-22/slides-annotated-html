@@ -190,6 +190,15 @@ def main():
     chk('course.js 有导出 Markdown（kp.markdown）', 'markdown: function' in js)
     chk('course.js 的检索索引立刻建（不懒建，防探针读到假故障）', 'CFind.build();' in js)
     chk('course.js 会渲染公式（要点表/术语总表里的 KaTeX）', 'renderMath' in js and 'katex.render' in js)
+    # 交互接线的「两端都在」检查：shell 里有控件、js 里有引用 —— 只查一端的话，
+    # 「UI 加了但没人接线」与「逻辑写了但没挂 UI」两种半成品都会漏网。
+    for wid in ('kpFilter', 'kpToggle', 'kpExport', 'glFilter', 'glTools'):
+        chk('course-shell.html 的 #%s 有控件、course.js 有引用' % wid,
+            ('id="%s"' % wid) in shell and ("'#%s'" % wid) in js)
+    chk('course.js 有 scrollspy（顶栏当前区块高亮）',
+        'function initSpy' in js and 'Spy.build' in js)
+    chk('course.js 有 URL 状态同步（#sec=&kp=&find=&gl=）',
+        'function initUrl' in js and "'sec='" in js)
     # 顺序断言要拿 **boot() 函数体内的调用处** 比，不能拿 `initKp()` 字面量 ——
     # 它首次出现是 `function initKp() {` 这个**定义**（在 renderMath 调用之前），
     # 用字面量找会把正确的代码误判成「顺序反了」。
@@ -218,6 +227,11 @@ def main():
         summary(len([]), 0, 0, 0)
         return finish()
     lectures = [x for x in (course.get('lectures') or []) if isinstance(x, dict)]
+
+    # 没写 summary 时 hero 区会显示一句给读者看的占位文案（「本课程的目标简介还没写」），
+    # 页面不算坏、但作者多半是忘了 —— 给一条 WARN 把「忘了」和「故意不写」分开。
+    if not (course.get('summary') or '').strip():
+        warn('course.json 还没写课程目标简介（summary）—— 课程主页 hero 区会显示占位文案')
 
     ids = [x.get('id') or '' for x in lectures]
     chk('讲次 id 非空且不重复', all(ids) and len(set(ids)) == len(ids), '、'.join(ids) or '(无讲次)')

@@ -9,21 +9,21 @@
 > **已完成条目已从正文移除**（不再跟踪），只留在文末「已完成索引」一行。  
 > 基线数据是 2026-10-03 实测，不是估算。
 
-## 当前基线（2026-10-15 实测）
+## 当前基线（2026-10-16 实测）
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 83 个文件（全部已跟踪） ｜ 11 MB（不含 `.git`） ｜ 41 个提交 |
+| 仓库 | 95 个文件（全部已跟踪） ｜ 13.4 MB（不含 `.git`） ｜ 43 个提交 |
 | 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**51 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
-| 图片资源 | ✅ 3 张（`docs/images/`，hero / notes / overview，各约 230 KB） |
-| 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.20 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.20 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>。两份均已按 v2.2.0 重建，源工程在 `examples/demo/` |
+| 图片资源 | ✅ 4 张（`docs/images/`：hero / overview / notes / course）——取景参数已固化在 `scripts/shoot_previews.py`，改完 demo 重跑即可（2026-10-16 加：此前是手工截的，实测已停在「没有字号按钮、目录没有『本讲要点』」的旧版上） |
+| 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>；**课程合集版**（`docs/demo-course/index.html`，0.66 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-course/>。三份都能由 `scripts/build_demo.py` 一键重建，源工程在 `examples/demo/`（课程 demo 的两讲是两份单讲 demo 的**预构建副本**） |
 | 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` + `demo/`（两份 demo 的源工程：config + content + 原页图） |
 | 依赖清单 | ✅ `requirements.txt`（`pymupdf` + `pillow`，不锁版本；`node` 与浏览器为可选/外部） |
-| 自检体系 | ✅ 四条线：`selftest.py` = 机械路线 + 语义路线 + **课程路线**（v2.3.0 新增：两份真实产物组成两讲课 → 课程层体检 + 反向注入）+ **文档口径**（`check_docs.py`，7 组断言）；**CI 已建**（第 3 条） |
-| CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（四条线） |
+| 自检体系 | ✅ 四条线：`selftest.py` = 机械路线 + 语义路线 + **课程路线**（v2.3.0 新增：两份真实产物组成两讲课 → 课程层体检 + **入口行为探针两发** + 反向注入）+ **文档口径**（`check_docs.py`，7 组断言）；**CI 已建**（第 3 条） |
+| CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（四条线）+ `check_docs.py` + **`build_demo.py --check`**（2026-10-16 加：三份 demo 的重建忠实性，纯 Python、不开浏览器） |
 | 代码块 | ✅ v2.4.1：`build.py` 构建期着色 + 标题栏注入 + 逐字自证；`site.js` 的 `initCodeCopy()` + `copyText()` 超时兜底；`templates/probe_codecopy.js` 专项探针（接进 `run_all.py` ⑥d）；`check_ui.py` ⑫ 组（条件式，无块时 SKIP） |
-| 版本号 | ✅ 最新 `v2.4.2`（`CHANGELOG.md` 已记到 v2.4.2「版本口径统一 + 表格行数守护」）；**已发布 tag = `v2.4.2`**，v2.3.1 / v2.4.0 / v2.4.1 三段已在提交历史里但未单独打 tag（按发布时的决定，Releases 页只保留 v2.4.2） |
-| tag 状况 | 12 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
+| 版本号 | ✅ 最新 `v2.4.3`（`CHANGELOG.md` 已记到 v2.4.3「课程主页从能用到好用」）；**已发布 tag = `v2.4.3`**，v2.3.1 / v2.4.0 / v2.4.1 三段已在提交历史里但未单独打 tag（按发布时的决定） |
+| tag 状况 | 13 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
 | 跨平台 | 代码里有 macOS / Linux 分支；**Linux 已由 CI 覆盖**（ubuntu runner 装 `fonts-noto-cjk`），macOS 仍未真机验证（见第 7 条） |
 | 文档口径 | ✅ 无已知漂移；`check_docs.py` 新增「pitfalls 裸计数」断言（第 1、13 条完成，`check_docs.py` 常驻把关） |
 
@@ -448,6 +448,12 @@ P0 已经清空了，但**现在所有验证都靠人手动跑**——这轮的�
 | 发布 `v2.1.1`（annotated tag + GitHub Release） | 2026-10-07 |
 | 代码块「能读能抄」：构建期着色 + 标题栏 + 一键复制 + `probe_codecopy.js` + `check_ui` ⑫ 组 | 2026-10-15（v2.4.0 / v2.4.1） |
 | 全仓库口径普查：修 5 类落后于 v2.4.1 的漂移；`check_docs.py` 新增 ⑦ 组 + ⑤ 组扩到 `docs/` | 2026-10-15（v2.4.2） |
+| **课程合集在线 demo**（`docs/demo-course/`：两份单讲 demo 当两讲 + 课程入口页）；`build_demo.py` 收编课程层的组装与忠实性校验（五产物逐字节可重建） | 2026-10-16 |
+| README 预览图**脚本化**：`shoot_previews.py` 固化四张图的取景参数并重截（含新增的课程主页图）；CI 加一步 `build_demo.py --check` | 2026-10-16 |
+| `coursekit.long_path()` 改为展开**最长的存在前缀**（原实现遇到不存在的文件整串不展开，导致临时目录下 `rel_posix` 算出 `../../..\SHENYU~1\...`） | 2026-10-16 |
+| `probe_course.js` 对齐 `MAX_ROWS` → `PAGE_ROWS` 并补「显示更多」分页断言（原断言因字段改名恒假，且它只在手动跑 `run_course` 时才执行，静默红了很久） | 2026-10-16 |
+| **课程主页第二梯队**：scrollspy 当前区块高亮 / 要点「全部折叠·展开」开关 / 术语总表过滤框 / **URL 状态同步**（`#sec=&kp=&find=&gl=` 全 kv 格式，防抖写入 + 启动恢复 + 全量套用）；另修 S1–S4（地图卡片文本流分隔、`pages_left()` 抽取、0 命中摘要补边界说明、`course.json` 缺 `summary` 的 WARN） | 2026-10-16 |
+| **课程探针补自动入口**（TODO S5）：`selftest.py` 课程线跑**两发真实探针**（裸跑 + 带 hash 验启动恢复），含空转守卫；探针同步扩六组断言（⑧–⑬），新增断言经 7 例反向注入验证 | 2026-10-16 |
 
 已完成条目的**实测记录**没有丢：README 相关截图与体积实测在 `README.md`，
 构建纪律在 `SKILL.md`，具体踩坑（含反向测试的记录）在 `references/pitfalls.md`。

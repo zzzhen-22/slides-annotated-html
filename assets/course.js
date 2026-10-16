@@ -56,6 +56,61 @@
     return n;
   }
 
+  /* ======================= 顶栏 scrollspy（当前区块高亮） =======================
+     让顶栏 5 个导航链接跟着滚动点亮「当前区块」。
+     做法是**计算式**的：update() 现场数「最后一个 top 已越过判定线的区块」，
+     而不是 IntersectionObserver —— 同类机制在本套件踩过「无头下原生事件不派发」
+     的坑（#toTop 显隐的假象，见审查报告「误报排除」），计算式可以被探针
+     **同步调用**并断言，行为也更好推理。
+
+     判定线是「顶部撞击线」（80px，与 .card 的 scroll-margin-top:64px 配套）：
+     **顶部已撞到顶栏下沿的最后一个区块**就是「正在读的那一块」。
+     滚到页面底部时直接点亮最后一节（它的 top 可能永远撞不到那条线）；
+     一个都没撞线（还在顶部）时点亮第一节 —— 任何时刻恰有一个高亮，不会闪断。
+     （不用「视口 45%」这类更宽的线：连续矮区块 —— 比如小课程的地图区很短 ——
+     会好几个同时越线，高亮会从一开始就跳过第一节，看着像「提前跳」。） */
+  var Spy = {
+    links: [],          // [{id, a}]，按顶栏顺序；只收「锚到真实区块」的导航项
+    cur: '',
+
+    build: function () {
+      var out = [];
+      $$('.cnav a').forEach(function (a) {
+        var id = (a.getAttribute('href') || '').replace(/^#/, '');
+        if (id && document.getElementById(id)) out.push({ id: id, a: a });
+      });
+      this.links = out;
+      return out.length;
+    },
+
+    at: function () {
+      var links = this.links, n = links.length;
+      if (!n) return '';
+      var vh = window.innerHeight || 800;
+      var doc = document.documentElement;
+      if (window.scrollY + vh >= (doc.scrollHeight || 0) - 4) return links[n - 1].id;
+      var best = links[0].id;
+      for (var i = 0; i < n; i++) {
+        var el = document.getElementById(links[i].id);
+        if (el && el.getBoundingClientRect().top <= 80) best = links[i].id;
+      }
+      return best;
+    },
+
+    set: function (id) {
+      this.cur = id || '';
+      var cur = this.cur;
+      this.links.forEach(function (x) { x.a.classList.toggle('active', x.id === cur); });
+      return this.cur;
+    },
+
+    update: function () {
+      var id = this.at();
+      if (id !== this.cur) this.set(id);       // 没变就不动 DOM，滚动时省掉无谓的类切换
+      return id;
+    }
+  };
+
   /* ======================= ① 要点过滤 ======================= */
   var Kp = {
     items: [],          // [{li, lec, text}]
@@ -161,13 +216,68 @@
     }
   };
 
+  /* ==================== 要点「全部折叠 / 展开」开关 ====================
+     默认全展开是设计稿 §5.2 的决定（首页要一眼看到要点），这个开关只做
+     **批量动作**、不动默认值。按钮文案跟着「当前是否还有展开的讲次块」走 ——
+     手动逐个折叠也会被同步：<details> 的 toggle 事件不冒泡，所以用捕获阶段监听。 */
+  var Fold = {
+    btn: null,
+
+    anyOpen: function () {
+      return $$('.klec').filter(function (lec) { return lec.open; }).length > 0;
+    },
+
+    sync: function () {
+      if (this.btn) this.btn.textContent = this.anyOpen() ? '全部折叠' : '全部展开';
+      return this;
+    },
+
+    setAll: function (open) {
+      $$('.klec').forEach(function (lec) { lec.open = open; });
+      return this.sync();
+    }
+  };
+
+  /* ======================= 术语总表过滤 =======================
+     与要点过滤同一套模式：纯 DOM indexOf、多词是「且」、0 命中给显式空态。
+     刻意**只加过滤、不堆视图** —— 术语表是「字典」（设计稿 §5.8 的三表分工），
+     排序一类会改变这张表语义的操作不在这里做。 */
+  var Gl = {
+    rows: [],
+
+    build: function () {
+      this.rows = $$('#glossary tbody tr');
+      return this.rows.length;
+    },
+
+    apply: function (raw) {
+      if (!this.rows.length) return 0;
+      var q = norm(raw).toLowerCase();
+      var terms = q ? q.split(' ') : [];
+      var hit = 0;
+      this.rows.forEach(function (tr) {
+        var t = norm(tr.textContent).toLowerCase();
+        var ok = terms.every(function (w) { return t.indexOf(w) >= 0; });
+        tr.hidden = !ok;
+        if (ok) hit++;
+      });
+      var empty = $('#glEmpty');
+      if (empty) empty.hidden = !(terms.length && !hit);
+      var cnt = $('#glCount');
+      if (cnt) cnt.textContent = terms.length ? (hit + ' / ' + this.rows.length + ' 条') : '';
+      return hit;
+    }
+  };
+
   /* ======================= ③ 跨讲检索 ======================= */
   var CFind = {
     data: null,
     idx: [],
     rows: [],
     terms: [],
-    MAX_ROWS: 120,
+    shown: 0,
+    /* 结果分页：每批渲染多少条；超出部分由列表底部的「显示更多」按钮逐批追加 */
+    PAGE_ROWS: 120,
     PER_PAGE: 3,
 
     load: function () {
@@ -254,33 +364,91 @@
       return r.e.href + '#q=' + encodeURIComponent(this.terms.join(' ')) + '&p=' + r.e.id;
     },
 
+    /* 一条命中 = 一个 <a>（不是 div + JS 点击）——保键盘可达（Tab 聚焦）、
+       可新标签打开、可复制链接。与要点区的 .kp-at 同一原则：能跳的东西就做成链接。 */
+    hitEl: function (r) {
+      var d = document.createElement('a');
+      d.className = 'ck-hit';
+      d.href = this.linkOf(r);
+      d.innerHTML =
+        '<div class="ch-loc">' + esc(r.e.lec + ' · ' + r.e.lecTitle + ' · P' + (r.e.page || '?') +
+        ' · ' + r.e.title) + '</div>' +
+        '<div class="ch-s">' + this.snippet(r) + '</div>';
+      return d;
+    },
+
+    /* 摘要一行：命中总数 + 讲数 + 页数；只显示了一批时补「已显示 N 条」 */
+    sumText: function () {
+      var rows = this.rows;
+      /* 0 命中是「找不到不等于没有」最需要被提醒的时刻（检索区上方的 caveat 写着
+         索引边界，但读者搜空了才最需要它）——所以这里直接把它带上一句。 */
+      if (!rows.length) {
+        return '全课程正文里没有「' + this.terms.join(' ') + '」。换个更短的词试试 —— ' +
+          '索引只含每页前段正文，找不到不等于没有。';
+      }
+      var lecs = {}, pages = {}, nLec = 0, nPage = 0;
+      rows.forEach(function (r) {
+        if (!lecs[r.e.lec]) { lecs[r.e.lec] = 1; nLec++; }
+        if (!pages[r.e.lec + r.e.id]) { pages[r.e.lec + r.e.id] = 1; nPage++; }
+      });
+      var t = '全书命中 ' + rows.length + ' 处 · 涉及 ' + nLec + ' 讲的 ' + nPage + ' 页';
+      if (this.shown < rows.length) t += '（已显示 ' + this.shown + ' 条）';
+      return t + '　点一条跳到那一页';
+    },
+
+    /* 把 [from, to) 的命中行追加到列表末尾 —— 「显示更多」时增量追加，不重渲染整段 */
+    appendHits: function (from, to) {
+      var box = $('#cres');
+      if (!box) return;
+      var more = box.querySelector('.res-more');
+      for (var i = from; i < to; i++) {
+        var el = this.hitEl(this.rows[i]);
+        if (more) box.insertBefore(el, more); else box.appendChild(el);
+      }
+    },
+
+    /* 「显示更多」按钮：还有没显示的条时存在（文案带剩余数），显示完了就移除 */
+    updateMore: function () {
+      var box = $('#cres');
+      if (!box) return;
+      var more = box.querySelector('.res-more');
+      var left = this.rows.length - this.shown;
+      if (left <= 0) { if (more) more.parentNode.removeChild(more); return; }
+      if (!more) {
+        var self = this;
+        more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'res-more';
+        more.addEventListener('click', function () { self.showMore(); });
+        box.appendChild(more);
+      }
+      more.textContent = '显示更多（还剩 ' + left + ' 条）';
+    },
+
+    showMore: function () {
+      var from = this.shown;
+      this.shown = Math.min(this.shown + this.PAGE_ROWS, this.rows.length);
+      this.appendHits(from, this.shown);
+      var box = $('#cres');
+      var sum = box && box.querySelector('.ck-sum');
+      if (sum) sum.textContent = this.sumText();
+      this.updateMore();
+      return this.shown;
+    },
+
     render: function () {
       var box = $('#cres');
       if (!box) return 0;
-      var self = this;
       var rows = this.search(this.terms);
       this.rows = rows;
+      this.shown = Math.min(this.PAGE_ROWS, rows.length);
       box.innerHTML = '';
-      var lecs = {}, acc = 0;
-      rows.forEach(function (r) { if (!lecs[r.e.lec]) { lecs[r.e.lec] = 1; acc++; } });
       var sum = document.createElement('div');
       sum.className = 'ck-sum';
-      sum.textContent = rows.length
-        ? ('全书命中 ' + rows.length + ' 处 · 涉及 ' + acc + ' 讲的 ' +
-           (function () { var s = {}, n = 0; rows.forEach(function (r) { if (!s[r.e.lec + r.e.id]) { s[r.e.lec + r.e.id] = 1; n++; } }); return n; })() +
-           ' 页' + (rows.length > this.MAX_ROWS ? '（只列前 ' + this.MAX_ROWS + ' 条）' : '') + '　点一条跳到那一页')
-        : ('全课程正文里没有「' + this.terms.join(' ') + '」。换个更短的词试试。');
+      sum.textContent = this.sumText();
       box.appendChild(sum);
-      rows.slice(0, this.MAX_ROWS).forEach(function (r) {
-        var d = document.createElement('div');
-        d.className = 'ck-hit';
-        d.innerHTML =
-          '<div class="ch-loc">' + esc(r.e.lec + ' · ' + r.e.lecTitle + ' · P' + (r.e.page || '?') +
-          ' · ' + r.e.title) + '</div>' +
-          '<div class="ch-s">' + self.snippet(r) + '</div>';
-        d.addEventListener('click', function () { location.href = self.linkOf(r); });
-        box.appendChild(d);
-      });
+      this.appendHits(0, this.shown);
+      this.updateMore();
       box.hidden = false;
       return rows.length;
     },
@@ -294,6 +462,129 @@
     }
   };
 
+  /* ======================= URL 状态同步 =======================
+     过滤词 / 检索词 / 术语过滤词写进 location.hash，刷新与分享都能恢复。
+     格式：`#sec=<区块id>&kp=<词>&find=<词>&gl=<词>`，全 kv、值 %-编码。
+
+     为什么第一段也用 `sec=` 而不是写成裸锚点（#keypoints&kp=x）：
+       · 写入用 `location.hash =` 时，浏览器只在「找得到同 id 的元素」时才滚动 ——
+         裸锚点形态会在「用户清空过滤词」的写入瞬间把页面滚走（意外滚动）；
+         kv 形态没有匹配 id，写入本身永不触发滚动，语义干净。
+       · 手动敲裸 `#glossary` 仍然兼容（parse 把裸段认成 sec），浏览器原生滚动照常。
+
+     三条路径的语义（URL 是单一真源）：
+       · 页面内操作（输入 / 点导航）→ 写入 hash（debounce；导航即刻写、且参数随行）；
+       · 打开带参数的链接 → 启动时套用 + 滚到 sec；
+       · 前进 / 后退 / 手动改地址栏 → 以 hash 为准**全量套用**（缺参数 = 清空该项），
+         与浏览器前进后退的认知模型一致。 */
+  var Url = {
+    DEBOUNCE: 300,      // 连续输入时不要每个字符都写一次 URL
+    _timer: 0,
+    last: null,         // 我们写过的 hash（不含 #），用来识别「自己触发的变化」
+
+    /* 解析 hash → {sec, kp, find, gl}；'sec=search&kp=x' 与裸 'keypoints' 都认。
+       不认识的键直接忽略 —— 将来加参数时，旧页面读到新链接也不会被吓到。 */
+    parse: function (raw) {
+      var out = { sec: '', kp: '', find: '', gl: '' };
+      var s = String(raw == null ? (location.hash || '') : raw).replace(/^#/, '');
+      if (!s) return out;
+      s.split('&').forEach(function (seg) {
+        if (!seg) return;
+        var i = seg.indexOf('=');
+        if (i < 0) {
+          if (!out.sec && document.getElementById(seg)) out.sec = seg;
+          return;
+        }
+        var k = seg.slice(0, i), v = seg.slice(i + 1);
+        try { v = decodeURIComponent(v); } catch (e) { /* 坏编码保留原样，别打断整条链 */ }
+        if (k === 'sec') out.sec = v;
+        else if (k === 'kp' || k === 'find' || k === 'gl') out[k] = v;
+      });
+      return out;
+    },
+
+    /* 组装当前该写的 hash（不含 #）。值一律 encodeURIComponent —— 这样浏览器读回
+       location.hash 时不会二次编码，last 比对才是可靠的字符串比较。 */
+    build: function (sec) {
+      var parts = [];
+      var s = sec || Spy.at();
+      if (s) parts.push('sec=' + encodeURIComponent(s));
+      var kp = norm(($('#kpFilter') || {}).value);
+      var find = norm(($('#cq') || {}).value);
+      var gl = norm(($('#glFilter') || {}).value);
+      if (kp) parts.push('kp=' + encodeURIComponent(kp));
+      if (find) parts.push('find=' + encodeURIComponent(find));
+      if (gl) parts.push('gl=' + encodeURIComponent(gl));
+      return parts.join('&');
+    },
+
+    write: function (sec) {
+      var h = this.build(sec);
+      if (!h) return '';
+      if (h === String(location.hash || '').replace(/^#/, '')) return h;   // 没变就别写
+      this.last = h;
+      location.hash = h;
+      return h;
+    },
+
+    /* 输入防抖：把「读输入框 → 写」包一层定时器（连续敲键只落一次历史条目） */
+    schedule: function () {
+      var self = this;
+      if (this._timer) clearTimeout(this._timer);
+      this._timer = setTimeout(function () { self._timer = 0; self.write(); }, this.DEBOUNCE);
+    },
+
+    /* 从 hash 全量套用。allowScroll 时滚到 sec（打开带参链接 / 前进后退）。
+       点击导航的滚动由点击接管处理，不走这里。 */
+    applyAll: function (h, allowScroll) {
+      var kf = $('#kpFilter');
+      if (kf) { kf.value = h.kp || ''; Kp.apply(kf.value); }
+      var q = $('#cq');
+      if (q) { q.value = h.find || ''; CFind.run(q.value); }
+      var gf = $('#glFilter');
+      if (gf) { gf.value = h.gl || ''; Gl.apply(gf.value); }
+      if (allowScroll && h.sec) {
+        var el = document.getElementById(h.sec);
+        if (el && h.sec !== Spy.at()) {
+          /* 'instant' 显式压过 CSS 的平滑滚动：打开带参链接时要直接定位，
+             不要从顶部滑过去。老引擎不认识这个枚举值会抛错，退回默认行为。 */
+          try { el.scrollIntoView({ behavior: 'instant', block: 'start' }); }
+          catch (e) { el.scrollIntoView(); }
+        }
+      }
+      return h;
+    }
+  };
+
+  /* 页内锚点点击接管：滚到区块 + 高亮跟上 + **把现有参数段写进新 hash**。
+     不接管的话，点导航会把 hash 覆盖成裸 #xxx（我们写入形态以外的东西），
+     参数段随之丢失。只接管「目标是真实 id 的裸锚点」—— 跨页链接与 #q= 深链不碰。 */
+  function initNav() {
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+      if (!a) return;
+      var raw = (a.getAttribute('href') || '').slice(1);
+      if (!raw || raw.indexOf('=') >= 0) return;
+      var el = document.getElementById(raw);
+      if (!el) return;
+      e.preventDefault();
+      el.scrollIntoView();          // 不带参数 → 走 CSS 的平滑滚动，与原生锚点一致
+      Spy.set(raw);                 // 高亮立刻跟上（滚动事件随后会再校准）
+      Url.write(raw);
+    });
+  }
+
+  function initUrl() {
+    Url.last = String(location.hash || '').replace(/^#/, '');
+    Url.applyAll(Url.parse(), true);          // 启动恢复：打开带参数的链接直接到位
+    window.addEventListener('hashchange', function () {
+      var cur = String(location.hash || '').replace(/^#/, '');
+      if (cur === Url.last) return;           // 自己写的（write 里已记 last）
+      Url.last = cur;
+      Url.applyAll(Url.parse(cur), true);
+    });
+  }
+
   /* ======================= 启动 ======================= */
   function initTop() {
     var btn = $('#toTop');
@@ -304,17 +595,59 @@
     btn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
   }
 
+  /* 顶栏高亮：scroll / resize 只做「排程」，真正的判定在 Spy.update 里同步完成
+     （rAF 节流，快速滚动时不会每个事件都重算） */
+  function initSpy() {
+    if (!Spy.build()) return 0;
+    var tick = false;
+    function onScroll() {
+      if (tick) return;
+      tick = true;
+      requestAnimationFrame(function () { tick = false; Spy.update(); });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    Spy.update();
+    return Spy.links.length;
+  }
+
   function initKp() {
     Kp.build();
     var f = $('#kpFilter');
     if (f) {
-      f.addEventListener('input', function () { Kp.apply(f.value); });
+      f.addEventListener('input', function () { Kp.apply(f.value); Url.schedule(); });
       f.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { f.value = ''; Kp.apply(''); f.blur(); }
+        if (e.key === 'Escape') { f.value = ''; Kp.apply(''); Url.schedule(); f.blur(); }
       });
     }
     var b = $('#kpExport');
     if (b) b.addEventListener('click', function () { Kp.download(); });
+    /* 「全部折叠 / 展开」：按钮点击走批量动作；手动折叠单个讲次时靠捕获监听同步文案
+       （<details> 的 toggle 事件不冒泡，但捕获阶段仍会经过 document） */
+    Fold.btn = $('#kpToggle');
+    if (Fold.btn) {
+      Fold.btn.addEventListener('click', function () { Fold.setAll(!Fold.anyOpen()); });
+      document.addEventListener('toggle', function () { Fold.sync(); }, true);
+      Fold.sync();
+    }
+  }
+
+  function initGl() {
+    if (!Gl.build()) {
+      /* 还没有术语时渲染的是说明性占位而不是表 —— 整个过滤工具条收起来，
+         别让读者面对一个永远筛不出东西的输入框 */
+      var tools = $('#glTools');
+      if (tools) tools.hidden = true;
+      return 0;
+    }
+    var f = $('#glFilter');
+    if (f) {
+      f.addEventListener('input', function () { Gl.apply(f.value); Url.schedule(); });
+      f.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { f.value = ''; Gl.apply(''); Url.schedule(); f.blur(); }
+      });
+    }
+    return Gl.rows.length;
   }
 
   function initFind() {
@@ -326,9 +659,15 @@
     CFind.build();
     var q = $('#cq');
     if (!q) return;
-    q.addEventListener('input', function () { CFind.run(q.value); });
+    q.addEventListener('input', function () { CFind.run(q.value); Url.schedule(); });
     q.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') { q.value = ''; CFind.run(''); q.blur(); }
+      if (e.key === 'Escape') { q.value = ''; CFind.run(''); Url.schedule(); q.blur(); }
+      /* Enter = 焦点跳到第一条命中（聚焦而不是直接导航 —— 两步式，防误跳走）。
+         到结果行后由 Tab / Enter 接管：它本来就是 <a>，键盘一路可达。 */
+      if (e.key === 'Enter') {
+        var first = $('#cres .ck-hit');
+        if (first) { e.preventDefault(); first.focus(); }
+      }
     });
   }
 
@@ -338,8 +677,12 @@
        LaTeX 源码；等公式渲染好，文本变了、索引没变，过滤就会按错误的词去匹配。 */
     var nMath = renderMath(document);
     initTop();
+    initSpy();
     initKp();
+    initGl();
     initFind();
+    initNav();
+    initUrl();
     return nMath;
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
@@ -349,6 +692,10 @@
   window.__course = {
     kp: Kp,
     find: CFind,
+    spy: Spy,
+    fold: Fold,
+    gl: Gl,
+    url: Url,
     renderMath: renderMath,
     state: function () {
       return {
@@ -358,8 +705,21 @@
         mapRows: $$('.lec').length,
         indexedPages: CFind.idx.length,
         glossaryRows: $$('#glossary tbody tr').length,
+        glossaryShown: $$('#glossary tbody tr').filter(function (x) { return !x.hidden; }).length,
         progressRows: $$('#progress tbody tr').length,
         emptyShown: !!(($('#kpEmpty') || {}).hidden === false),
+        /* 检索结果：当前渲染出的命中行数（分页后 = 已显示条数） */
+        resultHits: $$('.ck-hit').length,
+        /* scrollspy：当前高亮的导航项（逗号分隔的 href 列表，正常 0 或 1 个） */
+        navActive: $$('.cnav a.active').map(function (a) {
+          return String(a.getAttribute('href') || '').replace(/^#/, '');
+        }).join(','),
+        /* 要点折叠开关：还开着的讲次块数 / 按钮当前文案 */
+        kpOpen: $$('.klec').filter(function (x) { return x.open; }).length,
+        kpToggleText: norm(($('#kpToggle') || {}).textContent),
+        /* URL 状态同步：当前 hash 与视口位置（探针读它们做断言） */
+        hash: String(location.hash || ''),
+        scrollY: Math.round(window.scrollY || 0),
         /* 公式体检用：渲染出来的公式数 / 尚未渲染的残留 / 渲染失败数 */
         mathRendered: $$('.katex').length,
         mathLeft: $$('script[type^="math/tex"]').length,

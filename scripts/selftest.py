@@ -13,7 +13,8 @@
 **四条自查线**（互相独立，缺一条就少一类保障）：
     ① 机械路线：现造 PDF → 全流水线
     ② 语义路线：--stage plan → 校对 outline → --outline → build → 体检
-    ③ 课程路线：把①②产出的**两份真实产物**就地组成一门两讲课 → 课程层体检 → 反向注入
+    ③ 课程路线：把①②产出的**两份真实产物**就地组成一门两讲课 → 课程层体检 →
+       **入口行为探针（两发：裸跑 + 带 hash 验启动恢复）** → 反向注入
        （这一条查的是「各部分之间还认不认得」，前两条各看一份产物、管不到跨讲关系）
     ④ 文档口径：跑 check_docs.py 查套件自己的文档与实现是否还对得上
        （这一条与前三条无关——前面查「产物对不对」，这条查「说明书准不准」，
@@ -319,12 +320,12 @@ def semantic_path(base, pdf):
 def course_path(base):
     """课程路线：把前两条路线已经建好的产物**就地组成一门两讲小课程**，走一遍课程层。
 
-    为什么不另造一份 PDF：课程层是**纯静态**的（coursekit 不启浏览器，见 pitfalls 第 29 条），
-    它消费的只是各讲产物 HTML。前两条路线跑完，磁盘上已经躺着两份真实产物
-    （机械路线一份、语义路线一份）—— 直接拿它们当讲次，比再造 PDF 更省时间，
+    为什么不另造一份 PDF：课程层的**静态判定**部分不启浏览器（coursekit 不启浏览器，
+    见 pitfalls 第 29 条），它消费的只是各讲产物 HTML。前两条路线跑完，磁盘上已经躺着
+    两份真实产物（机械路线一份、语义路线一份）—— 直接拿它们当讲次，比再造 PDF 更省时间，
     而且用的是**真实产物形态**而不是手搓的迷你样例。
 
-    本函数做四件事：
+    本函数做五件事：
       ① 复制两讲目录到 `base/course/lecture-01-zh` 与 `lecture-02-en`，
          并把 `config.json` 里 `out` / `pdf` 的**绝对路径改写到副本内**
          （不改的话 course_index 读的还是原件，断言对象错位，等于没测）；
@@ -332,8 +333,14 @@ def course_path(base):
          要点、术语行、一张 .xref 跨讲卡）—— 合成 PDF 没有内容作者，
          不补的话 ③④⑤⑥ 组会是「0 个术语 0 条要点」的空转 PASS，
          那正是 pitfalls 第 44 条要防的形态；
-      ③ 跑 course_init → run_course --sync --no-probe；
-      ④ **反向注入**：把一条 .xref 指向坏锚点，重跑体检，必须报 FAIL ——
+      ③ 跑 course_init → run_course --sync --no-probe（静态链）；
+      ④ **课程入口行为探针，两发**（这是 2026-10-16 补的自动入口）：
+         一发裸跑；一发 `--hash` 验「打开带参链接 → 参数已恢复 + 页面已滚到区块」。
+         为什么要单独跑、而不是去掉 run_course 的 --no-probe：单独跑能拿到探针的
+         **完整输出**来断言（run_course 成功时只回显步骤名），而且失败时错误归属清晰。
+         在此之前探针只在手动跑 run_course 时执行，静默红过很久（它引用的字段被改名、
+         断言恒假，却没有任何自动化入口会碰到它）。
+      ⑤ **反向注入**：把一条 .xref 指向坏锚点，重跑体检，必须报 FAIL ——
          证明刚才是真的在查，而不是「永远 PASS」。
 
     返回断言列表（与另两条路线同格式）。
@@ -425,7 +432,34 @@ def course_path(base):
     vis = coursekit.body_html(raw)
     checks.append(('⑤ 可见正文里没有〔公式〕占位符', '〔公式〕' not in vis))
 
-    # ④ 反向注入：坏锚点必须被抓到
+    # ⑤c 课程入口行为探针：**两发**。
+    #     2026-10-16 之前这个探针没有任何自动入口——只在手动跑 run_course（不带
+    #     --no-probe）时执行，而本函数的课程线用的正是 --no-probe、CI 也不跑它；
+    #     它因此静默红过很久（引用的字段被改名后断言恒假，没人发现）。
+    #     第一发裸跑：五区块行为 + scrollspy/折叠/术语过滤/URL 链路（⑧–⑬ 组）。
+    #     第二发带 hash：验「打开带参链接 → 过滤已恢复 + 已滚到那个区块」，
+    #     同时用输出确认 ⑫ 组走的是「真跑」分支（不是 SKIP）。
+    probe_html = os.path.join(course, 'index.html')
+    probe_js = os.path.join(KIT, 'templates', 'probe_course.js')
+    out_pr, rc_pr = run_pipeline([sys.executable, '-u',
+                                  os.path.join(HERE, 'probe.py'), probe_html, probe_js])
+    checks.append(('⑤c 课程入口探针（裸跑）PASS',
+                   rc_pr == 0 and re.search(r'RESULT: PASS', out_pr) is not None))
+    # 空转守卫：本轮新增的组真的在跑（探针文件若退回旧版，这两组会消失而整体照旧 PASS）
+    checks.append(('⑤c 探针覆盖本轮新增组（scrollspy / URL 链路）',
+                   '⑧ 顶栏 scrollspy' in out_pr and '⑬ URL 写入' in out_pr))
+    out_ph, rc_ph = run_pipeline([sys.executable, '-u',
+                                  os.path.join(HERE, 'probe.py'), probe_html, probe_js,
+                                  '--hash', 'sec=keypoints&kp=zzz-selftest-none'])
+    line12 = next((l for l in out_ph.splitlines() if '⑫ 启动恢复' in l), '')
+    checks.append(('⑤c 课程入口探针（带 hash 启动恢复）PASS 且真跑非 SKIP',
+                   rc_ph == 0 and re.search(r'RESULT: PASS', out_ph) is not None
+                   and '打开页面时就带参数' in line12 and '✔' in line12))
+    if rc_pr != 0 or rc_ph != 0:
+        print('  （课程探针失败时先看上面两发 output 里的 ✘ 行；'
+              '改了课程页 JS/CSS/HTML 后必须重跑这里）')
+
+    # ⑤ 反向注入：坏锚点必须被抓到
     checks.append(reverse_check_course(course, prod_rel))
     return checks
 

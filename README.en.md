@@ -5,7 +5,7 @@ English ｜ [简体中文](README.md)
 > Turn lecture PDFs into a **single-file HTML** with complete per-page explanations sitting next to the original slides: thumbnail cross-reference, offline formula rendering, collapsible TOC, text highlighting with a notes drawer — fully offline.
 > The explanations are **written by an AI agent**: hand it your deck, get a finished document in one conversation. You can also run everything yourself.
 
-**▶ [Try the live demo](https://zzzhen-22.github.io/slides-annotated-html/demo-en/)** — an 8-page interactive excerpt, **fully in English**. Nothing to install: click the TOC, highlight a sentence, take a note. (The original Chinese demo lives [here](https://zzzhen-22.github.io/slides-annotated-html/demo/).)
+**▶ [Try the live demo](https://zzzhen-22.github.io/slides-annotated-html/demo-en/)** — an 8-page interactive excerpt, **fully in English**. Nothing to install: click the TOC, highlight a sentence, take a note. (The original Chinese demo lives [here](https://zzzhen-22.github.io/slides-annotated-html/demo/).) Course-collection version: **[course homepage demo](https://zzzhen-22.github.io/slides-annotated-html/demo-course/)** — the same two demos treated as two lectures of one course, plus a course entry page (map / key points / cross-lecture search / glossary / progress).
 
 ![Per-page layout: explanations on the left, original page thumbnails on the right; offline formula rendering; four card types separating "what the original says" from "what the explainer added"](docs/images/hero.png)
 
@@ -80,6 +80,13 @@ Prefer step by step? `prepare_pdf.py` (page images + text layer) → read `_extr
 When one course spans a dozen decks (lecture 1 … lecture 14), **do not merge them into one giant HTML**.
 Each lecture stays a self-contained product; the course layer just adds a directory on top:
 
+<p align="center">
+  <img src="docs/images/course.png" width="62%" alt="Course entry page: five blocks top to bottom — course map, key points, cross-lecture search, glossary, progress">
+</p>
+<p align="center">
+  <sub>Course entry page (<a href="https://zzzhen-22.github.io/slides-annotated-html/demo-course/">try it online</a>): map / key points / cross-lecture search / glossary / progress. All five blocks are rendered <b>at build time</b>, so the page reads fine offline and with JavaScript disabled</sub>
+</p>
+
 ```
 <course dir>/
 ├─ course.json          ← course metadata + lecture list
@@ -90,6 +97,8 @@ Each lecture stays a self-contained product; the course layer just adds a direct
 ```
 
 The entry page **inlines its index data into the HTML**, so it opens by double-click and works offline.
+
+It also ships its own front-end interactions: the top nav **highlights the current block** while you scroll; key points and the glossary each have a client-side filter box; key points support a one-click **collapse / expand all** (default stays expanded); and filter / search terms are written into the **URL** (`#sec=keypoints&kp=...`), so a filtered view survives a refresh, can be shared as a link, and browser back/forward steps through filter changes.
 
 ```bash
 python scripts/course_init.py "<course dir>" --name "<course name>"   # first time: create course.json
@@ -138,16 +147,21 @@ Every deliverable must pass all of these — mechanical checks catch what screen
 | `probe.py` + `probe_doc.js` | **is the content actually finished**: pending pages N / M, pages missing a thumbnail, broken TOC anchors, leftover KaTeX `<script>` tags, TODO comments, missing-glyph risk | whether the explanations are *correct* |
 | `shot.py` | looks and real interaction states | details |
 
-> The eight rows above check the **output**. One more script checks the **suite itself**: `check_docs.py`
-> asserts that cross-document facts ("how many interactions?", which scripts a step runs, the
-> pitfalls numbering) stay in sync across the five docs and the code. It is what catches
-> "changed the feature, forgot the docs". It is not part of `run_all.py` (that pipeline runs a
-> user's deck); `selftest.py` runs it as part of its pass.
+> The eight rows above check the **output**. Two more scripts check the **suite itself**:
+> `check_docs.py` asserts that cross-document facts ("how many interactions?", which scripts a step
+> runs, the pitfalls numbering) stay in sync across the five docs and the code — it is what catches
+> "changed the feature, forgot the docs"; and `build_demo.py --check` asserts that the three online
+> demos (two single-lecture + one course collection) can still be rebuilt **byte-for-byte** into what
+> is committed, which also catches "the single-lecture demo was updated but the course demo's lecture
+> copies lagged behind" — a shopfront going stale is the classic "nobody runs it, so nobody notices"
+> failure; on 2026-10-16 the README preview images were found to be stuck on a version without the
+> font-size buttons. Neither is part of `run_all.py` (that pipeline runs a user's deck).
 
 Self-test: `python scripts/selftest.py` — builds a synthetic 6-page PDF and exercises every route (mechanical pipeline + semantic outline path + a two-lecture course layer), then checks the suite's own doc/code consistency; expect the final line `自检结果: PASS`.
 To check only the docs (fast — run this after editing README / SKILL.md or adding an interaction): `python scripts/check_docs.py`.
+To check only the demos' rebuild fidelity (after touching the demo sources or `assets/`): `python scripts/build_demo.py --check`.
 
-These run automatically in CI: `.github/workflows/selftest.yml` runs the full `selftest.py` (all four checks) on every push to `main` and every PR, on both Ubuntu and Windows runners.
+These run automatically in CI: `.github/workflows/selftest.yml` runs the full `selftest.py` (all four checks) plus the docs and demo-fidelity checks on every push to `main` and every PR, on both Ubuntu and Windows runners.
 
 ---
 

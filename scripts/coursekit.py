@@ -480,6 +480,16 @@ def long_path(p):
     **Chromium 不接受短路径** —— 截图 / 探针会「退出码 0、无 stdout、不生成文件」，
     极难排查（见 pitfalls 第 29 条）。课程页里的链接最终要交给浏览器打开，
     所以在**路径写进 course.json 之前**就把它展开掉，而不是等浏览器那边哑掉。
+
+    为什么不能只调一次 `GetLongPathNameW` 就完事：它**只认整条路径都存在**的情形，
+    中间任何一段缺失就整串原样返回。而这里要展开的常常是**还不存在的文件** ——
+    例如 `course.json` 里记的 `lecture-01-zh/_plan/outline.json`，那个 `_plan`
+    目录可能压根还没建。这时若 `rel_posix` 的两端一个展开了、一个没展开，
+    `os.path.relpath` 就找不出公共前缀，会算出
+    `../../../../SHENYU~1/AppData/...` 这种又长又错位的相对路径
+    （2026-10-16 在临时目录里重建课程 demo 时实测到）。
+
+    做法：**从最长的「存在」前缀往下退**，把能展开的那一截展开，剩余部分原样拼回。
     """
     if not p or os.name != 'nt':
         return p
@@ -489,9 +499,28 @@ def long_path(p):
         k32 = ctypes.windll.kernel32
         k32.GetLongPathNameW.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
         k32.GetLongPathNameW.restype = wintypes.DWORD
-        buf = ctypes.create_unicode_buffer(32768)
-        if k32.GetLongPathNameW(str(p), buf, 32768):
-            return buf.value or p
+
+        def expand_once(q):
+            buf = ctypes.create_unicode_buffer(32768)
+            if k32.GetLongPathNameW(str(q), buf, 32768):
+                return buf.value or q
+            return q
+
+        s = os.path.abspath(str(p))
+        full = expand_once(s)
+        # 整条能展开（含「本来就是长名」的情形）：直接给它
+        if full != s or os.path.exists(s):
+            return full
+        # 整条展不开：逐级上退，找到最长的存在前缀再拼回去
+        head, tail = s, ''
+        while True:
+            parent, name = os.path.split(head)
+            if not name or parent == head:            # 退到盘符根了，放弃
+                return s
+            tail = (name + '\\' + tail) if tail else name
+            if os.path.exists(parent):
+                return expand_once(parent) + '\\' + tail
+            head = parent
     except Exception:                                   # noqa: BLE001
         pass
     return p

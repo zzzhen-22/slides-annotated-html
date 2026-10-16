@@ -1,0 +1,95 @@
+{
+  "schema": "glossary/v1",
+  "terms": [
+    {
+      "id": "supervised-learning",
+      "zh": "监督学习",
+      "en": "supervised learning",
+      "def": "从「输入 + 正确答案」的数据里学预测函数",
+      "zh_html": "监督学习",
+      "en_html": "supervised learning",
+      "def_html": "从「输入 + 正确答案」的数据里学预测函数",
+      "aliases": [],
+      "first": "L01:p02",
+      "seen": [
+        "L01:p02"
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "regression-classification",
+      "zh": "回归 / 分类",
+      "en": "regression / classification",
+      "def": "标签是连续数值 / 离散类别",
+      "zh_html": "回归 / 分类",
+      "en_html": "regression / classification",
+      "def_html": "标签是连续数值 / 离散类别",
+      "aliases": [],
+      "first": "L01:p03",
+      "seen": [
+        "L01:p03"
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "conditional-probability",
+      "zh": "条件概率",
+      "en": "conditional probability",
+      "def": "已知某事件成立时，另一事件的可能性",
+      "zh_html": "条件概率",
+      "en_html": "conditional probability",
+      "def_html": "已知某事件成立时，另一事件的可能性",
+      "aliases": [],
+      "first": "L01:p05",
+      "seen": [
+        "L01:p05"
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "product-sum-rule",
+      "zh": "乘法法则 / 求和法则",
+      "en": "product / sum rule",
+      "def": "联合与边缘、条件之间的两个基本关系",
+      "zh_html": "乘法法则 / 求和法则",
+      "en_html": "product / sum rule",
+      "def_html": "联合与边缘、条件之间的两个基本关系",
+      "aliases": [],
+      "first": "L01:p05",
+      "seen": [
+        "L01:p05"
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "bayes-theorem",
+      "zh": "贝叶斯定理",
+      "en": "Bayes' theorem",
+      "def": "用证据更新信念：后验 ∝ 先验 × 似然",
+      "zh_html": "贝叶斯定理",
+      "en_html": "Bayes' theorem",
+      "def_html": "用证据更新信念：后验 ∝ 先验 × 似然",
+      "aliases": [],
+      "first": "L01:p06",
+      "seen": [
+        "L01:p06"
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "prior-likelihood-posterior",
+      "zh": "先验 / 似然 / 后验",
+      "en": "prior / likelihood / posterior",
+      "def": "看数据前的信念 / 数据在该参数下的可能性 / 看数据后的信念",
+      "zh_html": "先验 / 似然 / 后验",
+      "en_html": "prior / likelihood / posterior",
+      "def_html": "看数据前的信念 / 数据在该参数下的可能性 / 看数据后的信念",
+      "aliases": [],
+      "first": "L01:p07",
+      "seen": [
+        "L01:p07"
+      ],
+      "conflicts": []
+    }
+  ]
+}

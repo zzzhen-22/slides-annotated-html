@@ -83,6 +83,12 @@ def page_no(page_id):
     return m.group(1) if m else str(page_id or '')
 
 
+def pages_left(lec):
+    """这一讲还剩多少页没写。要点区的占位文案与进度看板两处共用 ——
+    同一个数只算一处，改口径时不会漏改另一边（审查报告 C1）。"""
+    return max(0, (lec.get('page_count') or 0) - (lec.get('done_pages') or 0))
+
+
 # ------------------------------------------------------------------ ① 课程地图
 def render_map(lectures, course_dir):
     out = []
@@ -92,22 +98,24 @@ def render_map(lectures, course_dir):
         title = lec.get('title') or lid
         href = href_of(lec, course_dir)
         topics = ' '.join('#' + t for t in (lec.get('topics') or []))
+        # meta 只放徽标里没有的信息 —— 状态已在 badge 上（带颜色），不再重复渲染第二遍
         meta = []
         if lec.get('page_count'):
             meta.append('%s 页' % lec['page_count'])
-        meta.append(STATUS_LABEL.get(st, st))
         if href:
             name = '<a class="ltitle" href="%s">%s</a>' % (e(href), e(title))
         else:
             name = '<span class="ltitle dim" title="这一讲还没有产物可打开">%s</span>' % e(title)
-        out.append(
-            '<div class="lec" data-lec="%s">'
-            '<span class="lid">%s</span>%s'
-            '<span class="badge %s">%s</span>'
-            '<span class="ltopics">%s</span>'
-            '<span class="lmeta">%s</span>'
-            '</div>' % (e(lid), e(lid), name, e(st), e(STATUS_LABEL.get(st, st)),
-                        e(topics), e(' · '.join(meta))))
+        # 段与段之间用**真空格**连接（而不是只靠 flex 的 gap）：gap 是纯视觉的、
+        # 进不了文本流，复制这一行会得到「L01selftest-deck部分完成」这种粘连串。
+        # 纯空白文本节点在 flex 容器里不生成匿名 flex item，所以视觉零影响。
+        segs = ['<span class="lid">%s</span>' % e(lid), name,
+                '<span class="badge %s">%s</span>' % (e(st), e(STATUS_LABEL.get(st, st)))]
+        if topics:
+            segs.append('<span class="ltopics">%s</span>' % e(topics))
+        if meta:
+            segs.append('<span class="lmeta">%s</span>' % e(' · '.join(meta)))
+        out.append('<div class="lec" data-lec="%s">%s</div>' % (e(lid), ' '.join(segs)))
     if not out:
         return '<p class="dim">（这门课还没有登记任何讲次。）</p>'
     return '\n'.join(out)
@@ -125,9 +133,15 @@ def render_keypoints(lectures, kp_by_id, course_dir):
         kp = kp_by_id.get(lid) or {}
         pts = kp.get('points') or []
         total += len(pts)
-        head = ('<summary>%s · %s <span class="badge %s">%s</span>'
+        # 标题在「有产物」时做成链接：读完要点想打开这一讲，不用滚回地图。
+        # 讲次名与徽标之间用 <span> 包住，避免 flex 的 gap 把「L01 · 标题」拆散。
+        if href:
+            tname = '<a class="ktitle" href="%s">%s</a>' % (e(href), e(title))
+        else:
+            tname = e(title)
+        head = ('<summary><span>%s · %s</span> <span class="badge %s">%s</span>'
                 '<span class="kmeta">%s</span></summary>'
-                % (e(lid), e(title), e(st), e(STATUS_LABEL.get(st, st)),
+                % (e(lid), tname, e(st), e(STATUS_LABEL.get(st, st)),
                    e('%d 条' % len(pts)) if pts else '尚无要点'))
         if pts:
             rows = []
@@ -155,8 +169,7 @@ def render_keypoints(lectures, kp_by_id, course_dir):
             elif st == 'skeleton':
                 why = '本讲还没构建产物 —— 跑 run_all.py 生成 HTML 后重跑课程同步。'
             elif st == 'partial':
-                why = '本讲还有 %d 页没写完，要点待补。' % max(
-                    0, (lec.get('page_count') or 0) - (lec.get('done_pages') or 0))
+                why = '本讲还有 %d 页没写完，要点待补。' % pages_left(lec)
             else:
                 why = '本讲产物里没有「本讲要点」卡（#keypoints）—— 补上它再同步。'
             body = '<div class="kp-hold">%s</div>' % e(why)
@@ -223,7 +236,7 @@ def render_progress(lectures, index_by_id):
         cls = 'pbar' + (' warn' if 0 < pct < 100 else (' none' if not pc else ''))
         note = {  # 用「已经发生的事实」说话，别写「请检查」这种没有指向的话
             'done': '要点与正文都齐了。',
-            'partial': '还有 %d 页没写。' % max(0, pc - done),
+            'partial': '还有 %d 页没写。' % pages_left(lec),
             'skeleton': '产物还没构建（跑 run_all.py）。',
             'pending': '讲次目录不存在。',
         }.get(st, '')
@@ -355,7 +368,7 @@ def build(course_dir, course, index, glossary, keypoints, max_text, full, katex=
         '__COURSE__': e(course.get('name') or '课程合集'),
         '__SUBTITLE__': e(' · '.join(x for x in [course.get('instructor') or '',
                                                 course.get('term') or ''] if x)),
-        '__SUMMARY__': e(course.get('summary') or '（还没写课程目标：course.json 的 summary）'),
+        '__SUMMARY__': e(course.get('summary') or '（本课程的目标简介还没写）'),
         '__META__': e(meta),
         '__NAV__': nav,
         '__MAP__': render_map(lectures, course_dir),

@@ -1,0 +1,314 @@
+{
+  "schema": "index/v1",
+  "course": "逻辑回归 · 课程合集 Demo",
+  "lectures": [
+    {
+      "id": "L01",
+      "dir": "lecture-01-zh",
+      "title": "Logistic Regression",
+      "status": "done",
+      "page_count": 8,
+      "done_pages": 8,
+      "product": "lecture-01-zh/index.html",
+      "hash": "4fb7c10d0d17",
+      "extractor": 2,
+      "pages": [
+        {
+          "id": "p01",
+          "page": "1",
+          "title": "Introduction to Artificial Intelligence — Logistic Regression 封面页",
+          "text": "这是整套课件的封面：课程《人工智能导论》，本次主题「逻辑回归（Logistic Regression）」，授课人 苏航（清华大学）。 这一页没有知识点，但它定了调子——接下来 62 页要讲的，是 机器学习中最基础、也最经得起考验的分类模型之一 。逻辑回归到今天仍然广泛用在垃圾邮件过滤、点击率预估、信用评分、疾病风险预测这些场景里；而它背后的推导方式（最大似然 + 梯度法）几乎是所有现代神经网络训练方法的雏形。 读法建议： 先记住这个标题里的两个词—— logistic （指 Sigmoid 函数）和 regression （虽然名字里带「回归」，它实际做的是 分类 ）。这个别扭的名字会在第 46 页得到解释。",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p02",
+          "page": "2",
+          "title": "Supervised Learning 监督学习",
+          "text": "这一页要把「监督学习」这四个字翻译成人话：给定一批「题目 + 标准答案」，让机器自己总结出一套解题规律。 原文写「Task: learn a predictive function」，即 学一个预测函数 ： 〔公式〕 这里出现了两个集合： 特征空间 〔公式〕 （模型看到的输入）和 标签空间 〔公式〕 （我们想预测的东西）。 幻灯片用两组例子对照说明： 文本分类： 特征 〔公式〕 是「文档里出现的词」，标签 〔公式〕 是 Sports ／ News ／ Politics 这样的类别。这里 〔公式〕 是一堆 离散的类别 。 股价预测： 特征 〔公式〕 是「截至时刻 〔公式〕 的市场信息」，标签是 $20.50 这样的 数值 。 页面上还标了一个红字 knowledge （知识）：它的意思是，〔公式〕 和 〔公式〕 之间存在的那层对应关系，正是我们希望机器学到的「知识」——它不是写在代码里的规则，而是从数据里估出来的。 底部给出训练数据的记号： 〔公式〕 意思很直白：有 〔公式〕 条样本，第 〔公式〕 条由输入 〔公式〕（加粗表示它是 一个向量 ，包含多个特征）和答案 〔公式〕 组成。这个记号后面会反复出现。 「监督」是什么意思？ 就是训练数据里每条输入都配了正确答案。反过来说，如果只有输入没有答案，那是「无监督学习」（比如聚类）。",
+          "concepts": [
+            "supervised-learning"
+          ],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p03",
+          "page": "3",
+          "title": "Supervised Learning — regression 监督学习的一种：回归",
+          "text": "同样画了「特征空间 → 标签空间」的箭头，但这一页在强调标签的性质： 标签是连续数值 。幻灯片右下角专门加了一个红框 Continuous Labels 。 输入是截至 〔公式〕 时刻的市场信息 → 输出是股价 $20.50 ； 输入是「时段、地点、时间」〔公式〕 → 输出是气温 42°F 。 这一页真正的作用是给「回归」和「分类」划界。 两者的输入都是特征向量，区别只在输出： 标签 〔公式〕 的类型 任务名 本课件的例子 输出连续值 实数，如 〔公式〕、〔公式〕 回归（regression） 股价、气温、第 40 页的贝叶斯回归 输出离散类别 如 Sports/News 、 鸟/哺乳动物 分类（classification） 朴素贝叶斯、逻辑回归 伏笔： 名称里的 confusion 就在这儿——逻辑回归叫「回归」，但它输出的是 概率 （0 到 1 之间的连续值），再阈值化成类别。因为输出概率这一步确实是回归，所以名字才保留了「regression」。第 47 页会把这个逻辑补完。",
+          "concepts": [
+            "regression-classification"
+          ],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p04",
+          "page": "4",
+          "title": "Outline 大纲",
+          "text": "大纲列了五个主题，构成了这次课的知识阶梯： Probabilistic methods for supervised learning ——监督学习的概率方法（第 5–15 页） Naive Bayes classifier ——朴素贝叶斯分类器（第 16–39 页） Logistic regression ——逻辑回归（第 40–63 页） Exponential family distributions ——指数族分布 Generalized linear models ——广义线性模型 需要提醒的一点： 原文 63 页里，第 4、5 两个主题（指数族分布、广义线性模型） 并没有展开 。课件讲完逻辑回归的收敛曲线就直接进入总结页了。本文档严格保留原顺序，不把这两节插进正文，而是在全文末尾以「补充篇 A / B」的形式单独给出简明讲解——它们是理解「逻辑回归为什么会是 Sigmoid 这个形状」的关键，值得知道。 另外注意大纲的排序本身就是一个叙事： 先讲概率方法（这是地基），再讲朴素贝叶斯（第一个完整可用的模型），再讲逻辑回归（把生成式换成判别式） 。第 63 页的总结会回扣这个结构。",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p05",
+          "page": "5",
+          "title": "Basic Rules of Probability 概率的基本法则",
+          "text": "这一页只写了三个概念和两条法则，但它们是后面 58 页的全部工具。原文里的 〔公式〕 是一个花体字母（读作 \"M\"），在这里代表一个 模型假设 ；先把它当成一个普通的随机变量就行。 三个概念： 符号 读法 原页面的英文注解 〔公式〕 X 的概率 probability of 〔公式〕 〔公式〕 给定 M 时 X 的条件概率 conditional probability of 〔公式〕 given 〔公式〕 〔公式〕 X 与 M 的联合概率 joint probability of 〔公式〕 and 〔公式〕 两条法则 （幻灯片用蓝色高亮标出了它们的名字）： 〔公式〕 〔公式〕 第二条里用积分而不是求和，是因为 〔公式〕 被当作连续量处理；如果它只取有限几个值，就该换成 〔公式〕。两种写法意思一样： 把不关心的那个变量「积分掉／求和掉」，就得到剩下的那个变量的分布。 为什么这两条这么重要？ 因为贝叶斯定理（下一页）就是这两条法则的直接推论。而贝叶斯定理，正是朴素贝叶斯分类器的全部内容。",
+          "concepts": [
+            "conditional-probability",
+            "product-sum-rule"
+          ],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p06",
+          "page": "6",
+          "title": "Bayes' Rule 贝叶斯法则",
+          "text": "一句话概括贝叶斯定理：它告诉你「如何用新证据更新旧看法」。 推导只有一步。把乘法法则 〔公式〕 对称地写另一遍，得到 〔公式〕——注意联合概率是对称的，两种分解方式必然相等（原文标题下面那句「Combining the definition of conditional prob. with the product and sum rules」说的就是这个）。于是： 〔公式〕 这正是原页面上的两行公式。四行字里其实有四个角色，第 7 页会给它们正式命名。这里先用直觉记住每一块的含义： 左边 〔公式〕： 看到数据 X 之后，我对假设 M 的 新 看法（后验）。 〔公式〕： 看数据 之前 ，我对 M 的旧看法（先验）。 〔公式〕： 如果 M 成立，看到这份 X 有多合理（似然）。 分母： 数据 X 本身出现的总可能性，起归一化作用，保证右边算出来是合法概率。 页面右侧是 Thomas Bayes（1702–1761）的画像，并注明这一结果最初发表于 1763 年《论机会学说中一个问题的解》（ An Essay towards Solving a Problem in the Doctrine of Chances ），刊登在伦敦皇家学会的《哲学汇刊》上——是他去世后才由朋友整理发表的。 注意一个细节： 分母那个积分和 〔公式〕 无关（它已经被积掉了），所以如果只是要找「哪个 〔公式〕 最可能」，分母是个常数，可以完全不管。第 35 页正是靠这一点把 MAP 的公式化简的。",
+          "concepts": [
+            "bayes-theorem"
+          ],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p07",
+          "page": "7",
+          "title": "Bayes' Rule Applied to Machine Learning 贝叶斯法则在机器学习中的应用",
+          "text": "这一页把上一页的抽象公式落到机器学习的具体场景： 让 〔公式〕 表示手上的数据集，让 〔公式〕 表示一个模型 。于是： 〔公式〕 原页面右侧把这四项逐一命名，这是全篇最该背下来的对照表： 符号 名称 中文含义 〔公式〕 prior probability of 〔公式〕 先验 ：还没看数据时，你认为哪个模型更可信 〔公式〕 likelihood of 〔公式〕 on data 似然 ：这个模型生成出当前这份数据的可能性 〔公式〕 posterior probability of 〔公式〕 given 〔公式〕 后验 ：看过数据之后，模型的可信度 〔公式〕 marginal likelihood or evidence 边缘似然／证据 ：归一化常数 接着是 模型比较（Model Comparison） 。这里引入了一个「模型空间」〔公式〕，并写出： 〔公式〕 它的意思：如果模型本身也不确定（是一族模型 〔公式〕 里的哪一个），那就把 〔公式〕 积分掉，对整个模型族算一个总的后验。这一步用到的正是第 5 页那条求和法则。 最后是 预测（Prediction） ： 〔公式〕 公式在说：要对新样本 〔公式〕 做预测，严格做法是把「所有可能模型各自给出的预测」按它们的后验概率加权平均。但那个积分通常算不出来，所以在一些常见假设下，直接用 一个 模型（比如最可能的那个）代替整个积分——这就是第 35–38 页 MAP 估计的思想来源。 记忆钩子： 先验 × 似然 ∝ 后验。看见这三个词，脑子里就该浮现这个乘法关系。",
+          "concepts": [
+            "prior-likelihood-posterior"
+          ],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p08",
+          "page": "8",
+          "title": "Three Fundamental Questions 三个基本问题",
+          "text": "这一页是一张「地图」，给出了任何概率模型都必须回答的三个问题。它不涉及公式，但值得记住，因为后续每一页其实都在回答其中之一。 1. 表示（Representation） 「How to capture/model uncertainty in possible worlds?」「How to encode our domain knowledge / assumptions / constraints?」—— 如何把「不确定性」写成数学对象，又如何把我们的先验知识塞进去？ 本课件的回答是：用概率分布（联合分布、条件分布）来表示不确定性；用朴素贝叶斯假设、Beta 先验来注入假设。 2. 推断（Inference） 「How do I answer questions/queries according to my model and/or based on given data?」—— 给定模型和数据，怎么回答具体的问题？ 页面给了一个例子：〔公式〕，即在看到数据后，某个变量的分布是什么。第 19 页的贝叶斯决策规则就属于这一类。 3. 学习（Learning） 「What model is 'right' for my data?」—— 哪个模型才是对的？ 页面给出的公式是： 〔公式〕 读法：在所有候选模型里，挑出让某个评分函数 〔公式〕 最大的那个。这个 〔公式〕 取什么，正是后面 MLE 与 MAP 的分歧所在——MLE 取 〔公式〕，MAP 取 〔公式〕。 为什么先讲这三个问题？ 因为它们构成了后面评价任何模型的框架。第 63 页的总结里对逻辑回归的评价，本质上就是「它的表示是什么、怎么推断、怎么学」这三句话。",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        }
+      ],
+      "keypoints": [
+        {
+          "text": "监督学习学的是从输入到输出的预测函数——「学习」的全部信息来自带正确答案的样本，而不是写死的规则。",
+          "html": "监督学习学的是从输入到输出的预测函数——「学习」的全部信息来自带正确答案的样本，而不是写死的规则。",
+          "at": "p02",
+          "topic": "supervised-learning"
+        },
+        {
+          "text": "回归与分类的差别只在标签：连续值学回归，离散类别学分类；模型形式可以完全相同。",
+          "html": "回归与分类的差别只在标签：连续值学回归，离散类别学分类；模型形式可以完全相同。",
+          "at": "p03",
+          "topic": "regression-classification"
+        },
+        {
+          "text": "概率推理的全部计算都从两条法则出发：乘法法则把联合概率拆开，求和法则做边缘化。",
+          "html": "概率推理的全部计算都从两条法则出发：乘法法则把联合概率拆开，求和法则做边缘化。",
+          "at": "p05",
+          "topic": "product-sum-rule"
+        },
+        {
+          "text": "贝叶斯法则把「模型生成数据的概率」反过来求「数据支持下模型的概率」——先验 × 似然 ∝ 后验。",
+          "html": "贝叶斯法则把「模型生成数据的概率」反过来求「数据支持下模型的概率」——先验 × 似然 ∝ 后验。",
+          "at": "p07",
+          "topic": "bayes-theorem"
+        },
+        {
+          "text": "任何概率模型都必须回答三个问题：怎么表示、怎么推断、怎么学习——本课后续全部内容都挂在这三问上。",
+          "html": "任何概率模型都必须回答三个问题：怎么表示、怎么推断、怎么学习——本课后续全部内容都挂在这三问上。",
+          "at": "p08",
+          "topic": ""
+        }
+      ],
+      "glossary": [
+        {
+          "id": "supervised-learning",
+          "zh": "监督学习",
+          "en": "supervised learning",
+          "def": "从「输入 + 正确答案」的数据里学预测函数",
+          "zh_html": "监督学习",
+          "en_html": "supervised learning",
+          "def_html": "从「输入 + 正确答案」的数据里学预测函数"
+        },
+        {
+          "id": "regression-classification",
+          "zh": "回归 / 分类",
+          "en": "regression / classification",
+          "def": "标签是连续数值 / 离散类别",
+          "zh_html": "回归 / 分类",
+          "en_html": "regression / classification",
+          "def_html": "标签是连续数值 / 离散类别"
+        },
+        {
+          "id": "conditional-probability",
+          "zh": "条件概率",
+          "en": "conditional probability",
+          "def": "已知某事件成立时，另一事件的可能性",
+          "zh_html": "条件概率",
+          "en_html": "conditional probability",
+          "def_html": "已知某事件成立时，另一事件的可能性"
+        },
+        {
+          "id": "product-sum-rule",
+          "zh": "乘法法则 / 求和法则",
+          "en": "product / sum rule",
+          "def": "联合与边缘、条件之间的两个基本关系",
+          "zh_html": "乘法法则 / 求和法则",
+          "en_html": "product / sum rule",
+          "def_html": "联合与边缘、条件之间的两个基本关系"
+        },
+        {
+          "id": "bayes-theorem",
+          "zh": "贝叶斯定理",
+          "en": "Bayes' theorem",
+          "def": "用证据更新信念：后验 ∝ 先验 × 似然",
+          "zh_html": "贝叶斯定理",
+          "en_html": "Bayes' theorem",
+          "def_html": "用证据更新信念：后验 ∝ 先验 × 似然"
+        },
+        {
+          "id": "prior-likelihood-posterior",
+          "zh": "先验 / 似然 / 后验",
+          "en": "prior / likelihood / posterior",
+          "def": "看数据前的信念 / 数据在该参数下的可能性 / 看数据后的信念",
+          "zh_html": "先验 / 似然 / 后验",
+          "en_html": "prior / likelihood / posterior",
+          "def_html": "看数据前的信念 / 数据在该参数下的可能性 / 看数据后的信念"
+        }
+      ]
+    },
+    {
+      "id": "L02",
+      "dir": "lecture-02-en",
+      "title": "Logistic Regression",
+      "status": "done",
+      "page_count": 8,
+      "done_pages": 8,
+      "product": "lecture-02-en/index.html",
+      "hash": "23d47d8b6436",
+      "extractor": 2,
+      "pages": [
+        {
+          "id": "p01",
+          "page": "1",
+          "title": "Introduction to Artificial Intelligence — Logistic Regression Cover page",
+          "text": "This is the cover of the deck: the course Introduction to Artificial Intelligence , today's topic \"Logistic Regression\", taught by Su Hang (Tsinghua University). There is no new content on this page, but it sets the tone — the next 62 pages develop one of the most fundamental and time-tested classification models in machine learning . Logistic regression is still widely used today in spam filtering, click-through-rate prediction, credit scoring, and disease-risk estimation; and the machinery behind it (maximum likelihood + gradient methods) is the prototype of almost every modern neural-network training procedure. How to read the title: keep two words in mind — logistic (referring to the Sigmoid function) and regression (despite the name, it actually performs classification ). This awkward naming is explained on page 46.",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p02",
+          "page": "2",
+          "title": "Supervised Learning learning a predictor from labeled examples",
+          "text": "This page translates \"supervised learning\" into plain words: give the machine a batch of questions with correct answers, and let it distill its own rule for solving them. The slide says \"Task: learn a predictive function\": 〔公式〕 Two sets appear here: the feature space 〔公式〕 (the input the model sees) and the label space 〔公式〕 (what we want to predict). The slide contrasts two families of examples: Text classification: the features 〔公式〕 are \"the words appearing in a document\", and the labels 〔公式〕 are categories like Sports , News , Politics . Here 〔公式〕 is a set of discrete categories . Stock-price prediction: the features 〔公式〕 are \"market information up to time 〔公式〕\", and the label is a numeric value like $20.50 . The slide also highlights one word in red: knowledge . The point is that the correspondence between 〔公式〕 and 〔公式〕 is exactly the \"knowledge\" we want the machine to learn — not rules written in code, but something estimated from data. The notation for training data appears at the bottom: 〔公式〕 Plainly: there are 〔公式〕 samples; the 〔公式〕-th one pairs an input 〔公式〕 (boldface because it is a vector of multiple features) with its answer 〔公式〕. This notation recurs throughout. What does \"supervised\" mean? Every input in the training data comes with its correct answer. Conversely, inputs without answers make it \"unsupervised learning\" (clustering, for example).",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p03",
+          "page": "3",
+          "title": "Supervised Learning — regression a variant with continuous labels",
+          "text": "The same \"feature space → label space\" arrow is drawn, but this page stresses the nature of the labels: they are continuous values . A red box Continuous Labels is added in the lower right. Input: market information up to time 〔公式〕 → output: a stock price $20.50 ; Input: \"session, location, time\" 〔公式〕 → output: a temperature 42°F . The real job of this page is to draw the boundary between regression and classification. Both take feature vectors as input; the difference is only in the output: Type of label 〔公式〕 Task Example in this deck Continuous output Real number, e.g. 〔公式〕, 〔公式〕 Regression Stock price, temperature, Bayesian regression on page 40 Discrete output e.g. Sports/News , bird/mammal Classification Naive Bayes, logistic regression Foreshadowing: here lies the naming confusion — logistic regression is called \"regression\" but outputs a probability (a continuous value between 0 and 1), which is then thresholded into a class. The name keeps \"regression\" because producing that probability really is a regression. Page 47 completes this line of reasoning.",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p04",
+          "page": "4",
+          "title": "Outline the ladder of this lecture",
+          "text": "The outline lists five topics, forming a knowledge ladder: Probabilistic methods for supervised learning (pages 5–15) Naive Bayes classifier (pages 16–39) Logistic regression (pages 40–63) Exponential family distributions Generalized linear models Worth flagging: in the original 63 pages, topics 4 and 5 (exponential family, generalized linear models) are never actually developed . The deck jumps from logistic regression's convergence curves straight to the summary. This document strictly preserves the original order — these two sections are not inserted into the main text; instead, concise supplements A / B are given at the end. They are the key to understanding why logistic regression has the Sigmoid shape, and are worth knowing. Note also that the ordering of the outline is itself a narrative: probability methods first (the foundation), then Naive Bayes (the first complete working model), then logistic regression (swapping the generative view for the discriminative one) . The summary on page 63 calls back to this structure.",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p05",
+          "page": "5",
+          "title": "Basic Rules of Probability the entire toolbox, in one page",
+          "text": "This page holds only three concepts and two rules, yet they are the entire toolbox for the remaining 58 pages. The script letter 〔公式〕 in the original stands for a model assumption ; for now, treat it as an ordinary random variable. Three concepts: Symbol Reading On-slide annotation 〔公式〕 probability of X probability of 〔公式〕 〔公式〕 conditional probability of X given M conditional probability of 〔公式〕 given 〔公式〕 〔公式〕 joint probability of X and M joint probability of 〔公式〕 and 〔公式〕 Two rules (the slide highlights their names in blue): 〔公式〕 〔公式〕 The second uses an integral rather than a sum because 〔公式〕 is treated as continuous; if it took only finitely many values, you would write 〔公式〕. Both say the same thing: marginalize out the variable you don't care about, and you get the distribution of the one you do. Why do these two rules matter so much? Because Bayes' rule (next page) is their direct corollary — and Bayes' rule is the entire content of the Naive Bayes classifier.",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p06",
+          "page": "6",
+          "title": "Bayes' Rule updating old beliefs with new evidence",
+          "text": "Bayes' theorem in one sentence: how to update an old belief with new evidence. The derivation is one step. Write the product rule 〔公式〕 symmetrically a second way, 〔公式〕 — the joint probability is symmetric, so the two decompositions must be equal (that is exactly what the sentence under the original title, \"Combining the definition of conditional prob. with the product and sum rules\", says). Hence: 〔公式〕 These are the two lines on the original slide. Four roles hide in those four terms; page 7 names them formally. For now, hold the intuition for each piece: Left side 〔公式〕: after seeing data X, my new belief about hypothesis M (the posterior). 〔公式〕: before the data, my old belief about M (the prior). 〔公式〕: how plausible this X is if M holds (the likelihood). Denominator: the total chance of observing X at all — a normalizer ensuring the right side is a legal probability. On the right of the slide is a portrait of Thomas Bayes (1702–1761), noting that the result first appeared posthumously in 1763 in An Essay towards Solving a Problem in the Doctrine of Chances , published in the Philosophical Transactions of the Royal Society of London — arranged by friends after his death. A detail worth noticing: the integral in the denominator does not involve 〔公式〕 (it has already been integrated out), so if you only need to know \"which 〔公式〕 is most likely\", the denominator is a constant and can be ignored entirely. Page 35 uses exactly this to simplify the MAP formula.",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p07",
+          "page": "7",
+          "title": "Bayes' Rule Applied to Machine Learning naming the four terms",
+          "text": "This page lands the abstract formula in a concrete machine-learning setting: let 〔公式〕 be the dataset at hand and 〔公式〕 a model . Then: 〔公式〕 The right side of the slide names all four terms — the single most worth-memorizing table in this deck: Symbol Name Meaning 〔公式〕 prior probability of 〔公式〕 Prior : which model you consider more credible before seeing any data 〔公式〕 likelihood of 〔公式〕 on data Likelihood : how plausibly this model would have generated the observed data 〔公式〕 posterior probability of 〔公式〕 given 〔公式〕 Posterior : the model's credibility after seeing the data 〔公式〕 marginal likelihood or evidence Evidence : the normalizing constant Next comes model comparison . A \"model space\" 〔公式〕 is introduced, and: 〔公式〕 Meaning: if the model itself is uncertain (which member of a family 〔公式〕?), integrate out 〔公式〕 and score the whole family with one posterior. This is exactly the sum rule from page 5 at work. Finally, prediction : 〔公式〕 The formula says: to predict a new sample 〔公式〕, the strict approach averages the predictions of all possible models, weighted by their posteriors. That integral is usually intractable, so under some common assumptions one model (say, the most probable one) substitutes for the whole integral — the origin of the MAP idea on pages 35–38. Memory hook: prior × likelihood ∝ posterior. Whenever you see those three words, this multiplicative relationship should light up.",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        },
+        {
+          "id": "p08",
+          "page": "8",
+          "title": "Three Fundamental Questions a map of probabilistic modeling",
+          "text": "This page is a map: three questions that any probabilistic model must answer. No formulas here, but worth memorizing — every subsequent page is answering one of them. 1. Representation \"How to capture/model uncertainty in possible worlds?\" \"How to encode our domain knowledge / assumptions / constraints?\" — how to write uncertainty down as a mathematical object, and how to inject prior knowledge into it? This deck's answers: represent uncertainty with probability distributions (joint, conditional); inject assumptions via the Naive Bayes assumption and Beta priors. 2. Inference \"How do I answer questions/queries according to my model and/or based on given data?\" — given a model and data, how do we answer concrete questions? The slide gives one example: 〔公式〕 — the distribution of some variable after observing the data. The Bayesian decision rule on page 19 belongs here. 3. Learning \"What model is 'right' for my data?\" The slide gives: 〔公式〕 Reading: among all candidate models, pick the one maximizing some scoring function 〔公式〕. What 〔公式〕 should be is precisely where MLE and MAP diverge — MLE takes 〔公式〕; MAP takes 〔公式〕. Why start with these three questions? Because they form the framework for judging every model that follows. The evaluation of logistic regression in the page-63 summary is, at heart, three sentences: what it represents, how it infers, how it learns.",
+          "concepts": [],
+          "pays_off": [],
+          "forward": []
+        }
+      ],
+      "keypoints": [
+        {
+          "text": "Supervised learning fits a predictive function from \"input + correct answer\" pairs — the information all comes from labeled samples, never from hand-written rules.",
+          "html": "Supervised learning fits a predictive function from \"input + correct answer\" pairs — the information all comes from labeled samples, never from hand-written rules.",
+          "at": "p02",
+          "topic": ""
+        },
+        {
+          "text": "Regression and classification differ only in the label: continuous values vs discrete classes — the model form can be identical.",
+          "html": "Regression and classification differ only in the label: continuous values vs discrete classes — the model form can be identical.",
+          "at": "p03",
+          "topic": ""
+        },
+        {
+          "text": "Every probability calculation builds on two rules: the product rule splits a joint probability apart, the sum rule marginalises.",
+          "html": "Every probability calculation builds on two rules: the product rule splits a joint probability apart, the sum rule marginalises.",
+          "at": "p05",
+          "topic": ""
+        },
+        {
+          "text": "Bayes' rule turns \"how likely is the data under a model\" into \"how plausible is the model given the data\" — prior × likelihood ∝ posterior.",
+          "html": "Bayes' rule turns \"how likely is the data under a model\" into \"how plausible is the model given the data\" — prior × likelihood ∝ posterior.",
+          "at": "p07",
+          "topic": ""
+        },
+        {
+          "text": "Every probabilistic model must answer three questions: how to represent, how to infer, how to learn — the rest of the course hangs on them.",
+          "html": "Every probabilistic model must answer three questions: how to represent, how to infer, how to learn — the rest of the course hangs on them.",
+          "at": "p08",
+          "topic": ""
+        }
+      ],
+      "glossary": []
+    }
+  ],
+  "stats": {
+    "lectures": 2,
+    "pages": 16,
+    "concepts": 6,
+    "keypoints": 10
+  }
+}

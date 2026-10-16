@@ -45,6 +45,7 @@ __CSS__
     <div class="kp-tools">
       <input id="kpFilter" class="kinput" type="search" autocomplete="off"
              placeholder="过滤要点（只筛这张表，不建索引）">
+      <button id="kpToggle" type="button" title="一次折起 / 展开全部讲次的要点（默认全展开）">全部折叠</button>
       <button id="kpExport" type="button" title="把当前这张表导出为 Markdown 文件">导出 Markdown</button>
       <span class="kp-count" id="kpCount"></span>
     </div>
@@ -65,6 +66,12 @@ __CSS__
   <section id="glossary" class="card">
     <h2>术语总表</h2>
     <p class="lead">这门课统一使用的术语与译名。「首见」可以点，跳到第一次讲它的那一页。</p>
+    <div class="kp-tools" id="glTools">
+      <input id="glFilter" class="kinput" type="search" autocomplete="off"
+             placeholder="过滤术语（只筛这张表，不建索引）">
+      <span class="kp-count" id="glCount"></span>
+    </div>
+    <div id="glEmpty" class="kp-empty" hidden>没有匹配的术语 —— 换一个词或清空试试。</div>
     __GLOSSARY__
   </section>
 

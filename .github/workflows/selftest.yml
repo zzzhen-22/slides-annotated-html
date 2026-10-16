@@ -76,6 +76,14 @@ jobs:
       - name: Docs consistency
         run: python scripts/check_docs.py
 
+      # demo 忠实性：仓库里那三份在线 demo（两份单讲 + 一份课程合集）必须仍能被
+      # 重建到与已入库**逐字节一致**。为什么单列一步：它是项目门面，而门面过期是
+      # 「没人跑所以没人发现」的典型 —— 2026-10-16 就实测到 README 的三张预览图
+      # 停留在「字号按钮还没加、目录还没有『本讲要点』」的旧版上。
+      # 纯 Python、不开浏览器，跑完十几秒。
+      - name: Demo rebuild fidelity
+        run: python scripts/build_demo.py --check
+
       # 完整四条自查线：机械路线 + 语义路线 + 课程路线 + 文档口径（内部还会再跑 check_docs.py）。
       - name: Full selftest
         run: python scripts/selftest.py

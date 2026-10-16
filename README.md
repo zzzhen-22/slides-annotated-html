@@ -6,7 +6,7 @@
 > 逐页缩略图对照、公式离线渲染、目录折叠、划词标记＋笔记抽屉，断网可开。
 > 逐页讲解由 **AI agent 替你写**——丢给它一份课件，一轮对话拿成品；也可以自己动手跑。
 
-**▶ [点这里在线试一下](https://zzzhen-22.github.io/slides-annotated-html/demo/)** —— 节选 8 页的 demo，**不需要安装任何东西**，直接在浏览器里点目录、划句子、写笔记。英文版：**[English demo](https://zzzhen-22.github.io/slides-annotated-html/demo-en/)**（讲解内容与界面为英文）。
+**▶ [点这里在线试一下](https://zzzhen-22.github.io/slides-annotated-html/demo/)** —— 节选 8 页的 demo，**不需要安装任何东西**，直接在浏览器里点目录、划句子、写笔记。英文版：**[English demo](https://zzzhen-22.github.io/slides-annotated-html/demo-en/)**（讲解内容与界面为英文）。课程合集版：**[课程主页 demo](https://zzzhen-22.github.io/slides-annotated-html/demo-course/)** —— 把上面两份演示当成一门课的两讲，再加一个课程入口页（课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 进度）。
 
 ![逐页对照：左侧中文讲解、右侧贴着原页缩略图；公式离线渲染；四类提示卡区分「原文有什么」与「讲解者加了什么」](docs/images/hero.png)
 
@@ -132,6 +132,13 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 一门课十几份课件（第 1 讲到第 14 讲），**不要合并进一个巨型 HTML** —— 每讲仍做一份
 独立产物，课程层只在它们之外加一层目录：
 
+<p align="center">
+  <img src="docs/images/course.png" width="62%" alt="课程入口页：自上而下五个区块 —— 课程地图、要点总结、跨讲检索、术语总表、进度看板">
+</p>
+<p align="center">
+  <sub>课程入口页（<a href="https://zzzhen-22.github.io/slides-annotated-html/demo-course/">在线试一下</a>）：课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 进度。五个区块的内容都在<b>生成时</b>写进 HTML，所以断网、禁用 JS 也读得到</sub>
+</p>
+
 ```
 <课程目录>/
 ├─ course.json          ← 课程元数据 + 讲次清单
@@ -145,6 +152,11 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 **KaTeX 也一并内联**（约 630 KB），因此要点总表与术语总表里的公式是**正常渲染**的，
 不会显示成 LaTeX 源码或〔公式〕占位符（那个占位符只存在于**检索索引**里，
 因为把 LaTeX 塞进索引既难读又没检索价值 —— 详见「跨讲检索」的提示语）。
+
+入口页自带一套前端交互：顶栏导航跟随滚动**高亮当前区块**；要点总结与术语总表各有一个
+纯前端过滤框（不建索引、输入即筛）；要点支持一键**全部折叠 / 展开**（默认仍全展开）；
+筛选词与检索词会写进 **URL**（形如 `#sec=keypoints&kp=梯度`）—— 刷新不丢，也能把
+「我筛出来的这份结果」直接分享给别人，浏览器前进 / 后退可在筛选操作之间回退。
 
 ```bash
 python scripts/course_init.py "<课程目录>" --name "<课程名>"   # 首次：建 course.json
@@ -194,7 +206,8 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 │   ├─ probe_marks.js       ← 标记功能回归（跨格/跨段/跨公式/单段 + 重开恢复）
 │   ├─ glyph_probe.py       ← 正文符号探针：把非中文符号排成一页，肉眼查方框
 │   ├─ selftest.py          ← 自检：现造小 PDF 跑通机械 + 语义 + 课程 + 文档口径四条线
-│   └─ shot.py              ← 无头截图（--script 可先触发交互再截）
+│   ├─ shot.py              ← 无头截图（--script 可先触发交互再截）
+│   └─ shoot_previews.py    ← 重截 README 里那几张预览图（取景参数固化，改完 demo 重跑）
 ├─ assets/                  ← 已验证的外壳与样式，build.py 自动内联
 │   ├─ shell.html           ← 页面骨架（改版式改这里，不要改 build.py）
 │   ├─ site.css             ← 基础版式
@@ -221,9 +234,11 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 ├─ docs/
 │   ├─ workflow.md          ← 人类向完整流程：每步做什么、为什么不能省
 │   ├─ v2-course-collection.md ← v2 设计稿：多课件课程合集（数据模型 / 内容层方法 / 分阶段落地）
+│   ├─ v2-course-collection-todo.md ← 课程合集主页优化待办（审查遗留项 + 「不要动」清单）
 │   ├─ demo/                ← 在线 demo（中文）：节选 8 页的可交互产物（单文件）
 │   ├─ demo-en/             ← 在线 demo（英文）：同一产物的全英文版
-│   └─ images/              ← README 里那几张截图
+│   ├─ demo-course/         ← 在线 demo（课程层）：把上面两份当两讲 + 课程入口页
+│   └─ images/              ← README 里那几张截图（scripts/shoot_previews.py 可重截）
 ├─ .github/
 │   └─ workflows/
 │       └─ selftest.yml     ← CI：每次 push 到 main / 每个 PR 跑四条自查线
@@ -250,19 +265,23 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 
 **截图看不出结构被改坏**，所以只要动了标记相关代码，`probe.py` 这一行不能省。
 
-> 上表八行查的是**产物**。另有一条查**套件自己**：`check_docs.py` 断言「几类交互」这类口径
+> 上表八行查的是**产物**。另有两条查**套件自己**：`check_docs.py` 断言「几类交互」这类口径
 > 在五份文档与 `check_ui.py` 之间是否一致、README 目录树有没有漏列新文件、
-> `pitfalls.md` 编号是否连续。**改功能而忘了改文档**，靠的就是这条拦。
-> 它不进 `run_all.py`（那条流水线是给用户跑课件的），由 `selftest.py` 顺带跑。
+> `pitfalls.md` 编号是否连续 —— **改功能而忘了改文档**，靠的就是它拦；
+> `build_demo.py --check` 断言仓库里那三份在线 demo（两份单讲 + 一份课程合集）仍能被重建到
+> 与已入库**逐字节一致**，顺带查出「单讲 demo 更新了、课程 demo 的讲次副本却没跟上」——
+> 门面过期属于「没人跑所以没人发现」，2026-10-16 就实测到 README 的三张预览图停在旧版上。
+> 两条都不进 `run_all.py`（那条流水线是给用户跑课件的）。
 
 ### 自检
 
 ```bash
-python scripts/selftest.py        # 现造一份 6 页小 PDF，跑通「机械 + 语义 + 课程」三条路线，并体检套件自身文档口径，期望结尾「自检结果: PASS」
-python scripts/check_docs.py      # 只跑文档口径体检（改了 README / SKILL.md / 交互功能之后跑这一条就够，秒级）
+python scripts/selftest.py             # 现造一份 6 页小 PDF，跑通「机械 + 语义 + 课程」三条路线，并体检套件自身文档口径，期望结尾「自检结果: PASS」
+python scripts/check_docs.py           # 只跑文档口径体检（改了 README / SKILL.md / 交互功能之后跑这一条就够，秒级）
+python scripts/build_demo.py --check   # 只校验三份 demo 能被重建（改了 demo 源工程或 assets/ 之后跑）
 ```
 
-这两条在 CI 里是自动跑的：`.github/workflows/selftest.yml` 会在每次 push 到 `main` 和每个 PR 上，
+这三条在 CI 里是自动跑的：`.github/workflows/selftest.yml` 会在每次 push 到 `main` 和每个 PR 上，
 在 ubuntu / windows 双平台跑完整 `selftest.py`（四条自查线），顺带覆盖 Linux 真机验证。
 
 ---

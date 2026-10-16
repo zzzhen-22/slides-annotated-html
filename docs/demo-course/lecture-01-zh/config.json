@@ -1,0 +1,139 @@
+{
+  "out": "index.html",
+  "embed_pdf": false,
+  "title": "逻辑回归 · 逐页精解（Demo · 节选 8 页）",
+  "brand": "逻辑回归 · 中文精解",
+  "course": "",
+  "sidebar_title": " · 逐页精解 Demo",
+  "sidebar_sub": "",
+  "topbar_title": "逻辑回归 · 逐页精解 · Demo（节选 P1–P8）",
+  "shards": [
+    "content/00_intro.html",
+    "content/10_ov1.html",
+    "content/11_p01_p08.html",
+    "content/90_outro.html"
+  ],
+  "thumb_dir": "../../../examples/demo/_thumbs",
+  "thumb_pattern": "thumb_{n:02d}.jpg",
+  "katex_dir": "../../../examples/demo/zh/_katex",
+  "pages": [
+    [
+      1,
+      "Introduction to Artificial Intelligence — Logistic Regression 封面页"
+    ],
+    [
+      2,
+      "Supervised Learning 监督学习"
+    ],
+    [
+      3,
+      "Supervised Learning — regression 监督学习的一种：回归"
+    ],
+    [
+      4,
+      "Outline 大纲"
+    ],
+    [
+      5,
+      "Basic Rules of Probability 概率的基本法则"
+    ],
+    [
+      6,
+      "Bayes' Rule 贝叶斯法则"
+    ],
+    [
+      7,
+      "Bayes' Rule Applied to Machine Learning 贝叶斯法则在机器学习中的应用"
+    ],
+    [
+      8,
+      "Three Fundamental Questions 三个基本问题"
+    ]
+  ],
+  "groups": [
+    [
+      "开始",
+      [
+        [
+          "#cover",
+          "封面与 demo 说明"
+        ],
+        [
+          "#demo-notice",
+          "关于这份 demo"
+        ],
+        [
+          "#primer",
+          "阅读前必读：概率论速成"
+        ]
+      ]
+    ],
+    [
+      "一 · 概率基础（P1–P8）",
+      [
+        [
+          "#ov1",
+          "本节概述"
+        ],
+        [
+          "#p01",
+          "1. 封面：Introduction to AI · Logistic Regression"
+        ],
+        [
+          "#p02",
+          "2. 监督学习：学一个预测函数"
+        ],
+        [
+          "#p03",
+          "3. 监督学习：回归（连续标签）"
+        ],
+        [
+          "#p04",
+          "4. 大纲 Outline"
+        ],
+        [
+          "#p05",
+          "5. 概率的基本法则"
+        ],
+        [
+          "#p06",
+          "6. 贝叶斯法则"
+        ],
+        [
+          "#p07",
+          "7. 贝叶斯法则用于机器学习"
+        ],
+        [
+          "#p08",
+          "8. 三个基本问题：表示 / 推断 / 学习"
+        ]
+      ]
+    ],
+    [
+      "速查与说明",
+      [
+        [
+          "#keypoints",
+          "本讲要点"
+        ],
+        [
+          "#cheatsheet",
+          "一页纸速查"
+        ],
+        [
+          "#glossary",
+          "术语速查表"
+        ],
+        [
+          "#about",
+          "关于本文档"
+        ]
+      ]
+    ]
+  ],
+  "footer": [
+    "逐页精解 · Demo（节选 P1–P8，完整版 63 页）",
+    "原课件版权归原作者所有；白底讲解与彩色卡片为本文档新增内容。"
+  ],
+  "_note": "本讲是**预构建产物**：index.html 由 docs/demo/index.html 原样复制而来，源工程在 examples/demo/zh/。本 config.json 只为课程层（course_init / course_index）提供 title / brand / pages / out，**不用于重新构建** —— 要改这一讲的正文，请改 examples/demo/zh/ 再跑 scripts/build_demo.py。"
+}

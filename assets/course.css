@@ -42,6 +42,9 @@ a:hover{text-decoration:underline}
   padding:5px 11px;border-radius:8px;font-size:13.2px;color:var(--text2);
 }
 .cnav a:hover{background:var(--accent-soft);color:var(--accent2);text-decoration:none}
+/* scrollspy 的「当前区块」。下划线用 inset 阴影画 —— 它不改变文字盒宽度，
+   切换高亮时顶栏导航整体不会发生位移（font-weight 方案就会）。 */
+.cnav a.active{background:var(--accent-soft);color:var(--accent2);box-shadow:inset 0 -2px 0 var(--accent)}
 
 /* ---------- 布局与卡片 ---------- */
 .cwrap{max-width:1180px;margin:0 auto;padding:22px 22px 60px}
@@ -83,14 +86,19 @@ a:hover{text-decoration:underline}
 .badge.skeleton,.badge.pending{background:var(--surface2);color:var(--muted)}
 
 /* ---------- ② 要点总结 ---------- */
+/* 工具条（过滤框 + 按钮 + 计数）：要点区与术语区共用这一套类名 */
 .kp-tools{display:flex;align-items:center;gap:10px;margin:0 0 14px;flex-wrap:wrap}
+/* 没有术语时 JS 会给术语区的工具条挂 hidden —— 但 .kp-tools 的 display:flex
+   会压过 UA 样式表里的 [hidden] 规则（作者样式优先于 UA 样式），
+   所以这里必须把 hidden 的语义明确补回来 */
+.kp-tools[hidden]{display:none}
 .kinput{
   flex:1;min-width:220px;padding:9px 13px;border:1px solid var(--line);
   border-radius:9px;font:14px var(--sans);background:var(--surface);color:var(--text);
 }
 .kinput.wide{flex:0 0 100%;max-width:640px;margin-bottom:12px}
 .kinput:focus{outline:none;border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
-.kp-tools button,.res-more{
+.kp-tools button{
   padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface);
   color:var(--text2);font:13.2px var(--sans);cursor:pointer;flex:none;
 }
@@ -109,6 +117,9 @@ a:hover{text-decoration:underline}
 .klec[open] > summary::before{content:'▾'}
 .klec > summary:hover{background:var(--accent-soft)}
 .klec .kmeta{margin-left:auto;color:var(--muted);font-size:12.5px;font-family:var(--mono);flex:none}
+/* 讲次标题（有产物时是链接）：继承正文色不喧宾夺主，hover / 聚焦才亮起来 */
+.ktitle{color:inherit;text-decoration:none}
+.ktitle:hover{color:var(--accent2)}
 .kpl{list-style:none;counter-reset:kpl;margin:0;padding:4px 15px 10px}
 .kpl li{
   counter-increment:kpl;position:relative;padding:9px 0 9px 36px;
@@ -141,14 +152,24 @@ a:hover{text-decoration:underline}
   padding:9px 14px;background:var(--surface2);border-bottom:1px solid var(--line);
   color:var(--text2);font-size:13px;
 }
-.ck-hit{padding:10px 14px;border-bottom:1px solid var(--line2);cursor:pointer}
-.ck-hit:last-child{border-bottom:0}
+.ck-hit{display:block;padding:10px 14px;border-bottom:1px solid var(--line2);color:inherit;text-decoration:none}
+/* last-of-type（不是 last-child）：最后一条命中之后可能还跟着「显示更多」按钮 */
+.ck-hit:last-of-type{border-bottom:0}
 .ck-hit:hover{background:var(--accent-soft)}
+/* 键盘 Tab 到命中行时的焦点环（:focus-visible —— 鼠标点击不显示，键盘才显示） */
+.ck-hit:focus-visible{outline:2px solid var(--accent-line);outline-offset:-2px}
 .ck-hit .ch-loc{
   font-size:12px;font-family:var(--mono);color:var(--accent);margin-bottom:3px;
 }
 .ck-hit .ch-s{font-size:13.4px;color:var(--text2);line-height:1.65;word-break:break-word}
 mark.ch{background:#bfe3ff;color:inherit;padding:0 1px;border-radius:3px}
+/* 「显示更多」：贴在结果列表底部的通栏条（命中超过一批时才有） */
+.res-more{
+  display:block;width:100%;margin:0;padding:11px 14px;border:0;border-top:1px solid var(--line2);
+  border-radius:0;background:var(--surface);color:var(--accent2);
+  font:600 13.2px var(--sans);cursor:pointer;text-align:center;
+}
+.res-more:hover{background:var(--accent-soft)}
 
 /* ---------- ④ 术语总表 ---------- */
 table.tbl{width:100%;border-collapse:collapse;font-size:13.8px}
@@ -198,7 +219,7 @@ table.tbl tr:hover td{background:var(--surface2)}
   .lec .lmeta{margin-left:0}
 }
 @media print{
-  .cbar,#toTop,.kp-tools,.caveat{display:none!important}
+  .cbar,#toTop,.kp-tools,.caveat,.res-more{display:none!important}
   .card{box-shadow:none;border-color:#ddd;break-inside:avoid}
   .klec > summary{background:#f5f5f5}
   .klec:not([open]) > .kpl{display:block}   /* 打印时展开全部，否则导出的纸面会缺要点 */

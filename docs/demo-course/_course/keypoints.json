@@ -1,0 +1,85 @@
+{
+  "schema": "keypoints/v1",
+  "lectures": [
+    {
+      "id": "L01",
+      "title": "Logistic Regression",
+      "status": "done",
+      "page_count": 8,
+      "done_pages": 8,
+      "hash": "4fb7c10d0d17",
+      "points": [
+        {
+          "text": "监督学习学的是从输入到输出的预测函数——「学习」的全部信息来自带正确答案的样本，而不是写死的规则。",
+          "html": "监督学习学的是从输入到输出的预测函数——「学习」的全部信息来自带正确答案的样本，而不是写死的规则。",
+          "at": "p02",
+          "topic": "supervised-learning"
+        },
+        {
+          "text": "回归与分类的差别只在标签：连续值学回归，离散类别学分类；模型形式可以完全相同。",
+          "html": "回归与分类的差别只在标签：连续值学回归，离散类别学分类；模型形式可以完全相同。",
+          "at": "p03",
+          "topic": "regression-classification"
+        },
+        {
+          "text": "概率推理的全部计算都从两条法则出发：乘法法则把联合概率拆开，求和法则做边缘化。",
+          "html": "概率推理的全部计算都从两条法则出发：乘法法则把联合概率拆开，求和法则做边缘化。",
+          "at": "p05",
+          "topic": "product-sum-rule"
+        },
+        {
+          "text": "贝叶斯法则把「模型生成数据的概率」反过来求「数据支持下模型的概率」——先验 × 似然 ∝ 后验。",
+          "html": "贝叶斯法则把「模型生成数据的概率」反过来求「数据支持下模型的概率」——先验 × 似然 ∝ 后验。",
+          "at": "p07",
+          "topic": "bayes-theorem"
+        },
+        {
+          "text": "任何概率模型都必须回答三个问题：怎么表示、怎么推断、怎么学习——本课后续全部内容都挂在这三问上。",
+          "html": "任何概率模型都必须回答三个问题：怎么表示、怎么推断、怎么学习——本课后续全部内容都挂在这三问上。",
+          "at": "p08",
+          "topic": ""
+        }
+      ]
+    },
+    {
+      "id": "L02",
+      "title": "Logistic Regression",
+      "status": "done",
+      "page_count": 8,
+      "done_pages": 8,
+      "hash": "23d47d8b6436",
+      "points": [
+        {
+          "text": "Supervised learning fits a predictive function from \"input + correct answer\" pairs — the information all comes from labeled samples, never from hand-written rules.",
+          "html": "Supervised learning fits a predictive function from \"input + correct answer\" pairs — the information all comes from labeled samples, never from hand-written rules.",
+          "at": "p02",
+          "topic": ""
+        },
+        {
+          "text": "Regression and classification differ only in the label: continuous values vs discrete classes — the model form can be identical.",
+          "html": "Regression and classification differ only in the label: continuous values vs discrete classes — the model form can be identical.",
+          "at": "p03",
+          "topic": ""
+        },
+        {
+          "text": "Every probability calculation builds on two rules: the product rule splits a joint probability apart, the sum rule marginalises.",
+          "html": "Every probability calculation builds on two rules: the product rule splits a joint probability apart, the sum rule marginalises.",
+          "at": "p05",
+          "topic": ""
+        },
+        {
+          "text": "Bayes' rule turns \"how likely is the data under a model\" into \"how plausible is the model given the data\" — prior × likelihood ∝ posterior.",
+          "html": "Bayes' rule turns \"how likely is the data under a model\" into \"how plausible is the model given the data\" — prior × likelihood ∝ posterior.",
+          "at": "p07",
+          "topic": ""
+        },
+        {
+          "text": "Every probabilistic model must answer three questions: how to represent, how to infer, how to learn — the rest of the course hangs on them.",
+          "html": "Every probabilistic model must answer three questions: how to represent, how to infer, how to learn — the rest of the course hangs on them.",
+          "at": "p08",
+          "topic": ""
+        }
+      ]
+    }
+  ]
+}

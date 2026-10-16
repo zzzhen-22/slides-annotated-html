@@ -1,0 +1,40 @@
+{
+  "schema": "course/v1",
+  "name": "逻辑回归 · 课程合集 Demo",
+  "instructor": "",
+  "term": "",
+  "summary": "一门两讲示例课程：L01 中文精解 + L02 英文精解，演示课程主页的五个区块 —— 课程地图、要点总结、跨讲检索、术语总表、进度看板。",
+  "created": "2026-10-16",
+  "lectures": [
+    {
+      "id": "L01",
+      "dir": "lecture-01-zh",
+      "title": "逻辑回归 · 中文精解",
+      "pdf": "",
+      "page_count": 8,
+      "status": "done",
+      "done_pages": 8,
+      "topics": [],
+      "outline": "lecture-01-zh/_plan/outline.json",
+      "product": "lecture-01-zh/index.html"
+    },
+    {
+      "id": "L02",
+      "dir": "lecture-02-en",
+      "title": "Logistic Regression · English walkthrough",
+      "pdf": "",
+      "page_count": 8,
+      "status": "done",
+      "done_pages": 8,
+      "topics": [],
+      "outline": "lecture-02-en/_plan/outline.json",
+      "product": "lecture-02-en/index.html"
+    }
+  ],
+  "unknowns": [
+    "L01：还没有 _plan/outline.json",
+    "L02：还没有 _plan/outline.json",
+    "教师未填（--instructor）",
+    "学期未填（--term）"
+  ]
+}
