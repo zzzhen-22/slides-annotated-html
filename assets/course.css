@@ -182,12 +182,34 @@ table.tbl tr:hover td{background:var(--surface2)}
 .dim{color:var(--muted)}
 .see{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.7}
 
-/* ---------- ⑤ 进度看板 ---------- */
-.pbar{display:inline-block;width:120px;height:7px;border-radius:5px;background:var(--line2);
-  overflow:hidden;vertical-align:middle;margin-right:8px}
-.pbar > i{display:block;height:100%;background:var(--green);border-radius:5px}
-.pbar.warn > i{background:var(--amber)}
-.pbar.none > i{background:var(--muted)}
+/* ---------- ⑤ 学习进度 ---------- */
+/* 总览行（运行期由 course.js 填；无记录时换成一条引导提示） */
+.lp-top{margin:0 0 12px;font-size:13.6px;color:var(--text2)}
+.lp-top b{font-family:var(--mono);font-weight:600;color:var(--text)}
+.lp-top .lp-tip{
+  display:block;padding:12px 14px;color:var(--muted);font-size:13.4px;
+  background:var(--surface2);border:1px dashed var(--line);border-radius:10px;
+}
+.lp-tbl td{padding:10px}
+.lp-cell{color:var(--text2);font-size:13.8px}
+.lp-cell b{font-family:var(--mono);font-weight:600;color:var(--text)}
+.lp-ago{color:var(--muted);font-size:12.5px}
+.lp-go{
+  display:inline-block;margin-left:8px;padding:2px 10px;border:1px solid var(--accent-line);
+  border-radius:20px;background:var(--accent-soft);color:var(--accent2);
+  font-size:12.5px;white-space:nowrap;
+}
+.lp-go:hover{background:var(--accent2);border-color:var(--accent2);color:#fff;text-decoration:none}
+.lp-write{color:var(--text2);font-size:13px;white-space:nowrap}
+.lp-foot{margin:12px 0 0;font-size:12.5px}
+
+/* 术语表排序控件（与过滤框同一排；值不持久化，每次打开回到「首见顺序」） */
+.gl-sort{flex:none;font-size:12.8px;color:var(--muted)}
+select#glSort{
+  flex:none;padding:8px 10px;border:1px solid var(--line);border-radius:9px;
+  background:var(--surface);color:var(--text2);font:13.2px var(--sans);cursor:pointer;
+}
+select#glSort:focus{outline:none;border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
 
 /* ---------- 回到顶部 ---------- */
 #toTop{

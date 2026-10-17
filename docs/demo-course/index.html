@@ -195,12 +195,34 @@ table.tbl tr:hover td{background:var(--surface2)}
 .dim{color:var(--muted)}
 .see{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.7}
 
-/* ---------- ⑤ 进度看板 ---------- */
-.pbar{display:inline-block;width:120px;height:7px;border-radius:5px;background:var(--line2);
-  overflow:hidden;vertical-align:middle;margin-right:8px}
-.pbar > i{display:block;height:100%;background:var(--green);border-radius:5px}
-.pbar.warn > i{background:var(--amber)}
-.pbar.none > i{background:var(--muted)}
+/* ---------- ⑤ 学习进度 ---------- */
+/* 总览行（运行期由 course.js 填；无记录时换成一条引导提示） */
+.lp-top{margin:0 0 12px;font-size:13.6px;color:var(--text2)}
+.lp-top b{font-family:var(--mono);font-weight:600;color:var(--text)}
+.lp-top .lp-tip{
+  display:block;padding:12px 14px;color:var(--muted);font-size:13.4px;
+  background:var(--surface2);border:1px dashed var(--line);border-radius:10px;
+}
+.lp-tbl td{padding:10px}
+.lp-cell{color:var(--text2);font-size:13.8px}
+.lp-cell b{font-family:var(--mono);font-weight:600;color:var(--text)}
+.lp-ago{color:var(--muted);font-size:12.5px}
+.lp-go{
+  display:inline-block;margin-left:8px;padding:2px 10px;border:1px solid var(--accent-line);
+  border-radius:20px;background:var(--accent-soft);color:var(--accent2);
+  font-size:12.5px;white-space:nowrap;
+}
+.lp-go:hover{background:var(--accent2);border-color:var(--accent2);color:#fff;text-decoration:none}
+.lp-write{color:var(--text2);font-size:13px;white-space:nowrap}
+.lp-foot{margin:12px 0 0;font-size:12.5px}
+
+/* 术语表排序控件（与过滤框同一排；值不持久化，每次打开回到「首见顺序」） */
+.gl-sort{flex:none;font-size:12.8px;color:var(--muted)}
+select#glSort{
+  flex:none;padding:8px 10px;border:1px solid var(--line);border-radius:9px;
+  background:var(--surface);color:var(--text2);font:13.2px var(--sans);cursor:pointer;
+}
+select#glSort:focus{outline:none;border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
 
 /* ---------- 回到顶部 ---------- */
 #toTop{
@@ -247,7 +269,7 @@ table.tbl tr:hover td{background:var(--surface2)}
     <span class="cbrand">逻辑回归 · 课程合集 Demo</span>
     <span class="csub"></span>
     <span class="sp"></span>
-    <nav class="cnav"><a href="#map">课程地图</a> <a href="#keypoints">要点总结</a> <a href="#search">跨讲检索</a> <a href="#glossary">术语总表</a> <a href="#progress">进度看板</a></nav>
+    <nav class="cnav"><a href="#map">课程地图</a> <a href="#keypoints">要点总结</a> <a href="#search">跨讲检索</a> <a href="#glossary">术语总表</a> <a href="#progress">学习进度</a></nav>
   </div>
 </header>
 
@@ -255,7 +277,7 @@ table.tbl tr:hover td{background:var(--surface2)}
 
   <section class="chero">
     <h1>逻辑回归 · 课程合集 Demo</h1>
-    <p class="csum">一门两讲示例课程：L01 中文精解 + L02 英文精解，演示课程主页的五个区块 —— 课程地图、要点总结、跨讲检索、术语总表、进度看板。</p>
+    <p class="csum">一门两讲示例课程：L01 中文精解 + L02 英文精解，演示课程主页的五个区块 —— 课程地图、要点总结、跨讲检索、术语总表、学习进度。</p>
     <p class="cmeta">2 讲 · 共 16 页</p>
   </section>
 
@@ -316,6 +338,11 @@ table.tbl tr:hover td{background:var(--surface2)}
     <div class="kp-tools" id="glTools">
       <input id="glFilter" class="kinput" type="search" autocomplete="off"
              placeholder="过滤术语（只筛这张表，不建索引）">
+      <label class="gl-sort dim" for="glSort">排序</label>
+      <select id="glSort" title="切换术语表的排序方式">
+        <option value="first">首见顺序</option>
+        <option value="en">English A–Z</option>
+      </select>
       <span class="kp-count" id="glCount"></span>
     </div>
     <div id="glEmpty" class="kp-empty" hidden>没有匹配的术语 —— 换一个词或清空试试。</div>
@@ -330,12 +357,13 @@ table.tbl tr:hover td{background:var(--surface2)}
   </section>
 
   <section id="progress" class="card">
-    <h2>进度看板</h2>
-    <p class="lead">哪一讲还没写完，一眼看出来。</p>
-    <table class="tbl"><thead><tr><th style="width:30%">讲次</th><th style="width:30%">进度</th><th style="width:12%">状态</th><th>说明</th></tr></thead><tbody>
-<tr data-lec="L01"><td>L01 · 逻辑回归 · 中文精解</td><td><span class="pbar"><i style="width:100%"></i></span><span class="mono">8 / 8</span></td><td><span class="badge done">已完成</span></td><td>要点与正文都齐了。</td></tr>
-<tr data-lec="L02"><td>L02 · Logistic Regression · English walkthrough</td><td><span class="pbar"><i style="width:100%"></i></span><span class="mono">8 / 8</span></td><td><span class="badge done">已完成</span></td><td>要点与正文都齐了。</td></tr>
-</tbody></table>
+    <h2>学习进度</h2>
+    <p class="lead">每讲读到哪、有多少笔记 —— 阅读痕迹只存在<b>本机浏览器</b>里（不上传、不清云），
+      打开过某讲之后这里会自动出现。</p>
+    <div class="lp-top" id="lpTop"></div><table class="tbl lp-tbl"><thead><tr><th style="width:36%%">讲次</th><th>学习进度</th></tr></thead><tbody>
+<tr data-lec="L01"><td class="lp-lec"><b class="lid">L01</b> 逻辑回归 · 中文精解</td><td class="lp-cell"><span class="dim">—</span></td></tr>
+<tr data-lec="L02"><td class="lp-lec"><b class="lid">L02</b> Logistic Regression · English walkthrough</td><td class="lp-cell"><span class="dim">—</span></td></tr>
+</tbody></table><p class="lp-foot dim">本课程讲解已全部写完（2 讲）。阅读痕迹只存在本机浏览器里，打开任一讲阅读后上面的进度会自动出现。</p>
   </section>
 
   <footer class="cfoot">
@@ -349,7 +377,7 @@ table.tbl tr:hover td{background:var(--surface2)}
 
 <!-- 课程索引（内联）。**必须内联**：file:// 是不透明源，fetch 同目录 JSON 会被 CORS 拦死，
      用户双击打开就是空白页（硬约束 C1）。下面的 "<" 已在生成时转义成 \u003c，不会截断本标签。 -->
-<script type="application/json" id="cdata">{"maxText":120,"full":false,"lectures":[{"id":"L01","title":"逻辑回归 · 中文精解","status":"done","href":"lecture-01-zh/index.html","pages":[{"id":"p01","page":"1","title":"Introduction to Artificial Intelligence — Logistic Regression 封面页","text":"这是整套课件的封面：课程《人工智能导论》，本次主题「逻辑回归（Logistic Regression）」，授课人 苏航（清华大学）。 这一页没有知识点，但它定了调子——接下来 62 页要讲的，是 机器学习中最基础、也最经得起考验的分类模型之"},{"id":"p02","page":"2","title":"Supervised Learning 监督学习","text":"这一页要把「监督学习」这四个字翻译成人话：给定一批「题目 + 标准答案」，让机器自己总结出一套解题规律。 原文写「Task: learn a predictive function」，即 学一个预测函数 ： 〔公式〕 这里出现了两个集合： "},{"id":"p03","page":"3","title":"Supervised Learning — regression 监督学习的一种：回归","text":"同样画了「特征空间 → 标签空间」的箭头，但这一页在强调标签的性质： 标签是连续数值 。幻灯片右下角专门加了一个红框 Continuous Labels 。 输入是截至 〔公式〕 时刻的市场信息 → 输出是股价 $20.50 ； 输入是「时"},{"id":"p04","page":"4","title":"Outline 大纲","text":"大纲列了五个主题，构成了这次课的知识阶梯： Probabilistic methods for supervised learning ——监督学习的概率方法（第 5–15 页） Naive Bayes classifier ——朴素贝叶斯"},{"id":"p05","page":"5","title":"Basic Rules of Probability 概率的基本法则","text":"这一页只写了三个概念和两条法则，但它们是后面 58 页的全部工具。原文里的 〔公式〕 是一个花体字母（读作 \"M\"），在这里代表一个 模型假设 ；先把它当成一个普通的随机变量就行。 三个概念： 符号 读法 原页面的英文注解 〔公式〕 X 的"},{"id":"p06","page":"6","title":"Bayes' Rule 贝叶斯法则","text":"一句话概括贝叶斯定理：它告诉你「如何用新证据更新旧看法」。 推导只有一步。把乘法法则 〔公式〕 对称地写另一遍，得到 〔公式〕——注意联合概率是对称的，两种分解方式必然相等（原文标题下面那句「Combining the definition"},{"id":"p07","page":"7","title":"Bayes' Rule Applied to Machine Learning 贝叶斯法则在机器学习中的应用","text":"这一页把上一页的抽象公式落到机器学习的具体场景： 让 〔公式〕 表示手上的数据集，让 〔公式〕 表示一个模型 。于是： 〔公式〕 原页面右侧把这四项逐一命名，这是全篇最该背下来的对照表： 符号 名称 中文含义 〔公式〕 prior prob"},{"id":"p08","page":"8","title":"Three Fundamental Questions 三个基本问题","text":"这一页是一张「地图」，给出了任何概率模型都必须回答的三个问题。它不涉及公式，但值得记住，因为后续每一页其实都在回答其中之一。 1. 表示（Representation） 「How to capture/model uncertainty i"}]},{"id":"L02","title":"Logistic Regression · English walkthrough","status":"done","href":"lecture-02-en/index.html","pages":[{"id":"p01","page":"1","title":"Introduction to Artificial Intelligence — Logistic Regression Cover page","text":"This is the cover of the deck: the course Introduction to Artificial Intelligence , today's topic \"Logistic Regression\","},{"id":"p02","page":"2","title":"Supervised Learning learning a predictor from labeled examples","text":"This page translates \"supervised learning\" into plain words: give the machine a batch of questions with correct answers,"},{"id":"p03","page":"3","title":"Supervised Learning — regression a variant with continuous labels","text":"The same \"feature space → label space\" arrow is drawn, but this page stresses the nature of the labels: they are continu"},{"id":"p04","page":"4","title":"Outline the ladder of this lecture","text":"The outline lists five topics, forming a knowledge ladder: Probabilistic methods for supervised learning (pages 5–15) Na"},{"id":"p05","page":"5","title":"Basic Rules of Probability the entire toolbox, in one page","text":"This page holds only three concepts and two rules, yet they are the entire toolbox for the remaining 58 pages. The scrip"},{"id":"p06","page":"6","title":"Bayes' Rule updating old beliefs with new evidence","text":"Bayes' theorem in one sentence: how to update an old belief with new evidence. The derivation is one step. Write the pro"},{"id":"p07","page":"7","title":"Bayes' Rule Applied to Machine Learning naming the four terms","text":"This page lands the abstract formula in a concrete machine-learning setting: let 〔公式〕 be the dataset at hand and 〔公式〕 a "},{"id":"p08","page":"8","title":"Three Fundamental Questions a map of probabilistic modeling","text":"This page is a map: three questions that any probabilistic model must answer. No formulas here, but worth memorizing — e"}]}]}</script>
+<script type="application/json" id="cdata">{"maxText":120,"full":false,"lectures":[{"id":"L01","title":"逻辑回归 · 中文精解","status":"done","href":"lecture-01-zh/index.html","pages":[{"id":"p01","page":"1","title":"Introduction to Artificial Intelligence — Logistic Regression 封面页","text":"这是整套课件的封面：课程《人工智能导论》，本次主题「逻辑回归（Logistic Regression）」，授课人 苏航（清华大学）。 这一页没有知识点，但它定了调子——接下来 62 页要讲的，是 机器学习中最基础、也最经得起考验的分类模型之"},{"id":"p02","page":"2","title":"Supervised Learning 监督学习","text":"这一页要把「监督学习」这四个字翻译成人话：给定一批「题目 + 标准答案」，让机器自己总结出一套解题规律。 原文写「Task: learn a predictive function」，即 学一个预测函数 ： 〔公式〕 这里出现了两个集合： "},{"id":"p03","page":"3","title":"Supervised Learning — regression 监督学习的一种：回归","text":"同样画了「特征空间 → 标签空间」的箭头，但这一页在强调标签的性质： 标签是连续数值 。幻灯片右下角专门加了一个红框 Continuous Labels 。 输入是截至 〔公式〕 时刻的市场信息 → 输出是股价 $20.50 ； 输入是「时"},{"id":"p04","page":"4","title":"Outline 大纲","text":"大纲列了五个主题，构成了这次课的知识阶梯： Probabilistic methods for supervised learning ——监督学习的概率方法（第 5–15 页） Naive Bayes classifier ——朴素贝叶斯"},{"id":"p05","page":"5","title":"Basic Rules of Probability 概率的基本法则","text":"这一页只写了三个概念和两条法则，但它们是后面 58 页的全部工具。原文里的 〔公式〕 是一个花体字母（读作 \"M\"），在这里代表一个 模型假设 ；先把它当成一个普通的随机变量就行。 三个概念： 符号 读法 原页面的英文注解 〔公式〕 X 的"},{"id":"p06","page":"6","title":"Bayes' Rule 贝叶斯法则","text":"一句话概括贝叶斯定理：它告诉你「如何用新证据更新旧看法」。 推导只有一步。把乘法法则 〔公式〕 对称地写另一遍，得到 〔公式〕——注意联合概率是对称的，两种分解方式必然相等（原文标题下面那句「Combining the definition"},{"id":"p07","page":"7","title":"Bayes' Rule Applied to Machine Learning 贝叶斯法则在机器学习中的应用","text":"这一页把上一页的抽象公式落到机器学习的具体场景： 让 〔公式〕 表示手上的数据集，让 〔公式〕 表示一个模型 。于是： 〔公式〕 原页面右侧把这四项逐一命名，这是全篇最该背下来的对照表： 符号 名称 中文含义 〔公式〕 prior prob"},{"id":"p08","page":"8","title":"Three Fundamental Questions 三个基本问题","text":"这一页是一张「地图」，给出了任何概率模型都必须回答的三个问题。它不涉及公式，但值得记住，因为后续每一页其实都在回答其中之一。 1. 表示（Representation） 「How to capture/model uncertainty i"}],"ns":"lr-doc:e999f816a7:","pageCount":8},{"id":"L02","title":"Logistic Regression · English walkthrough","status":"done","href":"lecture-02-en/index.html","pages":[{"id":"p01","page":"1","title":"Introduction to Artificial Intelligence — Logistic Regression Cover page","text":"This is the cover of the deck: the course Introduction to Artificial Intelligence , today's topic \"Logistic Regression\","},{"id":"p02","page":"2","title":"Supervised Learning learning a predictor from labeled examples","text":"This page translates \"supervised learning\" into plain words: give the machine a batch of questions with correct answers,"},{"id":"p03","page":"3","title":"Supervised Learning — regression a variant with continuous labels","text":"The same \"feature space → label space\" arrow is drawn, but this page stresses the nature of the labels: they are continu"},{"id":"p04","page":"4","title":"Outline the ladder of this lecture","text":"The outline lists five topics, forming a knowledge ladder: Probabilistic methods for supervised learning (pages 5–15) Na"},{"id":"p05","page":"5","title":"Basic Rules of Probability the entire toolbox, in one page","text":"This page holds only three concepts and two rules, yet they are the entire toolbox for the remaining 58 pages. The scrip"},{"id":"p06","page":"6","title":"Bayes' Rule updating old beliefs with new evidence","text":"Bayes' theorem in one sentence: how to update an old belief with new evidence. The derivation is one step. Write the pro"},{"id":"p07","page":"7","title":"Bayes' Rule Applied to Machine Learning naming the four terms","text":"This page lands the abstract formula in a concrete machine-learning setting: let 〔公式〕 be the dataset at hand and 〔公式〕 a "},{"id":"p08","page":"8","title":"Three Fundamental Questions a map of probabilistic modeling","text":"This page is a map: three questions that any probabilistic model must answer. No formulas here, but worth memorizing — e"}],"ns":"lr-doc:9fa84d7a41:","pageCount":8}]}</script>
 <!-- 离线 KaTeX 渲染引擎（内联，约 270 KB）。课程主页显示的要点与术语里含公式，
      没有它就只会看到 LaTeX 源码或占位符〔公式〕。
      注意本注释里**不写真标签**：写了会让「挖 script」的正则从假标签起算、配对错位。 -->
@@ -597,15 +625,20 @@ table.tbl tr:hover td{background:var(--surface2)}
     }
   };
 
-  /* ======================= 术语总表过滤 =======================
-     与要点过滤同一套模式：纯 DOM indexOf、多词是「且」、0 命中给显式空态。
-     刻意**只加过滤、不堆视图** —— 术语表是「字典」（设计稿 §5.8 的三表分工），
-     排序一类会改变这张表语义的操作不在这里做。 */
+  /* ======================= 术语总表：过滤 + 排序 =======================
+     过滤与要点过滤同一套模式：纯 DOM indexOf、多词是「且」、0 命中给显式空态。
+     排序是**视图切换**、不改这张表的语义（它仍是「术语字典」，设计稿 §5.8）：
+     默认「首见顺序」（= 生成期文档序），可切「English A–Z」——对字典来说字母序是
+     天然的第二视图（课程 TODO T8③；原设想的「拼音序」需生成期引入拼音数据、
+     违反零依赖纪律，收窄为 English 序）。排序值不进 URL、不持久化 —— 课程页对
+     localStorage 只读不写（设计稿 §5.10），每次打开回到默认序。 */
   var Gl = {
     rows: [],
+    initial: [],       // 初始行序 = 首见顺序，切回默认时还原它
 
     build: function () {
       this.rows = $$('#glossary tbody tr');
+      this.initial = this.rows.slice();
       return this.rows.length;
     },
 
@@ -625,6 +658,23 @@ table.tbl tr:hover td{background:var(--surface2)}
       var cnt = $('#glCount');
       if (cnt) cnt.textContent = terms.length ? (hit + ' / ' + this.rows.length + ' 条') : '';
       return hit;
+    },
+
+    sort: function (mode) {
+      if (!this.rows.length) return 0;
+      var rows = this.initial.slice();
+      if (mode === 'en') {
+        rows.sort(function (a, b) {
+          var x = a.cells[1] ? norm(a.cells[1].textContent) : '';
+          var y = b.cells[1] ? norm(b.cells[1].textContent) : '';
+          return x.localeCompare(y, 'en', { sensitivity: 'base' }) || 0;
+        });
+      }
+      var tb = $('#glossary tbody');
+      if (!tb) return 0;
+      rows.forEach(function (tr) { tb.appendChild(tr); });   // appendChild 挪行即重排
+      this.rows = rows;
+      return rows.length;
     }
   };
 
@@ -915,6 +965,110 @@ table.tbl tr:hover td{background:var(--surface2)}
     }
   };
 
+  /* ======================= ⑤ 学习进度（读各讲阅读痕迹） =======================
+     数据来自各讲产物写入**本浏览器** localStorage 的痕迹（设计稿 §5.10）：
+       lr-doc:<h10>:pos    {v,p,n,t}      上次读到哪（单讲 site.js 的 Pos 写的）
+       lr-doc:<h10>:notes  {v,seq,items}  标记笔记
+     <h10> 由 course_site.py 从**产物**提取、内联在 cdata.lectures[].ns（单一真源，
+     course_check.py 复核一致性）。**只读不写**；读不到（隐私模式 / 清缓存 / 数据
+     损坏）一律降级为空态，不影响其它区块。 */
+  var LP = {
+    lecs: [],
+    KEY_TIP: '打开任一讲开始阅读后，这里会自动记录每讲的阅读位置与笔记数。',
+
+    load: function () {
+      var el = document.getElementById('cdata');
+      if (!el) return 0;
+      try { this.lecs = (JSON.parse(el.textContent || '{}').lectures) || []; }
+      catch (e) { this.lecs = []; }
+      return this.lecs.length;
+    },
+
+    /* 读一讲的痕迹：{pos:{p,n,t}|null, notes:Number}。任何异常都按「没有」处理 */
+    readLec: function (lec) {
+      var out = { pos: null, notes: 0 };
+      var ns = lec && lec.ns;
+      if (!ns) return out;
+      try {
+        var raw = localStorage.getItem(ns + 'pos');
+        if (raw) {
+          var o = JSON.parse(raw);
+          if (o && typeof o.p === 'string' && o.p) out.pos = o;
+        }
+        raw = localStorage.getItem(ns + 'notes');
+        if (raw) {
+          var n = JSON.parse(raw);
+          if (n && n.items && n.items.length) out.notes = n.items.length;
+        }
+      } catch (e) { /* 数据坏了按「没有」处理；不打断其它行 */ }
+      return out;
+    },
+
+    ago: function (t) {
+      if (typeof t !== 'number' || !t) return '';
+      var d = Date.now() - t;
+      if (d < 0) return '';
+      var day = 24 * 3600 * 1000;
+      if (d < day) return '今天';
+      if (d < 2 * day) return '昨天';
+      if (d < 30 * day) return Math.floor(d / day) + ' 天前';
+      return Math.floor(d / (30 * day)) + ' 个月前';
+    },
+
+    render: function () {
+      var self = this;
+      var byId = {};
+      this.lecs.forEach(function (l) { byId[l.id] = l; });
+      var started = 0, notesSum = 0, lastT = 0;
+      $$('#progress tbody tr').forEach(function (tr) {
+        var lec = byId[tr.getAttribute('data-lec')] || {};
+        var r = self.readLec(lec);
+        if (r.pos) { started++; if (r.pos.t > lastT) lastT = r.pos.t; }
+        notesSum += r.notes;
+        self.renderRow(tr, lec, r);
+      });
+      this.renderTop(this.lecs.length, started, notesSum, lastT);
+      return { started: started, notes: notesSum };
+    },
+
+    renderRow: function (tr, lec, r) {
+      var cell = tr.querySelector('.lp-cell');
+      if (!cell) return;
+      var href = lec.href || '';
+      var html;
+      if (r.pos) {
+        var n = r.pos.n ? '<b>P' + esc(String(r.pos.n)) + '</b>' : '上次位置';
+        var pc = lec.pageCount ? '（共 ' + esc(String(lec.pageCount)) + ' 页）' : '';
+        var ago = this.ago(r.pos.t);
+        html = '上次读到 ' + n + pc +
+          (ago ? ' <span class="lp-ago">· ' + esc(ago) + '</span>' : '') +
+          (r.notes ? ' <span class="lp-ago">· ' + r.notes + ' 条笔记</span>' : '') +
+          (href ? ' <a class="lp-go" href="' + esc(href) + '#' + esc(r.pos.p) + '">继续 →</a>' : '');
+      } else {
+        html = '还没有阅读记录' +
+          (r.notes ? ' <span class="lp-ago">· ' + r.notes + ' 条笔记</span>' : '') +
+          (href ? ' <a class="lp-go" href="' + esc(href) + '">' +
+            (r.notes ? '打开 →' : '开始 →') + '</a>' : '');
+      }
+      cell.innerHTML = html;
+    },
+
+    renderTop: function (total, started, notesSum, lastT) {
+      var top = $('#lpTop');
+      if (!top) return;
+      if (!started && !notesSum) {
+        top.innerHTML = '<span class="lp-tip">' + esc(this.KEY_TIP) + '</span>';
+        return;
+      }
+      var ago = this.ago(lastT);
+      top.innerHTML = '已开始 <b>' + started + '</b> / ' + total + ' 讲' +
+        ' · 共 <b>' + notesSum + '</b> 条笔记' +
+        (ago ? ' · 最近阅读 <b>' + esc(ago) + '</b>' : '');
+    },
+
+    refresh: function () { this.render(); }
+  };
+
   /* 页内锚点点击接管：滚到区块 + 高亮跟上 + **把现有参数段写进新 hash**。
      不接管的话，点导航会把 hash 覆盖成裸 #xxx（我们写入形态以外的东西），
      参数段随之丢失。只接管「目标是真实 id 的裸锚点」—— 跨页链接与 #q= 深链不碰。 */
@@ -1006,6 +1160,8 @@ table.tbl tr:hover td{background:var(--surface2)}
         if (e.key === 'Escape') { f.value = ''; Gl.apply(''); Url.schedule(); f.blur(); }
       });
     }
+    var s = $('#glSort');
+    if (s) s.addEventListener('change', function () { Gl.sort(s.value); });
     return Gl.rows.length;
   }
 
@@ -1030,6 +1186,16 @@ table.tbl tr:hover td{background:var(--surface2)}
     });
   }
 
+  function initLP() {
+    /* 学习进度：读各讲 localStorage（只读，设计稿 §5.10）。数据只在浏览器端，
+       没有可预渲染的静态形态 —— 未启用 JS 时表格里是「—」。 */
+    if (!LP.load()) return 0;
+    LP.render();
+    /* bfcache 恢复 / 从讲次返回主页：数字可能已变，重读一遍（只读操作，开销可忽略） */
+    window.addEventListener('pageshow', function () { LP.refresh(); });
+    return LP.lecs.length;
+  }
+
   function boot() {
     /* ⚠ 顺序不能反：先渲染公式，再建要点索引。
        Kp.build() 读的是 li.textContent —— 公式没渲染完就读，索引里存的是
@@ -1042,6 +1208,7 @@ table.tbl tr:hover td{background:var(--surface2)}
     initFind();
     initNav();
     initUrl();
+    initLP();
     return nMath;
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
@@ -1050,6 +1217,7 @@ table.tbl tr:hover td{background:var(--surface2)}
   /* 无头测试入口（与单讲侧同一个约定：探针靠它读结构，而不是靠猜 DOM） */
   window.__course = {
     kp: Kp,
+    lp: LP,
     find: CFind,
     spy: Spy,
     fold: Fold,
@@ -1066,6 +1234,8 @@ table.tbl tr:hover td{background:var(--surface2)}
         glossaryRows: $$('#glossary tbody tr').length,
         glossaryShown: $$('#glossary tbody tr').filter(function (x) { return !x.hidden; }).length,
         progressRows: $$('#progress tbody tr').length,
+        lpCells: $$('#progress .lp-cell').length,
+        lpTopText: norm(($('#lpTop') || {}).textContent),
         emptyShown: !!(($('#kpEmpty') || {}).hidden === false),
         /* 检索结果：当前渲染出的命中行数（分页后 = 已显示条数） */
         resultHits: $$('.ck-hit').length,

@@ -9,7 +9,6 @@
   "sidebar_title": " 逐页精解",
   "sidebar_sub": "原文件 63 页 · 顺序一致 · 每页配原图对照",
   "search_placeholder": "搜索页码或标题，如 61 / IRLS",
-  "topbar_title": "逻辑回归 · 逐页精解",
   "nav_foot": "快捷键：<b>J</b>/<b>K</b> 翻页 · <b>B</b> 侧栏 · <b>T</b> 缩略图 · <b>N</b> 笔记",
   "shards": [
     "content/00_intro.html",
@@ -56,15 +55,15 @@
       [
         [
           "#cover",
-          "封面与使用说明"
-        ],
-        [
-          "#primer",
-          "阅读前必读：概率论速成"
+          "封面"
         ],
         [
           "#roadmap",
           "全文脉络：这 63 页讲什么"
+        ],
+        [
+          "#primer",
+          "前置知识：概率论速成"
         ]
       ]
     ],

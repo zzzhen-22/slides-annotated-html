@@ -470,11 +470,12 @@ def guess_meta(pdf_path, doc, titles, outline=None):
 
 # --------------------------------------------------------------- 多讲课程（v2）
 def course_step(course_dir, out_dir):
-    """建完骨架后，把这一讲登记进课程并生成它的「前序知识简报」。
+    """建完骨架后，把这一讲登记进课程、声明返回入口、并生成它的「前序知识简报」。
 
-    只做三件事，全部复用已经写好的课程层脚本 —— **不在这里重写它们的逻辑**
-    （各写一份必然漂移，见 references/pitfalls.md 第 43 条）：
+    只做四件事，其中登记 / 索引 / 简报全部复用已经写好的课程层脚本 ——
+    **不在这里重写它们的逻辑**（各写一份必然漂移，见 references/pitfalls.md 第 43 条）：
 
+        （声明）     往 config.json 写 course_home（设计稿 §5.9，可选注入的返回入口）
         course_init  → 登记/刷新 course.json（派生字段自动重算）
         course_index → 扫各讲产物，更新 _course/*.json
         course_brief → 出这一讲的 briefing-LNN.md（**写讲解前先读它**）
@@ -484,7 +485,10 @@ def course_step(course_dir, out_dir):
     """
     course_dir = os.path.abspath(course_dir)
     out_dir = os.path.abspath(out_dir)
-    rel = os.path.relpath(out_dir, course_dir)
+    try:
+        rel = os.path.relpath(out_dir, course_dir)
+    except ValueError:      # Windows 跨盘符：relpath 算不出 —— 必然「在课程之外」
+        rel = '..'
     if rel.startswith('..'):
         print()
         print('[course] 讲次目录在课程目录之外，跳过自动登记。')
@@ -511,6 +515,34 @@ def course_step(course_dir, out_dir):
         print('  （登记失败，其余步骤跳过。常见原因：课程还没建 —— 先跑 '
               'course_init.py "%s" --name "课程名"' % course_dir)
         return
+
+    # —— 声明「课程返回入口」（config.course_home，设计稿 §5.9）——
+    # 值 = 课程主页**相对产物所在目录**的路径；build.py 构建时读它、在讲次顶栏注入
+    # 「← 返回课程主页」。默认不声明就没有任何变化；跨盘符算不出相对路径时不写、不猜。
+    # 注意异常要分开接：json 的解析错误是 ValueError 的子类，别和 relpath 的跨盘
+    # ValueError 混在一个分支里（那会把「config 坏了」报成「跨盘符」）。
+    cfg_p = os.path.join(out_dir, 'config.json')
+    try:
+        with open(cfg_p, encoding='utf-8') as f:
+            cfg = json.load(f)
+    except (OSError, ValueError):
+        cfg = None
+        print('  [warn] 读不到或解析不了 config.json，跳过 course_home 声明')
+    if cfg is not None:
+        try:
+            prod_dir = os.path.dirname(os.path.abspath(
+                os.path.join(out_dir, cfg.get('out') or '')))
+            want = os.path.relpath(os.path.join(course_dir, 'index.html'),
+                                   prod_dir).replace(os.sep, '/')
+        except ValueError:      # 纵深防御：讲次在课程内时理论上不会跨盘（上面已拦），保留兜底
+            want = ''
+            print('  [warn] 课程主页与本讲不在同一盘符，跳过 course_home 声明（可在 config.json 手写）')
+        if want and cfg.get('course_home') != want:
+            cfg['course_home'] = want
+            with open(cfg_p, 'w', encoding='utf-8') as f:
+                f.write(json.dumps(cfg, ensure_ascii=False, indent=2) + '\n')
+            print('  ✔ 已声明课程返回入口: course_home = %s' % want)
+
     run('course_index.py', [course_dir, '--quiet'], fatal=False)
 
     # 找到这一讲被分到的 id
@@ -599,9 +631,9 @@ def main():
     shards = ['content/00_intro.html']
     groups_cfg = []
 
-    intro_start = [['#cover', '封面与使用说明'], ['#roadmap', '全文脉络']]
+    intro_start = [['#cover', '封面'], ['#roadmap', '全文脉络']]
     if not a.no_extras:
-        intro_start.insert(1, ['#primer', '阅读前必读（补充）'])
+        intro_start.append(['#primer', '前置知识（补充）'])
     cover_sub = '基于《%s》（%d 页课件）逐页编写' % (stem_name, n_pages)
     if outline and outline.get('cover', {}).get('subtitle'):
         cover_sub = clean_title(outline['cover']['subtitle'], 90)
@@ -687,7 +719,6 @@ def main():
         'brand': stem_name,
         'course': course_name or '',
         'sidebar_title': ' 逐页精解',
-        'topbar_title': '%s · 逐页精解' % stem_name,
         'shards': shards,
         'thumb_dir': '_extract',
         'thumb_pattern': 'thumb_{n:02d}.jpg',
@@ -735,8 +766,8 @@ def main():
         '## 重建（每次改完 content/ 都要跑）',
         '',
         '```bash',
-        '# 套件位置：默认从本文件所在目录往上找不到时，改这一行即可',
-        'KIT="%s"' % KIT.replace('\\', '/'),
+        '# 套件位置：默认用下面的路径；套件搬到别处时 export KIT=/新路径 或改这一行',
+        'KIT="${KIT:-%s}"' % KIT.replace('\\', '/'),
         'PY="$(command -v python || command -v python3)"',
         '',
         '# 先自查环境（python / node / 浏览器 是否就位）',

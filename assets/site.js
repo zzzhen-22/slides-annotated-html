@@ -26,6 +26,7 @@
   var NAVHIDDEN_KEY = NS + 'nav-hidden';
   var HIDETHUMB_KEY = NS + 'hide-thumb';
   var FS_KEY = NS + 'font-size';
+  var POS_KEY = NS + 'pos';        // 阅读位置（课程主页「学习进度」读取，设计稿 §5.10）
 
   /* ======================= 1. KaTeX 渲染 ======================= */
   function renderMath() {
@@ -1533,6 +1534,7 @@
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       var k = e.key.toLowerCase();
       if (e.key === 'Escape') {
+        if (About.isOpen()) { About.close(); return; }
         if (LB.el && LB.el.classList.contains('on')) { LB.close(); return; }
         hideSelBar();
         hideCtx();
@@ -1750,6 +1752,101 @@
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
   }
 
+  /* ======================= 12b. 阅读位置（学习进度） =======================
+     记录「上次读到哪一页」，供**课程主页**的「学习进度」区块读取
+     （file:// 下跨页面 / 跨目录共享 localStorage —— 2026-10-17 实机实测）。
+     设计稿：docs/v2-course-collection.md §5.10。
+
+     语义完全诚实：记录的是「最后停留的页」，不代表前面都读过 —— 所以课程页
+     的文案写「上次读到 P42」而不是「已读 67%」。
+     只写不读：本页打开时**不**自动跳回上次位置（跳回是课程主页「继续」链接的事）。
+
+     三条覆盖：
+       ① 换页时写（滚动节流 800ms；同一页反复滚动不重复写）
+       ② 页面隐藏时强制写（切标签 / 关窗口的最后一刻，同时刷新时间戳）
+       ③ pagehide 兜底（个别关闭路径不触发 visibilitychange） */
+  var Pos = {
+    KEY: POS_KEY,
+    timer: null,
+    last: '',            // 已写入的页 id：同页反复滚动不重复写
+    cur: function () {
+      /* 「当前页」= 视口顶部最后扫过的页区块 —— 与目录高亮 / J/K 翻页同一套判定
+         （限定 section.pg，不把 #primer 这类卡片算进去）。 */
+      var secs = $$('section.pg');
+      if (!secs.length) return null;
+      var y = window.scrollY + 90, pick = secs[0];
+      for (var i = 0; i < secs.length; i++) {
+        if (secs[i].offsetTop <= y) pick = secs[i];
+      }
+      var pid = String(pick.id || '');
+      if (!pid) return null;
+      return { p: pid, n: parseInt(pid.replace(/^p0*/, ''), 10) || 0 };
+    },
+    save: function (force) {
+      var c = this.cur();
+      if (!c) return;
+      if (!force && c.p === this.last) return;
+      this.last = c.p;
+      LS.set(POS_KEY, { v: 1, p: c.p, n: c.n, t: Date.now() });
+    },
+    init: function () {
+      if (!$('section.pg')) return;      // 不是逐页精解形态（骨架等）就不挂
+      window.addEventListener('scroll', function () {
+        if (Pos.timer) return;           // 简单节流：800ms 一个窗口
+        Pos.timer = setTimeout(function () {
+          Pos.timer = null;
+          Pos.save(false);
+        }, 800);
+      }, { passive: true });
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) Pos.save(true);
+      });
+      window.addEventListener('pagehide', function () { Pos.save(true); });
+    }
+  };
+
+  /* ======================= 关于面板 =======================
+     顶栏「关于」→ 使用说明（原正文 howto 卡）+ 生成工具（GitHub）。
+     modal 语义：Esc / 点遮罩 / × 关闭；关闭后焦点还给「关于」按钮（键盘用户的回路）。
+     面板正文由 build.py 按 config.lang 从 assets/about-<lang>.html 注入。 */
+  var About = {
+    mask: null,
+    btn: null,
+    isOpen: function () { return !!(this.mask && this.mask.classList.contains('on')); },
+    open: function () {
+      if (!this.mask) return;
+      this.mask.hidden = false;
+      this.mask.classList.add('on');
+      document.body.classList.add('about-open');
+      var c = $('#aboutClose');
+      if (c && c.focus) c.focus();
+    },
+    close: function () {
+      var self = this;
+      if (!this.mask) return;
+      this.mask.classList.remove('on');
+      document.body.classList.remove('about-open');
+      /* 等淡出过渡结束再 hidden —— 否则面板会「瞬间消失」、没有过渡 */
+      setTimeout(function () {
+        if (!self.isOpen()) self.mask.hidden = true;
+      }, 200);
+      if (this.btn && this.btn.focus) this.btn.focus();
+    },
+    init: function () {
+      this.mask = $('#aboutMask');
+      this.btn = $('#aboutBtn');
+      if (!this.mask || !this.btn) return;
+      var self = this;
+      this.btn.addEventListener('click', function () { self.open(); });
+      var c = $('#aboutClose');
+      if (c) c.addEventListener('click', function () { self.close(); });
+      /* 点遮罩空白处关闭；点卡片内部不关（别把阅读时的手势误判成关闭） */
+      this.mask.addEventListener('click', function (e) {
+        if (e.target === self.mask) self.close();
+      });
+    }
+  };
+
   /* ======================= 启动 ======================= */
   function boot() {
     ensureSectionIds();          // 先补 id：没有 id 的卡片标不了，也存不下 pid
@@ -1770,6 +1867,8 @@
     initPdfLinks();
     initEmbeddedPdf();
     initDeepLink();       // 放最后：它要用到 #q / #qres 与 Find，前面都准备好才跑
+    Pos.init();           // 纯写不读的旁路，挂载顺序无关紧要
+    About.init();         // 顶栏「关于」→ 使用说明 + 生成工具
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
@@ -1777,6 +1876,7 @@
   /* 无头测试入口 */
   window.__doc = {
     notes: Notes, toc: Toc, font: Font, find: Find,
+    pos: Pos,
     markSelection: markSelection,
     openEmbeddedPdf: openEmbeddedPdf,
     pdfBlob: pdfBlob,

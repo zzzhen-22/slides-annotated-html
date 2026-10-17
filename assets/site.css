@@ -75,10 +75,13 @@ main{margin-left:296px;padding:0 0 90px}
   backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);
   padding:11px 34px;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--muted);
 }
-.topbar .tb-title{font-weight:600;color:var(--text2)}
 .topbar .sp{flex:1}
 .topbar a{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--accent-line)}
 .topbar a:hover{border-bottom-style:solid}
+/* 课程返回入口（可选注入）：只有声明了 config.course_home 的讲次才有这个元素
+   （设计稿 §5.9）。箭头与文字是两个 span，用 gap 排版 —— 窄屏隐藏文字时
+   不会留下尾随空格；颜色与下划线沿用上面的 .topbar a 顶栏链接风格。 */
+.course-home{flex:none;white-space:nowrap;display:inline-flex;align-items:center;gap:.35em}
 #menuBtn{display:none}
 
 /* 封面 */
@@ -257,6 +260,14 @@ code{font-family:var(--mono);font-size:.9em;background:#eef1f7;padding:1px 5px;b
 #toTop:hover{background:var(--accent-soft)}
 
 /* 响应式 */
+/* 小屏（≤1024px，与 toc 抽屉化同断点）课程返回入口只留箭头 —— 它可选的，
+   不该在窄屏挤掉顶栏的固定功能。（2026-10-17：顶栏的「文档标题」已删 ——
+   左上角目录顶部本就有品牌名；删后 1025–1280 区间空间充裕，断点从 1200 收到 1024。）
+   **教训：断点别选常用窗口宽度** —— 最初写的是 1280，恰好罩住「1920 物理 ÷ 150%
+   系统缩放 = 1280 逻辑宽」这类常见配置（实测报告：入口只剩一个「←」、语义不明）。 */
+@media (max-width:1024px){
+  .course-home .ch-label{display:none}
+}
 @media (max-width:1180px){
   .pg{grid-template-columns:minmax(0,1fr) 232px;column-gap:20px}
 }

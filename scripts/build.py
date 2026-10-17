@@ -41,7 +41,7 @@ ASSETS = os.path.join(HERE, '..', 'assets')
 # 占位符 → 允许出现次数的校验
 REQUIRED = ['__KATEX_CSS__', '__CSS__', '__KATEX_JS__', '__TITLE__', '__BRAND__',
             '__SIDEBAR_TITLE__', '__SIDEBAR_SUB__', '__SEARCH_PH__', '__NAV_FOOT__',
-            '__TOPBAR_TITLE__', '__PDF_LINE__', '__PDFURL__', '__DOC_NS__', '__JS__',
+            '__ABOUT_BODY__', '__ABOUT_PDF__', '__PDFURL__', '__DOC_NS__', '__JS__',
             '__TOC__', '__BODY__', '__FOOT1__', '__FOOT2__',
             '__PDF_NAME__', '__PDF_B64__']
 
@@ -292,6 +292,41 @@ def decorate_codeblocks(body):
     return new, stats['n']
 
 
+# ============================================================ 课程返回入口（可选注入）
+# 只有声明了 config.course_home 的讲次才有这个元素（课程场景的可选增强，
+# 见 docs/v2-course-collection.md §5.9）。三条性质：
+#   · 不默认 —— 没有字段时**一个字节都不碰顶栏**；
+#   · 可选 —— 删字段重构建即移除；
+#   · 不构成依赖 —— 注入物只是一个 <a>，讲次的全部功能都不读课程目录
+#     （被单独拷走时链接失效，其余毫发无损）。
+#
+# 为什么用「锚点插入」而不是占位符：无痕天然成立（不注入 = 零接触），
+# 而且「单讲 demo → 课程 demo 讲次副本」的注入（build_demo.py 的
+# add_course_home）与本处的构建注入**共用同一实现** —— 两处各写一份的话，
+# 锚点迟早漂移。锚点必须恰好出现 1 次，不满足即硬失败（pitfalls 第 44 条）。
+RE_TOPBAR_ANCHOR = '<div class="topbar">'
+
+
+def course_home_html(raw_href):
+    """生成「← 返回课程主页」链接的 HTML。href 统一 URL 编码（§5.5 同款 safe 集合）。"""
+    href = urllib.parse.quote(str(raw_href).strip(), safe='/:')
+    # 箭头与文字各包一层 span、用 CSS gap 排版（site.css）：这样 ≤1024px
+    # 隐藏文字时（只留箭头）不会剩下「← 」的尾随空格、虚线底也只覆盖箭头本身。
+    return ('<a class="course-home" href="%s" title="回到这门课的课程主页">'
+            '<span class="ch-arrow">←</span>'
+            '<span class="ch-label">返回课程主页</span></a>' % href)
+
+
+def inject_course_home(html, raw_href):
+    """把返回入口插进顶栏最左。返回注入后的 HTML；不注入时请直接别调本函数。"""
+    n = html.count(RE_TOPBAR_ANCHOR)
+    if n != 1:
+        raise SystemExit(
+            '顶栏锚点 %r 在页面里出现 %d 次（应为 1）—— 骨架变了或页面结构异常，'
+            '课程返回入口无法安全注入。' % (RE_TOPBAR_ANCHOR, n))
+    return html.replace(RE_TOPBAR_ANCHOR, RE_TOPBAR_ANCHOR + course_home_html(raw_href), 1)
+
+
 def b64(path):
     with open(path, 'rb') as f:
         return base64.b64encode(f.read()).decode('ascii')
@@ -488,10 +523,6 @@ def main():
         if not pdf_url:
             raise SystemExit('embed_pdf=true 但 config 没给 pdf 路径')
         pdf_b64 = b64(rp(cfg['pdf']))
-        pdf_line = '原文件已内嵌 · 点每页的「打开原文件该页」即可对照'
-    else:
-        pdf_line = ('对照原文件：<a href="%s" target="_blank" rel="noopener">%s</a>'
-                    % (pdf_url, pdf_name)) if pdf_url else ''
 
     # 把链接写进 HTML（不依赖 JS 也能点；内嵌模式下由 site.js 接管）
     if embed:
@@ -523,6 +554,37 @@ def main():
     #            必须按文档隔离，否则不同讲解文档的笔记会串在一起 ----------
     doc_ns = 'lr-doc:' + hashlib.md5(ns_seed).hexdigest()[:10] + ':'
 
+    # ---------- 关于面板（顶栏「关于」→ 使用说明 + 生成工具）----------
+    # 原顶栏的 pdf-line（「原文件已内嵌……」）与正文的「这份文档怎么用」卡都收到这里。
+    # 文案按 config.lang 取 assets/about-<lang>.html（缺省 zh）——英文 demo 用 en。
+    lang = str(cfg.get('lang') or 'zh').strip().lower()
+    if lang not in ('zh', 'en'):
+        lang = 'zh'
+    about_path = os.path.join(ASSETS, 'about-%s.html' % lang)
+    if not os.path.exists(about_path):
+        raise SystemExit('缺 assets/about-%s.html（关于面板文案；config.lang=%r）'
+                         % (lang, cfg.get('lang')))
+    about_body = open(about_path, encoding='utf-8').read()
+
+    def _esc(s):
+        return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+    if embed:
+        about_pdf = (('Source file <b>%s</b> — embedded in this document. Use “Open this page in '
+                      'the original PDF” on any page, or “Save original PDF” in the top bar.')
+                     % _esc(pdf_name)) if lang == 'en' else (
+                     '原文件 <b>%s</b> —— 已内嵌在本文档里。点每页的「打开原文件该页」即可对照，'
+                     '或用顶栏的「另存原 PDF」导出。' % _esc(pdf_name))
+    elif pdf_url:
+        about_pdf = ('Source file: <a href="%s" target="_blank" rel="noopener">%s</a>'
+                     if lang == 'en' else
+                     '对照原文件：<a href="%s" target="_blank" rel="noopener">%s</a>'
+                     ) % (pdf_url, _esc(pdf_name))
+    else:
+        about_pdf = ('The source file is not embedded — this document contains the annotations '
+                     'and page screenshots only.' if lang == 'en'
+                     else '本文档没有内嵌原文件（只含讲解与页面截图）。')
+
     f1, f2 = (cfg.get('footer') or ['', ''])
     nav_foot = cfg.get('nav_foot',
                        '快捷键：<b>J</b>/<b>K</b> 翻页 · <b>/</b> 搜索正文 · '
@@ -541,8 +603,7 @@ def main():
         '__SIDEBAR_SUB__': cfg.get('sidebar_sub', ''),
         '__SEARCH_PH__': cfg.get('search_placeholder', '搜索正文 · 标题 · 页码（/）'),
         '__NAV_FOOT__': nav_foot,
-        '__TOPBAR_TITLE__': cfg.get('topbar_title', ''),
-        '__PDF_LINE__': pdf_line,
+        '__ABOUT_PDF__': about_pdf,
         '__PDFURL__': pdf_url,
         '__DOC_NS__': doc_ns,
         '__FOOT1__': f1,
@@ -550,13 +611,25 @@ def main():
         '__PDF_NAME__': pdf_name,
         '__PDF_B64__': pdf_b64,
     }
-    html = shell
+    # 先把关于面板正文拼进外壳：about-*.html 里的 __ABOUT_PDF__ 等占位由下面的
+    # repl 循环统一替换（顺序上必须先拼、后替换）。
+    html = shell.replace('__ABOUT_BODY__', about_body)
     for k, v in repl.items():
         html = html.replace(k, v)
 
     left = [k for k in REQUIRED if k in html]
     if left:
         raise SystemExit('还有未替换的占位符: %s' % left)
+
+    # ---------- 课程返回入口（可选注入，见设计稿 §5.9）----------
+    # 没声明 course_home 就什么都不做 —— 产物与旧版除「用不到的 CSS 规则」外零差异。
+    raw_home = cfg.get('course_home')
+    if raw_home is not None and not isinstance(raw_home, str):
+        raise SystemExit('config.course_home 必须是字符串（课程主页相对产物目录的路径），'
+                         '当前是 %r' % (raw_home,))
+    if (raw_home or '').strip():
+        html = inject_course_home(html, raw_home)
+        print('课程返回入口: ← %s' % raw_home.strip())
 
     out = rp(cfg['out'])
     os.makedirs(os.path.dirname(out), exist_ok=True)

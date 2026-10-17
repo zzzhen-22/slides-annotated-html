@@ -34,7 +34,8 @@
 **课程 demo（`docs/demo-course/`）为什么也归这个脚本管**：它是另一条产物链
 （`course_init → course_index → course_site → course_check`），手工拼一次就再也复现不了；
 而且单讲 demo 一更新，课程 demo 里的讲次副本就悄悄落后——这与「门面必须能被源工程
-忠实重建」是同一条纪律。它的讲次是**预构建产物**（把两份单讲 demo 原样复制过去）：
+忠实重建」是同一条纪律。它的讲次是**预构建产物**（把两份单讲 demo 复制过去，
+并注入「← 返回课程主页」链接 —— 与构建期的 course_home 注入**共用同一个函数**，§5.9）：
 课程层消费的只是各讲产物 HTML，`coursekit` 既不启浏览器也不读 PDF，所以这样做是充分的。
 """
 import json
@@ -48,6 +49,9 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 KIT = os.path.dirname(HERE)
 
+sys.path.insert(0, HERE)
+from build import inject_course_home  # noqa: E402  （与构建注入共用同一实现，杜绝两处漂移）
+
 DEMOS = [('zh', 'demo', '中文'), ('en', 'demo-en', '英文')]
 OUTDIR = {lang: outdir for lang, outdir, _ in DEMOS}
 THUMBS = os.path.join(KIT, 'examples', 'demo', '_thumbs')
@@ -56,7 +60,7 @@ THUMBS = os.path.join(KIT, 'examples', 'demo', '_thumbs')
 COURSE_DIR = os.path.join(KIT, 'docs', 'demo-course')
 COURSE_NAME = '逻辑回归 · 课程合集 Demo'
 COURSE_SUMMARY = ('一门两讲示例课程：L01 中文精解 + L02 英文精解，演示课程主页的五个区块'
-                  ' —— 课程地图、要点总结、跨讲检索、术语总表、进度看板。')
+                  ' —— 课程地图、要点总结、跨讲检索、术语总表、学习进度。')
 # (讲次目录名, 源 demo 的 lang, 课程地图上显示的标题)
 # 标题取自讲次 config.json 的 `brand`（见 coursekit.lecture_meta 的优先级：
 # outline.cover.title → config.brand → 目录名）—— 两份 demo 的产物与外壳**一个字节都不改**，
@@ -70,7 +74,8 @@ COURSE_FILES = ['index.html', 'course.json',
                 '_course/index.json', '_course/glossary.json', '_course/keypoints.json']
 
 COURSE_CFG_NOTE = (
-    '本讲是**预构建产物**：index.html 由 docs/%s/index.html 原样复制而来，'
+    '本讲是**预构建产物**：index.html 由 docs/%s/index.html 复制并注入'
+    '「返回课程主页」链接而来（见 scripts/build_demo.py），'
     '源工程在 examples/demo/%s/。本 config.json 只为课程层（course_init / course_index）'
     '提供 title / brand / pages / out，**不用于重新构建** —— 要改这一讲的正文，'
     '请改 examples/demo/%s/ 再跑 scripts/build_demo.py。'
@@ -144,7 +149,7 @@ def lecture_config(lang, brand):
 
 
 def build_course():
-    """组装 `docs/demo-course/`：两讲副本 + course.json + _course/ + index.html。"""
+    """组装 `docs/demo-course/`：两讲副本（带返回入口）+ course.json + _course/ + index.html。"""
     os.makedirs(COURSE_DIR, exist_ok=True)
     for lcdir, lang, brand in COURSE_LECTURES:
         src_prod = os.path.join(KIT, 'docs', OUTDIR[lang], 'index.html')
@@ -152,10 +157,19 @@ def build_course():
             raise SystemExit('先把单讲 demo 建出来，课程 demo 要用它当讲次：%s' % src_prod)
         dst_dir = os.path.join(COURSE_DIR, lcdir)
         os.makedirs(dst_dir, exist_ok=True)
-        shutil.copy2(src_prod, os.path.join(dst_dir, 'index.html'))
+        # 复制**并注入「课程返回入口」**（设计稿 §5.9）——调用的是 build.py 的同一个
+        # 注入函数（构建期的 course_home 注入），所以副本里讲次顶栏带「← 返回课程主页」，
+        # 课程 demo 形成「主页 → 讲次 → 主页」完整闭环。
+        # 读/写都用字节等价的方式（newline='' 不做行尾转换）：除注入点外，副本与
+        # 单讲 demo 逐字节相同 —— check_course 的断言 ① 就是这么比对的。
+        raw = open(src_prod, 'rb').read().decode('utf-8')
+        text = inject_course_home(raw, '../index.html')
+        with open(os.path.join(dst_dir, 'index.html'), 'w',
+                  encoding='utf-8', newline='') as f:
+            f.write(text)
         with open(os.path.join(dst_dir, 'config.json'), 'w', encoding='utf-8') as f:
             f.write(json.dumps(lecture_config(lang, brand), ensure_ascii=False, indent=2) + '\n')
-        print('  讲次 %s ← docs/%s/index.html（标题：%s）' % (lcdir, OUTDIR[lang], brand))
+        print('  讲次 %s ← docs/%s/index.html（标题：%s）+ 返回入口' % (lcdir, OUTDIR[lang], brand))
     sh([sys.executable, os.path.join(HERE, 'course_init.py'), COURSE_DIR,
         '--name', COURSE_NAME, '--summary', COURSE_SUMMARY])
     sh([sys.executable, os.path.join(HERE, 'run_course.py'), COURSE_DIR, '--sync', '--no-probe'])
@@ -165,7 +179,9 @@ def build_course():
 def check_course(fails):
     """课程 demo 的两条忠实性断言。
 
-    ① 讲次副本与当前单讲 demo 逐字节一致 —— 防「单讲更新了、课程 demo 还停在上一次」；
+    ① 讲次副本 == 当前单讲 demo **经同一注入转换后**（逐字节）—— 防「单讲更新了、
+       课程 demo 还停在上一次」；转换 = `inject_course_home(…, '../index.html')`
+       （与 build_course / build.py 共用同一实现，所以它的行为本身也被这条锁住）；
     ② 课程层五个产物能由「讲次副本 + course.json」重跑出来、逐字节一致 ——
        可比是因为 `long_path` 会把临时目录的 8.3 短名展开（否则 relpath 两侧一长一短，
        `course.json` 里的 outline 路径会算出 `../../../../SHENYU~1/...` 而假红）。
@@ -173,9 +189,13 @@ def check_course(fails):
     for lcdir, lang, _ in COURSE_LECTURES:
         a = os.path.join(KIT, 'docs', OUTDIR[lang], 'index.html')
         b = os.path.join(COURSE_DIR, lcdir, 'index.html')
+        want = inject_course_home(open(a, 'rb').read().decode('utf-8'),
+                                  '../index.html').encode('utf-8') \
+            if os.path.exists(a) else b''
         same = (os.path.exists(a) and os.path.exists(b)
-                and open(a, 'rb').read() == open(b, 'rb').read())
-        print('  讲次副本 == docs/%s/index.html: %s' % (OUTDIR[lang], '✔' if same else '✘'))
+                and want == open(b, 'rb').read())
+        print('  讲次副本 == docs/%s/index.html（经返回入口注入）: %s'
+              % (OUTDIR[lang], '✔' if same else '✘'))
         if not same:
             fails.append('course/' + lcdir)
 

@@ -6,7 +6,6 @@
   "course": "",
   "sidebar_title": " · 逐页精解 Demo",
   "sidebar_sub": "",
-  "topbar_title": "逻辑回归 · 逐页精解 · Demo（节选 P1–P8）",
   "shards": [
     "content/00_intro.html",
     "content/10_ov1.html",
@@ -64,7 +63,7 @@
         ],
         [
           "#primer",
-          "阅读前必读：概率论速成"
+          "前置知识：概率论速成"
         ]
       ]
     ],

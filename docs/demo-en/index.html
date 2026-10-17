@@ -84,10 +84,13 @@ main{margin-left:296px;padding:0 0 90px}
   backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);
   padding:11px 34px;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--muted);
 }
-.topbar .tb-title{font-weight:600;color:var(--text2)}
 .topbar .sp{flex:1}
 .topbar a{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--accent-line)}
 .topbar a:hover{border-bottom-style:solid}
+/* 课程返回入口（可选注入）：只有声明了 config.course_home 的讲次才有这个元素
+   （设计稿 §5.9）。箭头与文字是两个 span，用 gap 排版 —— 窄屏隐藏文字时
+   不会留下尾随空格；颜色与下划线沿用上面的 .topbar a 顶栏链接风格。 */
+.course-home{flex:none;white-space:nowrap;display:inline-flex;align-items:center;gap:.35em}
 #menuBtn{display:none}
 
 /* 封面 */
@@ -266,6 +269,14 @@ code{font-family:var(--mono);font-size:.9em;background:#eef1f7;padding:1px 5px;b
 #toTop:hover{background:var(--accent-soft)}
 
 /* 响应式 */
+/* 小屏（≤1024px，与 toc 抽屉化同断点）课程返回入口只留箭头 —— 它可选的，
+   不该在窄屏挤掉顶栏的固定功能。（2026-10-17：顶栏的「文档标题」已删 ——
+   左上角目录顶部本就有品牌名；删后 1025–1280 区间空间充裕，断点从 1200 收到 1024。）
+   **教训：断点别选常用窗口宽度** —— 最初写的是 1280，恰好罩住「1920 物理 ÷ 150%
+   系统缩放 = 1280 逻辑宽」这类常见配置（实测报告：入口只剩一个「←」、语义不明）。 */
+@media (max-width:1024px){
+  .course-home .ch-label{display:none}
+}
 @media (max-width:1180px){
   .pg{grid-template-columns:minmax(0,1fr) 232px;column-gap:20px}
 }
@@ -314,7 +325,6 @@ code{font-family:var(--mono);font-size:.9em;background:#eef1f7;padding:1px 5px;b
   font-family:var(--mono);background:var(--accent);color:#fff;border-radius:9px;padding:0 5px;
 }
 .tb-count.zero{background:#cbd5e1;color:#475569}
-.topbar .tb-sep{width:1px;height:18px;background:var(--line);flex:0 0 1px}
 /* 正文字号调节（A− / 100% / A＋），状态存 localStorage */
 .tb-font{display:inline-flex;align-items:center;gap:3px}
 .tb-font .tb-btn{width:30px;justify-content:center;padding:5px 0;font-weight:700}
@@ -532,6 +542,39 @@ mark.hl.flash{animation:hlflash 1.9s ease}
 .dr-list .empty{color:var(--muted);font-size:13.6px;text-align:center;padding:44px 18px;line-height:2}
 .dr-list .empty span{font-size:12.5px;opacity:.85}
 body.drawer-open #toTop{right:416px}
+
+/* ---------------------------------------------------------------------------
+   关于面板（顶栏「关于」→ 这份文档怎么用 + 生成工具）
+   原顶栏的 pdf-line 与正文的「这份文档怎么用」卡都收到这里。
+   modal 语义：Esc / 点遮罩 / × 关闭；面板正文由 build.py 按 config.lang 注入。
+   --------------------------------------------------------------------------- */
+.ab-mask{position:fixed;inset:0;z-index:70;background:rgba(16,24,44,.44);
+  opacity:0;pointer-events:none;transition:opacity .18s ease}
+.ab-mask.on{opacity:1;pointer-events:auto}
+.ab-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.98);
+  width:min(720px,calc(100vw - 48px));max-height:min(84vh,780px);display:flex;flex-direction:column;
+  background:var(--surface);border-radius:var(--radius);box-shadow:0 28px 80px rgba(16,24,44,.30);
+  transition:transform .18s ease}
+.ab-mask.on .ab-card{transform:translate(-50%,-50%) scale(1)}
+.ab-close{position:absolute;right:10px;top:10px;width:34px;height:34px;border:0;border-radius:9px;
+  background:transparent;color:var(--muted);font-size:22px;line-height:1;cursor:pointer}
+.ab-close:hover{background:rgba(30,40,70,.08);color:var(--text)}
+.ab-body{overflow:auto;padding:26px 30px 30px}
+.ab-body h3{margin:0 0 6px;font-size:19px;padding-right:36px}
+.ab-meta{margin:0 0 6px;color:var(--muted);font-size:13.5px}
+.ab-meta b{color:var(--text)}
+.ab-meta a{color:var(--accent)}
+.ab-sec{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.ab-sec h4{margin:0 0 10px;font-size:15px}
+.ab-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px;
+  font-size:13.8px;line-height:1.78}
+.ab-list b{color:var(--text)}
+.ab-list code,.ab-meta code{font-family:var(--mono);font-size:12.5px;
+  background:rgba(30,40,70,.06);padding:1px 5px;border-radius:4px}
+.ab-link{margin:6px 0 0;font-size:13.5px}
+.ab-link a{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--accent-line)}
+.ab-link a:hover{border-bottom-style:solid}
+
 @media (max-width:1024px){
   .drawer{width:100%;max-width:100%}
   body.drawer-open #toTop{right:24px}
@@ -539,7 +582,6 @@ body.drawer-open #toTop{right:416px}
 
 /* 移动端顶栏精简 */
 @media (max-width:860px){
-  .topbar .pdf-line{display:none}
   .topbar{gap:9px}
   .tb-btn .tb-label{display:none}
   .tb-btn{padding:5px 9px}
@@ -781,7 +823,7 @@ mark.q-hit{
 <div class="toc-items">
 <a href="#cover" class="group-link"><span class="num">·</span><span class="t">Cover & about this demo</span></a>
 <a href="#demo-notice" class="group-link"><span class="num">·</span><span class="t">About this demo</span></a>
-<a href="#primer" class="group-link"><span class="num">·</span><span class="t">Before you read: probability crash course</span></a>
+<a href="#primer" class="group-link"><span class="num">·</span><span class="t">Prerequisites: probability crash course</span></a>
 </div></div>
 <div class="toc-group" data-gid="g2">
 <div class="toc-head"><button class="toc-toggle" type="button" aria-expanded="true"><span class="chev"></span><span class="gt">Part 1 · Probability foundations (P1–P8)</span></button><span class="gcount">8</span></div>
@@ -824,14 +866,14 @@ mark.q-hit{
       <span class="tb-fsize" id="fontSizeLabel">100%</span>
       <button id="fontPlus" class="tb-btn" type="button" aria-label="增大正文字号" title="增大正文字号">A＋</button>
     </span>
-    <span class="tb-sep"></span>
-    <span class="tb-title">Logistic Regression · Annotated Walkthrough · Demo (P1–P8)</span>
     <span class="sp"></span>
     <button id="notesBtn" class="tb-btn" type="button" aria-expanded="false"
             title="打开我的标记笔记（快捷键 N）">
       <span class="tb-icon">✎</span><span class="tb-label">笔记</span>
       <span class="tb-count zero" id="notesBtnCount">0</span></button>
-    <span class="pdf-line"></span>
+    <button id="aboutBtn" class="tb-btn" type="button"
+            title="关于这份文档：使用说明与生成工具（Esc 关闭）">
+      <span class="tb-icon">ⓘ</span><span class="tb-label">关于</span></button>
     <button id="savePdf" class="tb-btn" type="button" title="把内嵌在本文档里的原文件另存为 PDF" hidden>
       <span class="tb-icon">⤓</span><span class="tb-label">另存原 PDF</span></button>
   </div>
@@ -887,7 +929,7 @@ mark.q-hit{
 </section>
 
 <section class="card primer" id="primer">
-  <h2>Before you read: a crash course in probability (supplement)</h2>
+  <h2>Prerequisites: a crash course in probability (supplement)</h2>
   <p class="lead">The original deck assumes you have taken probability and calculus — page 5 opens straight with <script type="math/tex">p(X \mid \mathcal{M})</script>. If you haven't, spend ten minutes on the nine cards below and nothing later will trip you. <b>If you have, jump straight to the main text.</b> Every card opens and collapses.</p>
 
   <details class="pill" open>
@@ -1446,6 +1488,40 @@ mark.q-hit{
 </footer>
 </main>
 
+<div class="ab-mask" id="aboutMask" hidden>
+  <div class="ab-card" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <button class="ab-close" id="aboutClose" type="button" title="关闭（Esc）">×</button>
+    <div class="ab-body" id="aboutBody">
+<!-- About panel body (English) — injected into the shell's about-panel placeholder by
+     build.py when config.lang = "en". Content mirrors assets/about-zh.html:
+     the old “How to use this document” card + source-file info + built-with section.
+     Note: do not write the placeholder token literally in this comment — the build's
+     “unreplaced placeholder” check would flag it. -->
+<h3 id="aboutTitle">About this document</h3>
+<p class="ab-meta">The source file is not embedded — this document contains the annotations and page screenshots only.</p>
+
+<section class="ab-sec">
+  <h4>How to use this document</h4>
+  <ol class="ab-list">
+    <li><b>The left sidebar is a page index.</b> Entries follow the original page order — click any of them to jump straight to that page. The table of contents highlights the current page as you scroll, collapses group by group, and remembers its state.</li>
+    <li><b>Every page ships with its original slide.</b> Each section has the source screenshot on the right — click to enlarge. Read the annotation on the left, check the original on the right, without switching windows.</li>
+    <li><b>Page badges jump back to the source.</b> A badge like <code>Original P12</code> anchors to that section; the “Open this page in the original PDF” button tries to open the source file at that page in your system viewer.</li>
+    <li><b>Grey cards are additions.</b> Boxes marked “supplement” are not part of the original slides — they are explanations added by the author. Red cards flag problems found in the source itself.</li>
+    <li><b>Select text to take a note.</b> Select any passage to add it to “My notes”, or just press <code>M</code>. Notes live in the drawer at the top right — annotate, jump back, export Markdown. Everything stays in your local browser; nothing is uploaded.</li>
+    <li><b>Collapse the sidebar for larger slides.</b> Click “☰ Collapse” or press <code>B</code>: the body widens and page screenshots grow from 268 px to 400 px.</li>
+  </ol>
+</section>
+
+<section class="ab-sec">
+  <h4>Built with</h4>
+  <p>This document was generated by the open-source project <b>pdf-slides-annotated-html</b> — it turns PDF / PPT slides into a self-contained, page-by-page annotated HTML. Works offline; notes and reading progress stay in your local browser.</p>
+  <p class="ab-link"><a href="https://github.com/zzzhen-22/slides-annotated-html" target="_blank" rel="noopener">github.com/zzzhen-22/slides-annotated-html</a></p>
+</section>
+
+    </div>
+  </div>
+</div>
+
 <aside class="drawer" id="drawer" aria-label="我的标记笔记">
   <div class="dr-head">
     <h3>我的标记 <span class="dr-count" id="drawerCount"></span></h3>
@@ -1500,6 +1576,7 @@ mark.q-hit{
   var NAVHIDDEN_KEY = NS + 'nav-hidden';
   var HIDETHUMB_KEY = NS + 'hide-thumb';
   var FS_KEY = NS + 'font-size';
+  var POS_KEY = NS + 'pos';        // 阅读位置（课程主页「学习进度」读取，设计稿 §5.10）
 
   /* ======================= 1. KaTeX 渲染 ======================= */
   function renderMath() {
@@ -3007,6 +3084,7 @@ mark.q-hit{
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       var k = e.key.toLowerCase();
       if (e.key === 'Escape') {
+        if (About.isOpen()) { About.close(); return; }
         if (LB.el && LB.el.classList.contains('on')) { LB.close(); return; }
         hideSelBar();
         hideCtx();
@@ -3224,6 +3302,101 @@ mark.q-hit{
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
   }
 
+  /* ======================= 12b. 阅读位置（学习进度） =======================
+     记录「上次读到哪一页」，供**课程主页**的「学习进度」区块读取
+     （file:// 下跨页面 / 跨目录共享 localStorage —— 2026-10-17 实机实测）。
+     设计稿：docs/v2-course-collection.md §5.10。
+
+     语义完全诚实：记录的是「最后停留的页」，不代表前面都读过 —— 所以课程页
+     的文案写「上次读到 P42」而不是「已读 67%」。
+     只写不读：本页打开时**不**自动跳回上次位置（跳回是课程主页「继续」链接的事）。
+
+     三条覆盖：
+       ① 换页时写（滚动节流 800ms；同一页反复滚动不重复写）
+       ② 页面隐藏时强制写（切标签 / 关窗口的最后一刻，同时刷新时间戳）
+       ③ pagehide 兜底（个别关闭路径不触发 visibilitychange） */
+  var Pos = {
+    KEY: POS_KEY,
+    timer: null,
+    last: '',            // 已写入的页 id：同页反复滚动不重复写
+    cur: function () {
+      /* 「当前页」= 视口顶部最后扫过的页区块 —— 与目录高亮 / J/K 翻页同一套判定
+         （限定 section.pg，不把 #primer 这类卡片算进去）。 */
+      var secs = $$('section.pg');
+      if (!secs.length) return null;
+      var y = window.scrollY + 90, pick = secs[0];
+      for (var i = 0; i < secs.length; i++) {
+        if (secs[i].offsetTop <= y) pick = secs[i];
+      }
+      var pid = String(pick.id || '');
+      if (!pid) return null;
+      return { p: pid, n: parseInt(pid.replace(/^p0*/, ''), 10) || 0 };
+    },
+    save: function (force) {
+      var c = this.cur();
+      if (!c) return;
+      if (!force && c.p === this.last) return;
+      this.last = c.p;
+      LS.set(POS_KEY, { v: 1, p: c.p, n: c.n, t: Date.now() });
+    },
+    init: function () {
+      if (!$('section.pg')) return;      // 不是逐页精解形态（骨架等）就不挂
+      window.addEventListener('scroll', function () {
+        if (Pos.timer) return;           // 简单节流：800ms 一个窗口
+        Pos.timer = setTimeout(function () {
+          Pos.timer = null;
+          Pos.save(false);
+        }, 800);
+      }, { passive: true });
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) Pos.save(true);
+      });
+      window.addEventListener('pagehide', function () { Pos.save(true); });
+    }
+  };
+
+  /* ======================= 关于面板 =======================
+     顶栏「关于」→ 使用说明（原正文 howto 卡）+ 生成工具（GitHub）。
+     modal 语义：Esc / 点遮罩 / × 关闭；关闭后焦点还给「关于」按钮（键盘用户的回路）。
+     面板正文由 build.py 按 config.lang 从 assets/about-<lang>.html 注入。 */
+  var About = {
+    mask: null,
+    btn: null,
+    isOpen: function () { return !!(this.mask && this.mask.classList.contains('on')); },
+    open: function () {
+      if (!this.mask) return;
+      this.mask.hidden = false;
+      this.mask.classList.add('on');
+      document.body.classList.add('about-open');
+      var c = $('#aboutClose');
+      if (c && c.focus) c.focus();
+    },
+    close: function () {
+      var self = this;
+      if (!this.mask) return;
+      this.mask.classList.remove('on');
+      document.body.classList.remove('about-open');
+      /* 等淡出过渡结束再 hidden —— 否则面板会「瞬间消失」、没有过渡 */
+      setTimeout(function () {
+        if (!self.isOpen()) self.mask.hidden = true;
+      }, 200);
+      if (this.btn && this.btn.focus) this.btn.focus();
+    },
+    init: function () {
+      this.mask = $('#aboutMask');
+      this.btn = $('#aboutBtn');
+      if (!this.mask || !this.btn) return;
+      var self = this;
+      this.btn.addEventListener('click', function () { self.open(); });
+      var c = $('#aboutClose');
+      if (c) c.addEventListener('click', function () { self.close(); });
+      /* 点遮罩空白处关闭；点卡片内部不关（别把阅读时的手势误判成关闭） */
+      this.mask.addEventListener('click', function (e) {
+        if (e.target === self.mask) self.close();
+      });
+    }
+  };
+
   /* ======================= 启动 ======================= */
   function boot() {
     ensureSectionIds();          // 先补 id：没有 id 的卡片标不了，也存不下 pid
@@ -3244,6 +3417,8 @@ mark.q-hit{
     initPdfLinks();
     initEmbeddedPdf();
     initDeepLink();       // 放最后：它要用到 #q / #qres 与 Find，前面都准备好才跑
+    Pos.init();           // 纯写不读的旁路，挂载顺序无关紧要
+    About.init();         // 顶栏「关于」→ 使用说明 + 生成工具
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
@@ -3251,6 +3426,7 @@ mark.q-hit{
   /* 无头测试入口 */
   window.__doc = {
     notes: Notes, toc: Toc, font: Font, find: Find,
+    pos: Pos,
     markSelection: markSelection,
     openEmbeddedPdf: openEmbeddedPdf,
     pdfBlob: pdfBlob,

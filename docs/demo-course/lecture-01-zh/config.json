@@ -6,7 +6,6 @@
   "course": "",
   "sidebar_title": " · 逐页精解 Demo",
   "sidebar_sub": "",
-  "topbar_title": "逻辑回归 · 逐页精解 · Demo（节选 P1–P8）",
   "shards": [
     "content/00_intro.html",
     "content/10_ov1.html",
@@ -64,7 +63,7 @@
         ],
         [
           "#primer",
-          "阅读前必读：概率论速成"
+          "前置知识：概率论速成"
         ]
       ]
     ],
@@ -135,5 +134,5 @@
     "逐页精解 · Demo（节选 P1–P8，完整版 63 页）",
     "原课件版权归原作者所有；白底讲解与彩色卡片为本文档新增内容。"
   ],
-  "_note": "本讲是**预构建产物**：index.html 由 docs/demo/index.html 原样复制而来，源工程在 examples/demo/zh/。本 config.json 只为课程层（course_init / course_index）提供 title / brand / pages / out，**不用于重新构建** —— 要改这一讲的正文，请改 examples/demo/zh/ 再跑 scripts/build_demo.py。"
+  "_note": "本讲是**预构建产物**：index.html 由 docs/demo/index.html 复制并注入「返回课程主页」链接而来（见 scripts/build_demo.py），源工程在 examples/demo/zh/。本 config.json 只为课程层（course_init / course_index）提供 title / brand / pages / out，**不用于重新构建** —— 要改这一讲的正文，请改 examples/demo/zh/ 再跑 scripts/build_demo.py。"
 }

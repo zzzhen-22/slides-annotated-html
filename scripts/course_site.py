@@ -12,7 +12,8 @@
     ② 要点总结   各讲 #keypoints 汇总成一张可过滤、可导出 Markdown 的总表   ← 本版核心
     ③ 跨讲检索   搜内联的全课程索引，命中 → 跳到那一讲的该页并高亮
     ④ 术语总表   glossary.json 渲染；「首见」可点
-    ⑤ 进度看板   每讲写到第几页
+    ⑤ 学习进度   每讲的阅读位置与笔记数（读各讲 localStorage；写作进度未完时逐行标注）
+                  —— 设计稿 §5.10。
 
 **为什么索引必须内联、不能在运行时 fetch**：`file://` 是不透明源，
 `fetch('_course/index.json')` 会被 CORS 拦死，用户双击打开就是空白页。见设计稿 §5.2。
@@ -46,12 +47,13 @@ JS_F = os.path.join(KIT, 'assets', 'course.js')
 KATEX_DIR = os.path.join(KIT, 'vendor', 'katex')
 
 SECTIONS = [('map', '课程地图'), ('keypoints', '要点总结'), ('search', '跨讲检索'),
-            ('glossary', '术语总表'), ('progress', '进度看板')]
+            ('glossary', '术语总表'), ('progress', '学习进度')]
 STATUS_LABEL = {'done': '已完成', 'partial': '部分完成', 'skeleton': '骨架', 'pending': '待建'}
 
 SIZE_LIMIT = 3 * 1024 * 1024      # 超过就自动降级正文长度（设计稿 §5.6）
 MAX_TEXT_FLOOR = 60
 FULL_GATE = (8, 400)              # --full 的闸门：讲次数 / 总页数（设计稿 §8 阶段 4）
+SEEN_MAX = 5                      # 术语表「出现位置」超过这个条数就截断（课程 TODO T8②）
 
 
 def e(s):
@@ -84,9 +86,31 @@ def page_no(page_id):
 
 
 def pages_left(lec):
-    """这一讲还剩多少页没写。要点区的占位文案与进度看板两处共用 ——
+    """这一讲还剩多少页没写。要点区的占位文案与学习进度区两处共用 ——
     同一个数只算一处，改口径时不会漏改另一边（审查报告 C1）。"""
     return max(0, (lec.get('page_count') or 0) - (lec.get('done_pages') or 0))
+
+
+def doc_ns_of(course_dir, lec):
+    """从某讲**产物**里提取命名空间（`lr-doc:<h10>:`），供「学习进度」读取端使用。
+
+    单一真源：产物里的 `var DOC_NS` 由 build.py 注入、site.js 用它隔离笔记 ——
+    这里只**提取**、不从 config（title/out）重算（重算 = 两处算法，迟早漂移）。
+    产物不存在 / 是旧版构建没注入过时返回 ''，课程页按「无 ns」降级（该讲不显示
+    学习进度）；course_check.py 对「产物存在但提取不到 / 与内联值不一致」报红。
+    """
+    p = (lec or {}).get('product') or ''
+    if not p:
+        return ''
+    fp = os.path.join(course_dir, p)
+    if not os.path.exists(fp):
+        return ''
+    try:
+        raw = open(fp, encoding='utf-8', errors='replace').read()
+    except OSError:
+        return ''
+    m = re.search(r'var DOC_NS\s*=\s*"(lr-doc:[0-9a-f]+:)"', raw)
+    return m.group(1) if m else ''
 
 
 # ------------------------------------------------------------------ ① 课程地图
@@ -211,46 +235,70 @@ def render_glossary(terms, lec_by_id, course_dir):
             note += '<br><span class="dim">别名：%s</span>' % e(alias)
         if conf:
             note += '<br><span class="dim">⚠ 各讲说法不一致：%s</span>' % e('；'.join(conf))
+        # 「出现位置」超长时截断：术语出现在很多讲时全列会把格子撑成多行、行高不齐。
+        # 截断为「首个位置 等 N 处」，全部位置挪进 title 悬停可见（课程 TODO T8②）。
+        seen_list = t.get('seen') or []
+        if len(seen_list) > SEEN_MAX:
+            see_txt = '%s 等 %d 处' % (seen_list[0], len(seen_list))
+            see_title = ' title="%s"' % e('全部 %d 处：%s' % (len(seen_list), '、'.join(seen_list)))
+        else:
+            see_txt = '、'.join(seen_list) or '—'
+            see_title = ''
         rows.append(
             '<tr data-concept="%s"><td>%s<br><span class="mono dim">%s</span></td>'
             '<td>%s</td><td>%s%s</td><td>%s</td>'
-            '<td class="see">%s</td></tr>'
+            '<td class="see"%s>%s</td></tr>'
             % (e(t.get('id') or ''), name, e(t.get('id') or ''), en_html,
                def_html, note, seen_link,
-               e('、'.join(t.get('seen') or []) or '—')))
+               see_title, e(see_txt)))
     return ('<table class="tbl"><thead><tr>'
             '<th style="width:19%%">术语</th><th style="width:15%%">English</th><th>一句话定义</th>'
             '<th style="width:11%%">首见</th><th style="width:19%%">出现位置</th>'
             '</tr></thead><tbody>\n%s\n</tbody></table>' % '\n'.join(rows))
 
 
-# ------------------------------------------------------------------ ⑤ 进度看板
-def render_progress(lectures, index_by_id):
+# ------------------------------------------------------------------ ⑤ 学习进度
+def render_progress(lectures):
+    """⑤ 区块的**静态骨架**：讲次行 + 学习进度占位格（运行期由 course.js 填）。
+
+    学习进度（阅读位置 / 笔记数）存在用户浏览器里，生成期读不到 ——
+    所以这里只出「讲次 + 空单元格」，`.lp-cell` 交给前端按 cdata.ns 渲染（§5.10）。
+    写作进度（待补 N/M）只在这门课**还有没写完的讲**时逐行标注；
+    全部写完时收敛为一行小字 —— 状态信息不再在「地图 / 要点 / 看板」三处重复
+    （审查 B6 / 课程 TODO T7）。
+    """
+    if not lectures:
+        return '<p class="dim">（这门课还没有登记任何讲次。）</p>'
+    all_done = all((lec.get('status') == 'done') for lec in lectures)
     rows = []
     for lec in lectures:
         lid = lec.get('id') or '?'
         st = lec.get('status') or 'pending'
-        pc = lec.get('page_count') or 0
-        done = lec.get('done_pages') or 0
-        pct = int(round(done * 100.0 / pc)) if pc else 0
-        cls = 'pbar' + (' warn' if 0 < pct < 100 else (' none' if not pc else ''))
-        note = {  # 用「已经发生的事实」说话，别写「请检查」这种没有指向的话
-            'done': '要点与正文都齐了。',
-            'partial': '还有 %d 页没写。' % pages_left(lec),
-            'skeleton': '产物还没构建（跑 run_all.py）。',
-            'pending': '讲次目录不存在。',
-        }.get(st, '')
-        rows.append('<tr data-lec="%s"><td>%s · %s</td>'
-                    '<td><span class="%s"><i style="width:%d%%"></i></span>'
-                    '<span class="mono">%s / %s</span></td>'
-                    '<td><span class="badge %s">%s</span></td><td>%s</td></tr>'
-                    % (e(lid), e(lid), e(lec.get('title') or ''), cls, pct,
-                       e(done), e(pc or '—'), e(st), e(STATUS_LABEL.get(st, st)), e(note)))
-    if not rows:
-        return '<p class="dim">（这门课还没有登记任何讲次。）</p>'
-    return ('<table class="tbl"><thead><tr><th style="width:30%%">讲次</th>'
-            '<th style="width:30%%">进度</th><th style="width:12%%">状态</th><th>说明</th>'
-            '</tr></thead><tbody>\n%s\n</tbody></table>' % '\n'.join(rows))
+        title = lec.get('title') or ''
+        cells = ['<td class="lp-lec"><b class="lid">%s</b>%s</td>'
+                 % (e(lid), e(' ' + title if title else ''))]
+        cells.append('<td class="lp-cell"><span class="dim">—</span></td>')
+        if not all_done:
+            note = {  # 用「已经发生的事实」说话，别写「请检查」这种没有指向的话
+                'done': '要点与正文都齐了。',
+                'partial': '还有 %d 页没写。' % pages_left(lec),
+                'skeleton': '产物还没构建（跑 run_all.py）。',
+                'pending': '讲次目录不存在。',
+            }.get(st, '')
+            num = ''
+            if lec.get('page_count'):
+                num = ' <span class="mono dim">%s / %s</span>' % (
+                    e(lec.get('done_pages') or 0), e(lec['page_count']))
+            cells.append('<td class="lp-write"><span class="badge %s">%s</span> %s%s</td>'
+                         % (e(st), e(STATUS_LABEL.get(st, st)), e(note), num))
+        rows.append('<tr data-lec="%s">%s</tr>' % (e(lid), ''.join(cells)))
+    head = ('<th style="width:36%%">讲次</th><th>学习进度</th>'
+            + ('' if all_done else '<th style="width:26%%">写作进度</th>'))
+    tail = ('<p class="lp-foot dim">本课程讲解已全部写完（%d 讲）。阅读痕迹只存在本机浏览器里，'
+            '打开任一讲阅读后上面的进度会自动出现。</p>' % len(lectures)) if all_done else ''
+    return ('<div class="lp-top" id="lpTop"></div>'
+            '<table class="tbl lp-tbl"><thead><tr>%s</tr></thead><tbody>\n%s\n</tbody></table>%s'
+            % (head, '\n'.join(rows), tail))
 
 
 # ------------------------------------------------------------------ 主流程
@@ -268,7 +316,9 @@ def load_payload(course_dir, course, index, max_text, full):
                           'title': p.get('title') or '',
                           'text': t if full else t[:max_text]})
         lecs.append({'id': lec.get('id'), 'title': lec.get('title') or '',
-                     'status': lec.get('status') or '', 'href': href, 'pages': pages})
+                     'status': lec.get('status') or '', 'href': href, 'pages': pages,
+                     'ns': doc_ns_of(course_dir, lec),
+                     'pageCount': lec.get('page_count') or 0})
     return {'maxText': max_text, 'full': bool(full), 'lectures': lecs}
 
 
@@ -374,7 +424,7 @@ def build(course_dir, course, index, glossary, keypoints, max_text, full, katex=
         '__MAP__': render_map(lectures, course_dir),
         '__KEYPOINTS__': render_keypoints(lectures, kp_by_id, course_dir),
         '__GLOSSARY__': render_glossary((glossary or {}).get('terms') or [], lec_by_id, course_dir),
-        '__PROGRESS__': render_progress(lectures, None),
+        '__PROGRESS__': render_progress(lectures),
         '__NOTICE__': notice_of(max_text, full, ''),
         '__DATA__': data_json,
         '__KATEX_CSS__': katex[0],

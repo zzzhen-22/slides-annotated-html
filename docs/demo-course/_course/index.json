@@ -5,12 +5,12 @@
     {
       "id": "L01",
       "dir": "lecture-01-zh",
-      "title": "Logistic Regression",
+      "title": "逻辑回归 · 中文精解",
       "status": "done",
       "page_count": 8,
       "done_pages": 8,
       "product": "lecture-01-zh/index.html",
-      "hash": "4fb7c10d0d17",
+      "hash": "124aa2933d81",
       "extractor": 2,
       "pages": [
         {
@@ -189,12 +189,12 @@
     {
       "id": "L02",
       "dir": "lecture-02-en",
-      "title": "Logistic Regression",
+      "title": "Logistic Regression · English walkthrough",
       "status": "done",
       "page_count": 8,
       "done_pages": 8,
       "product": "lecture-02-en/index.html",
-      "hash": "23d47d8b6436",
+      "hash": "16e8558cb040",
       "extractor": 2,
       "pages": [
         {

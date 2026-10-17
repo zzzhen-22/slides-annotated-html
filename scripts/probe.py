@@ -13,6 +13,10 @@
 约定：探针脚本自己在结束时把页面清空，只留
       <pre id="__r">要回传的文本</pre>
       （直接改 document.head/body 的 innerHTML 即可，见 references/pitfalls.md 第 23 条）。
+      **判定回传**：探针以 `RESULT: PASS` / `RESULT: FAIL` 收尾（probe_doc.js 例外，
+      它只报数据不打判定）；出现 `RESULT: FAIL` 时本脚本退出码为 **1** —— 这样
+      run_all / run_course 等按退出码判步骤的调用方，才能真正看见探针红了
+      （2026-10-17 实测的假绿：课程探针在真实大课件上 FAIL，run_course 却照报 ✔）。
 
 为什么需要它：截图只能看「长得对不对」，看不了「结构有没有被改坏」（例如
 划线把 <td> 搬进 <mark>、表格 tr/td 数量变化）。DOM 断言必须靠这个。
@@ -27,6 +31,7 @@
 import argparse
 import ctypes
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -117,6 +122,11 @@ def main():
     for x, y in (('&lt;', '<'), ('&gt;', '>'), ('&amp;', '&'), ('&quot;', '"')):
         body = body.replace(x, y)
     print(body)
+
+    # 判定行必须反映到退出码：调用方（run_all / run_course 的步骤判定）看的就是它。
+    # 只有 RESULT 行首锚定的 FAIL 才算 —— 探针正文里提到这个词不会误解。
+    if re.search(r'^RESULT:\s*FAIL\b', body, re.M):
+        sys.exit(1)
 
     if not a.profile and not a.keep:
         shutil.rmtree(tmp, ignore_errors=True)

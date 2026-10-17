@@ -84,6 +84,7 @@ def scan_product(path):
         'page_nums': set(),                       # 逐页区块的页码（int，查「这一页在不在」）
         'kps': [],                                # [(at, topic)]，含还没写文本的占位 li
         'xrefs': [],                              # [href]，.xref 卡里的外链
+        'homes': [],                              # [href]，顶栏「课程返回入口」的外链（可选注入）
         'pays': [],                               # [(page_id, value)]
         'forwards': [],                           # [(page_id, value)]
         'has': {k: (k in body) for k in ('data-concepts', 'data-pays-off', 'data-forward')},
@@ -111,6 +112,12 @@ def scan_product(path):
     for m in re.finditer(r'<div[^>]*\bclass="[^"]*\bxref\b[^"]*"[^>]*>([\s\S]*?)</div>', body, re.I):
         for a in RE_HREF.finditer(m.group(1)):
             d['xrefs'].append(a.group(1) if a.group(1) is not None else a.group(2))
+
+    # 顶栏的「课程返回入口」（可选注入，设计稿 §5.9）：有就收，没就空 —— 不强制
+    for m in re.finditer(r'<a\b[^>]*\bclass="[^"]*\bcourse-home\b[^"]*"[^>]*>', body, re.I):
+        hm = RE_HREF.search(m.group(0))
+        if hm:
+            d['homes'].append(hm.group(1) if hm.group(1) is not None else hm.group(2))
 
     _PROD_CACHE[path] = d
     return d
@@ -192,7 +199,7 @@ def main():
     chk('course.js 会渲染公式（要点表/术语总表里的 KaTeX）', 'renderMath' in js and 'katex.render' in js)
     # 交互接线的「两端都在」检查：shell 里有控件、js 里有引用 —— 只查一端的话，
     # 「UI 加了但没人接线」与「逻辑写了但没挂 UI」两种半成品都会漏网。
-    for wid in ('kpFilter', 'kpToggle', 'kpExport', 'glFilter', 'glTools'):
+    for wid in ('kpFilter', 'kpToggle', 'kpExport', 'glFilter', 'glTools', 'glSort'):
         chk('course-shell.html 的 #%s 有控件、course.js 有引用' % wid,
             ('id="%s"' % wid) in shell and ("'#%s'" % wid) in js)
     chk('course.js 有 scrollspy（顶栏当前区块高亮）',
@@ -321,6 +328,39 @@ def main():
         chk('入口页内联讲次数 = course.json 讲次数', ok_c and n_site == len(lectures),
             '%d vs %d' % (n_site, len(lectures)) if ok_c else '')
 
+        # ---- 学习进度：内联的命名空间（cdata.ns）必须与产物实际 DOC_NS 一致 ----
+        # 防漂移：主页按 ns 读各讲 localStorage 的阅读痕迹（设计稿 §5.10）。ns 由
+        # course_site 从**产物**提取内联（单一真源）；产物重建后忘了重跑 course_site、
+        # 或提取/注入环节被改坏，这里当场报红。与「返回入口」组同精神：只查
+        # 「产物存在」的讲，产物不存在的讲不查。
+        ns_bad, ns_checked = [], 0
+        if ok_c:
+            lecs_c = ((json.loads(m.group(1)) or {}).get('lectures')) or []
+            for lc in lecs_c:
+                lid = lc.get('id') or '?'
+                fp = prods.get(lid)
+                if not fp:
+                    continue
+                prod_raw = coursekit.read_text(fp) or ''
+                mm = re.search(r'var DOC_NS\s*=\s*"(lr-doc:[0-9a-f]+:)"', prod_raw)
+                actual = mm.group(1) if mm else ''
+                ns_checked += 1
+                if not actual:
+                    ns_bad.append('%s：产物里找不到 DOC_NS（先重建该讲）' % lid)
+                elif lc.get('ns') != actual:
+                    ns_bad.append('%s：内联 %r ≠ 产物 %r（跑 course_site.py 重新生成）'
+                                  % (lid, lc.get('ns'), actual))
+        chk('学习进度的命名空间（cdata.ns）= 各讲产物实际值', not ns_bad, '；'.join(ns_bad[:4]))
+        if ns_checked:
+            print('  （核对了 %d 个讲次的命名空间）' % ns_checked)
+
+        # 学习进度的静态骨架（lpTop 总览区 / lp-cell 每讲的格子）。有讲次就该有 ——
+        # 运行期由 course.js 填充；静态层只保「骨架存在」（渲染正确性归探针 ⑭ 组）。
+        if lectures:
+            _sk_ok = 'id="lpTop"' in raw and 'class="lp-cell"' in raw
+            chk('入口页含学习进度骨架（#lpTop / .lp-cell）', _sk_ok,
+                '' if _sk_ok else '缺骨架（跑 course_site.py 重新生成）')
+
         # 公式能不能渲染 —— 防的具体事故（2026-10-15）：
         # 课程主页没内联 KaTeX，各讲汇总来的公式全显示成〔公式〕占位符。
         # 生成期断言全绿，只有人打开页面才看得见，所以必须在静态层也拦一道。
@@ -380,6 +420,27 @@ def main():
         print('  （检查了 %d 条 .xref 外链）' % n_xref)
     else:
         print('  （本课程还没有 .xref 跨讲卡）')
+
+    # 课程返回入口（可选注入，设计稿 §5.9）：**有链接的讲**才查目标可达；
+    # 没有链接的讲不查 —— 不声明 course_home 是合法形态，不能强制要求每个讲都有。
+    home_bad, n_home = [], 0
+    for lid, p in sorted(prods.items()):
+        sc = scan_product(p)
+        for h in sc['homes']:
+            n_home += 1
+            if re.search(r'\s', h):
+                home_bad.append('%s：href 含裸空白 %r' % (lid, h))
+                continue
+            if is_external(h):
+                continue
+            target, _frag, err = resolve_link(os.path.dirname(p), h)
+            if err:
+                home_bad.append('%s：%s' % (lid, err))
+            elif not os.path.exists(target):
+                home_bad.append('%s → %s（目标文件不存在）' % (lid, h))
+    chk('每个课程返回入口都指向存在的目标（有则必达）', not home_bad, '；'.join(home_bad[:4]))
+    if n_home:
+        print('  （检查了 %d 个课程返回入口）' % n_home)
 
     # ---------------------------------------------------------- ⑤ data-*
     print()

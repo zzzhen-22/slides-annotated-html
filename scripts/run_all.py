@@ -25,6 +25,8 @@
     ⑥b probe_font.js    正文字号调节回归（档位 / localStorage / MIN·MAX 钳制）
     ⑥c probe_find.js    正文搜索回归（索引 / 命中 / 跳转高亮 / Esc 还原 / 与笔记互不干扰）
     ⑥d probe_codecopy.js 代码块回归（着色不改字 / 标题栏位置 / 复制按钮成功与失败两条路径）
+    ⑥e probe_pos.js     阅读位置回归（换页写 / 同页去重 / 隐藏与 pagehide 强制写）
+    ⑥f probe_about.js   关于面板回归（开/关链路 + Esc/遮罩/焦点归还 + 内容含使用说明与工具链接）
     ⑦ probe_doc.js      交付体检（内容进度 / 缩略图一致性 / 断链）
     ⑧ shot.py ×3        首屏 / 首段概述卡 / 侧栏收起（截图失败只告警，不算失败）
 
@@ -114,7 +116,9 @@ def parse_probe(out):
                          '目录条目', '标记回归', '缺缩略图的页', '抽屉里的',
                          '正文缺字风险', '非法命名实体', 'TODO 残留',
                          '初始档位', '放大到', 'localStorage', 'init 从', 'MAX', 'MIN',
-                         '重开恢复', '固定到')):
+                         '重开恢复', '固定到',
+                         '换页写入', '换页更新', '同页不重复写', '隐藏时强制写',
+                         'pagehide', 'DOM 判定', '键值结构', '关于面板')):
             m.append(s)
     # 探针的判定行（PASS/FAIL）务必透传，否则上游脚本没法据此判绿。
     if not any(x.startswith('RESULT') for x in m):
@@ -279,6 +283,14 @@ def main():
     R.step('⑥d 代码块回归 probe_codecopy.js',
            [py, os.path.join(HERE, 'probe.py'), html,
             os.path.join(KIT, 'templates', 'probe_codecopy.js')],
+           parse=parse_probe, fatal=True)
+    R.step('⑥e 阅读位置回归 probe_pos.js',
+           [py, os.path.join(HERE, 'probe.py'), html,
+            os.path.join(KIT, 'templates', 'probe_pos.js')],
+           parse=parse_probe, fatal=True)
+    R.step('⑥f 关于面板回归 probe_about.js',
+           [py, os.path.join(HERE, 'probe.py'), html,
+            os.path.join(KIT, 'templates', 'probe_about.js')],
            parse=parse_probe, fatal=True)
     R.step('⑦ 交付体检 probe_doc.js',
            [py, os.path.join(HERE, 'probe.py'), html,

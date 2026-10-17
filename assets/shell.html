@@ -43,14 +43,14 @@ __CSS__
       <span class="tb-fsize" id="fontSizeLabel">100%</span>
       <button id="fontPlus" class="tb-btn" type="button" aria-label="增大正文字号" title="增大正文字号">A＋</button>
     </span>
-    <span class="tb-sep"></span>
-    <span class="tb-title">__TOPBAR_TITLE__</span>
     <span class="sp"></span>
     <button id="notesBtn" class="tb-btn" type="button" aria-expanded="false"
             title="打开我的标记笔记（快捷键 N）">
       <span class="tb-icon">✎</span><span class="tb-label">笔记</span>
       <span class="tb-count zero" id="notesBtnCount">0</span></button>
-    <span class="pdf-line">__PDF_LINE__</span>
+    <button id="aboutBtn" class="tb-btn" type="button"
+            title="关于这份文档：使用说明与生成工具（Esc 关闭）">
+      <span class="tb-icon">ⓘ</span><span class="tb-label">关于</span></button>
     <button id="savePdf" class="tb-btn" type="button" title="把内嵌在本文档里的原文件另存为 PDF" hidden>
       <span class="tb-icon">⤓</span><span class="tb-label">另存原 PDF</span></button>
   </div>
@@ -65,6 +65,15 @@ __BODY__
   <p class="small">__FOOT2__</p>
 </footer>
 </main>
+
+<div class="ab-mask" id="aboutMask" hidden>
+  <div class="ab-card" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <button class="ab-close" id="aboutClose" type="button" title="关闭（Esc）">×</button>
+    <div class="ab-body" id="aboutBody">
+__ABOUT_BODY__
+    </div>
+  </div>
+</div>
 
 <aside class="drawer" id="drawer" aria-label="我的标记笔记">
   <div class="dr-head">

@@ -14,6 +14,7 @@ Feed it a slide deck (a lecture PPT exported to PDF, a tech talk, training mater
 - Explanations on the **left**, original page thumbnails on the **right** — no window switching
 - Formulas rendered by **KaTeX, fully offline** (fonts embedded as data URIs)
 - Six interactions: collapsible TOC / per-section overview cards / thumbnails auto-enlarge when the sidebar collapses / **highlight text → notes drawer** / **A− / A＋ to adjust body text size (level saved in your browser)** / **full-text search over the body (hit list with jump & highlight, not just a title filter)**
+- An in-page **About** panel in the top bar: usage guide (how to read, take notes, jump back) plus a link to the generating tool on GitHub — the long “how to use” card is gone from the body, and the old “source PDF embedded” one-liner moved here too.
 - **Code blocks**: syntax colouring (comments / strings / keywords / numbers — applied at build time, **no highlighting library**), a header showing the language and source, and **one-click copy** (what lands on the clipboard is plain code, without the colouring markup)
 - Clearly separates "what the original says" from "what the explainer added" (green = intuition, blue = added derivation, red = source issue, gray = quotation)
 - Optionally **embed the original PDF** (base64) so page-deep links survive across devices
@@ -81,16 +82,16 @@ When one course spans a dozen decks (lecture 1 … lecture 14), **do not merge t
 Each lecture stays a self-contained product; the course layer just adds a directory on top:
 
 <p align="center">
-  <img src="docs/images/course.png" width="62%" alt="Course entry page: five blocks top to bottom — course map, key points, cross-lecture search, glossary, progress">
+  <img src="docs/images/course.png" width="62%" alt="Course entry page: five blocks top to bottom — course map, key points, cross-lecture search, glossary, learning progress">
 </p>
 <p align="center">
-  <sub>Course entry page (<a href="https://zzzhen-22.github.io/slides-annotated-html/demo-course/">try it online</a>): map / key points / cross-lecture search / glossary / progress. All five blocks are rendered <b>at build time</b>, so the page reads fine offline and with JavaScript disabled</sub>
+  <sub>Course entry page (<a href="https://zzzhen-22.github.io/slides-annotated-html/demo-course/">try it online</a>): map / key points / cross-lecture search / glossary / learning progress. Of the five blocks, only “learning progress” is filled at runtime from reading traces stored in <b>your local browser</b>; everything else is rendered <b>at build time</b> — the page reads fine offline</sub>
 </p>
 
 ```
 <course dir>/
 ├─ course.json          ← course metadata + lecture list
-├─ index.html           ← course entry: map / key-points / cross-lecture search / glossary / progress
+├─ index.html           ← course entry: map / key-points / cross-lecture search / glossary / learning progress
 ├─ _course/             ← derived data (index, glossary, key points, prior-knowledge briefs)
 └─ lecture-01-xxx/      ← each lecture is still a complete, separately usable project
    lecture-02-yyy/
@@ -98,7 +99,7 @@ Each lecture stays a self-contained product; the course layer just adds a direct
 
 The entry page **inlines its index data into the HTML**, so it opens by double-click and works offline.
 
-It also ships its own front-end interactions: the top nav **highlights the current block** while you scroll; key points and the glossary each have a client-side filter box; key points support a one-click **collapse / expand all** (default stays expanded); and filter / search terms are written into the **URL** (`#sec=keypoints&kp=...`), so a filtered view survives a refresh, can be shared as a link, and browser back/forward steps through filter changes.
+It also ships its own front-end interactions: the top nav **highlights the current block** while you scroll; key points and the glossary each have a client-side filter box (the glossary can also be sorted **English A–Z**, one click back to first-seen order); key points support a one-click **collapse / expand all** (default stays expanded); and filter / search terms are written into the **URL** (`#sec=keypoints&kp=...`), so a filtered view survives a refresh, can be shared as a link, and browser back/forward steps through filter changes. Lectures scaffolded with `init_project.py --course` additionally get a “**← Back to course home**” link in the top bar (opt-in via `config.course_home`) — a one-click way back to the course page. Finally, the “**learning progress**” block reads the traces each lecture writes into **your local browser**: “last read P42 · 5 notes · 3 days ago” plus a one-click **continue** — zero upload, zero network, at the cost of starting from scratch on another browser or after clearing site data.
 
 ```bash
 python scripts/course_init.py "<course dir>" --name "<course name>"   # first time: create course.json
@@ -126,7 +127,14 @@ moving a lecture directory** — a broken course sequence is silent: the entry p
 - Input is **PDF only**; export PPTX/Keynote to PDF yourself first — no LibreOffice dependency, by design.
 - PDF text layers are unreliable: explanations are written from **rendered page images**, never the raw text layer. The suite does not judge whether your source is correct — source errors are flagged, not silently fixed.
 - The mechanical part is automated; the explanations themselves are written by the agent (or by you). The suite just tells you how many pages are still pending.
-- With the original PDF embedded, output size ≈ PDF size × 1.34 + thumbnails; a large deck can reach 20 MB+.
+- With the original PDF embedded, output size ≈ **PDF size × 1.34** (base64) **+ thumbnails (~50 KB/page)** + ~1.1 MB of KaTeX & shell; a large deck can reach 20 MB+. Four measured samples to estimate yours:
+
+  | Measured sample | Source PDF | Pages | Output |
+  |---|---|---|---|
+  | deck, `--embed-pdf` | 1.5 MB | 63 | 6.3 MB |
+  | deck, `--embed-pdf` | 1.5 MB | 80 | 6.9 MB |
+  | deck, `--embed-pdf` | 2.6 MB | 82 | 9.6 MB |
+  | sample deck (no PDF) | 0.6 MB | 8 | 1.2 MB |
 - Output typography is optimized for **Chinese** (font stack, punctuation squeezing). Other languages work but are not specially tuned.
 - Headless screenshots require a Chromium-based browser.
 
@@ -144,10 +152,12 @@ Every deliverable must pass all of these — mechanical checks catch what screen
 | `probe.py` + `probe_font.js` | **body text size control**: 100% on load, `--fs` / label / localStorage staying in sync after `step()`, restore via `Font.init()`, MIN(0.9)/MAX(1.4) clamping and button disabling; run twice with `--profile` to prove cross-session persistence | looks |
 | `probe.py` + `probe_find.js` | **full-text search**: lazy index over every non-empty section, hit count = result rows, `mark.q-hit` in both the snippet and the body, jumping only adds elements (block count and every character unchanged), multi-word queries are AND, the TOC is handed back on zero hits, Esc clears every highlight, and `mark.hl` is never touched | looks |
 | `probe.py` + `probe_codecopy.js` | **code blocks — readable and copyable**: every block has a header as its first child, syntax colours use only the four agreed classes, stripping every `<span>` leaves the text byte-identical to `textContent`, `codeOf()` returns clean source, and one real click is exercised; headless clipboards always fail, so the probe stubs a resolving `writeText` to cover the success path too | looks + copied content |
+| `probe.py` + `probe_pos.js` | **reading position (learning progress)**: `lr-doc:<ns>:pos` written on page change, no duplicate writes while staying on the same page, forced writes on `visibilitychange` (hidden) and `pagehide` — tested through the real wiring by stubbing `document.hidden` and dispatching the event, update when moving on, key shape `{v,p,n,t}`; SKIP when the product has no page sections | looks |
+| `probe.py` + `probe_about.js` | **the top-bar “About” panel**: clicking really opens it (mask `.on`, focus moves into the panel), the content carries the usage guide and the generating tool's GitHub link, all three close paths work (Esc / overlay click / ×), focus returns to the button, and clicking *inside* the card does **not** dismiss it | looks / wiring |
 | `probe.py` + `probe_doc.js` | **is the content actually finished**: pending pages N / M, pages missing a thumbnail, broken TOC anchors, leftover KaTeX `<script>` tags, TODO comments, missing-glyph risk | whether the explanations are *correct* |
 | `shot.py` | looks and real interaction states | details |
 
-> The eight rows above check the **output**. Two more scripts check the **suite itself**:
+> The ten rows above check the **output**. Two more scripts check the **suite itself**:
 > `check_docs.py` asserts that cross-document facts ("how many interactions?", which scripts a step
 > runs, the pitfalls numbering) stay in sync across the five docs and the code — it is what catches
 > "changed the feature, forgot the docs"; and `build_demo.py --check` asserts that the three online

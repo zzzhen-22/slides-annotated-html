@@ -4,7 +4,8 @@ description: >-
   把 PDF / PPT 课件、讲义、论文投影片做成「逐页对照讲解」的单文件 HTML：左侧两级可折叠目录、
   每页配原页缩略图（可收起侧栏让缩略图自动放大）、关键公式用 LaTeX 排版、完全离线可打开，
   支持在正文里划词标记 → 汇入「我的标记」笔记抽屉（可备注、定位、导出），
-  顶栏 A−/A＋ 可调正文字号（档位存浏览器）。
+  顶栏 A−/A＋ 可调正文字号（档位存浏览器）；「关于」按钮打开使用说明与生成工具信息
+  （使用说明不占正文篇幅、随外壳走）。
   也支持**多讲课程合集**：一门课的多份课件各留独立产物，另生成一个课程入口页
   （课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 进度），断网可用。
   适用于：课件逐页精解、PDF 转讲解文档、教材/讲义中文注释、生成便于对照原文阅读的 HTML、
@@ -179,6 +180,7 @@ node  "$KIT/scripts/check_math.js" "输出.html" "_katex/katex.min.js"     # 公
 "$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_font.js"  # 字号调节回归（档位 / localStorage）
 "$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_find.js"  # 正文搜索回归（命中 / 跳转高亮 / 不碰笔记）
 "$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_codecopy.js"  # 代码块回归（着色不改字 / 复制成功与失败两条路径）
+"$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_about.js"  # 关于面板回归（开/关链路 + Esc/遮罩/焦点 + 内容）
 "$PY" "$KIT/scripts/probe.py"      "输出.html" "$KIT/templates/probe_doc.js"  # 待补页面=0、断链、缺字
 "$PY" "$KIT/scripts/shot.py"       "输出.html" "_extract/shot.png"          # 截图看长相
 ```
@@ -197,7 +199,7 @@ node  "$KIT/scripts/check_math.js" "输出.html" "_katex/katex.min.js"     # 公
 ```
 <课程目录>/
 ├─ course.json          ← 课程元数据 + 讲次清单（course_init.py 生成，幂等）
-├─ index.html           ← 课程合集入口：课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 进度
+├─ index.html           ← 课程合集入口：课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 学习进度
 ├─ _course/             ← 派生数据（index.json / glossary.json / keypoints.json / briefing-*.md）
 └─ lecture-01-xxx/      ← 每一讲仍是完整独立的单讲项目（可单独拷走用）
    lecture-02-yyy/
@@ -240,6 +242,37 @@ node  "$KIT/scripts/check_math.js" "输出.html" "_katex/katex.min.js"     # 公
 **三个 `data-*` 全是可选的** —— 一门课不上这些也不影响单讲使用。但一旦跨讲要互相引用
 （「这个概念第 3 讲讲过」），就必须靠它们，课程层才能把各讲串起来。
 
+### 讲次页的「返回课程主页」入口（可选）
+
+想让讲次页顶栏出现「← 返回课程主页」（读者从课程主页点进一讲后可一键返回），
+在讲次 `config.json` 里声明：
+
+```json
+"course_home": "../index.html"
+```
+
+（值 = 课程主页相对**讲次产物目录**的路径；用 `init_project.py --course` 建骨架时会
+自动写入，跨盘符算不出相对路径时不写。）**不声明就没有任何变化** —— 单讲独立性不受影响：
+这个入口只是一个链接，讲次的打开与全部功能都不读课程目录（单独拷走时链接失效、其余
+毫发无损）。设计细节见 `docs/v2-course-collection.md` §5.9。
+
+### 课程主页的「学习进度」（读者侧）
+
+课程主页最末的「学习进度」区块会**读取各讲产物写入本机浏览器的阅读痕迹**
+（`lr-doc:<ns>:pos` 阅读位置 + `:notes` 笔记数），显示「上次读到 P42 · 5 条笔记 · 3 天前」
+与一键「继续」。三条与改套件有关的性质（细节见设计稿 §5.10）：
+
+- **只读**：课程页自己**不写** localStorage；读不到（隐私模式 / 清缓存）一律降级为空态。
+- **ns 是单一真源**：主页用的命名空间由 `course_site.py` **从产物提取**（`var DOC_NS`）、
+  不从 config 重算；`course_check.py` 有「cdata.ns == 产物实际值」断言兜底 ——
+  **重建过讲次产物后忘了重跑 `course_site.py`，这条会报红**（照提示重跑即可）。
+- **改名即换命名空间**：改讲次 `title` / `out` 等于换了存储键，旧阅读痕迹与笔记
+  不再关联（与既有笔记行为一致）。
+
+回归：单讲 `templates/probe_pos.js`（换页写 / 同页去重 / 隐藏与 pagehide 强制写）与
+`probe_about.js`（顶栏「关于」的开/关链路 + Esc/遮罩/焦点归还 + 内容为使用说明与工具链接）；
+课程 `probe_course.js` ⑭ 组（渲染/空态）与 ⑮ 组（术语排序）。改了相关代码跑 `selftest.py` 自动覆盖。
+
 ### 课程层体检（改完课必跑）
 
 ```bash
@@ -248,7 +281,8 @@ node  "$KIT/scripts/check_math.js" "输出.html" "_katex/katex.min.js"     # 公
 
 它查的是**单讲体检答不了**的问题：跨讲链接的文件与锚点是否可达、同一概念在不同讲里
 中/英/释是否漂移、伏笔指向的讲次与页是否真实存在、要点锚点是否有效、
-以及**各讲产物哈希与 `_course/index.json` 是否一致**（不一致 = 改过没重跑，先 `--sync`）。
+**各讲产物哈希与 `_course/index.json` 是否一致**（不一致 = 改过没重跑，先 `--sync`）、
+以及**主页内联的命名空间 `ns` 与产物实际值是否一致**（学习进度的读取端，见上）。
 FAIL 进退出码，`结果: ALL PASS` 才算过。
 
 > **改名 / 挪目录之后**：`course.json` 里的 `dir` 是键，改目录名后必须重跑

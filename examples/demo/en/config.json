@@ -1,12 +1,12 @@
 {
   "out": "../../../docs/demo-en/index.html",
   "embed_pdf": false,
+  "lang": "en",
   "title": "Logistic Regression · Annotated Walkthrough (Demo · 8-page excerpt)",
   "brand": "Logistic Regression",
   "course": "",
   "sidebar_title": " · Annotated Walkthrough (Demo)",
   "sidebar_sub": "",
-  "topbar_title": "Logistic Regression · Annotated Walkthrough · Demo (P1–P8)",
   "shards": [
     "content/00_intro.html",
     "content/10_ov1.html",
@@ -64,7 +64,7 @@
         ],
         [
           "#primer",
-          "Before you read: probability crash course"
+          "Prerequisites: probability crash course"
         ]
       ]
     ],

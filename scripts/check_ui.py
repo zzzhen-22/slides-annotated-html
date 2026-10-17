@@ -14,9 +14,11 @@
     ⑥ 正文搜索：搜索框与结果面板、索引惰性建、临时高亮与笔记高亮的类名隔离、
        清空时拆除并 normalize、↑↓/Enter/Esc 键盘路径、搜索框是否真的接到 Find
 
-（⑦–⑫ 是「结构安全 / 附加功能」类检查，不计入上面的「六项交互」——
+（⑦–⑬ 是「结构安全 / 附加功能」类检查，不计入上面的「六项交互」——
    它们的编号延续历史顺序：⑦ 目录滚动、⑧ 标记上色、⑨ 位置标签、
-   ⑩ 字号调节、⑪ 正文搜索的补充、⑫ 代码块的标题栏与复制按钮。）
+   ⑩ 字号调节、⑪ 正文搜索的补充、⑫ 代码块的标题栏与复制按钮、
+   ⑬ 课程返回入口（可选注入，无此元素是合法形态 → 整组 SKIP）、
+   ⑭ 关于面板（顶栏入口 + 使用说明 + 生成工具；**非条件式**，每份产物都该有）。）
 
 浏览器失灵时（见 references/pitfalls.md 第 29 条）用它兜底，
 能覆盖"结构对不对"，覆盖不了"长得对不对"。
@@ -323,6 +325,50 @@ def main():
     # 那些分支一执行就 ReferenceError —— 补上之后这里守住它不再丢。
     chk('JS 定义了 toast（不再是有调用无实现）',
         'function toast(' in js and re.search(r'^\.toast\{', css, re.M) is not None)
+
+    print()
+    print('=== ⑬ 课程返回入口（可选注入 · 条件式）===')
+    # 只有声明了 config.course_home 的讲次才有这个元素（课程场景的可选增强，
+    # 见 docs/v2-course-collection.md §5.9）。**单讲产物没有它是合法形态** ——
+    # 与 ⑫ 代码块组同一原则：没有就整组 SKIP，不能报 FAIL。
+    n_home = len(re.findall(r'<a class="course-home"', html))
+    if n_home == 0:
+        print('%-52s %s %s' % ('（本文档没有课程返回入口，本组跳过）', 'SKIP', '0 个'))
+    else:
+        chk('恰好一个课程返回入口', n_home == 1, '%d 个' % n_home)
+        mh = re.search(r'<a class="course-home" href="([^"]*)"', html)
+        href = mh.group(1) if mh else ''
+        chk('href 非空、无裸空白', bool(href) and not re.search(r'\s', href), href)
+        chk('href 是相对路径（不带协议、不以 / 开头）',
+            bool(href) and '://' not in href and not href.startswith('/'), href)
+        tb_s = html.find('<div class="topbar">')
+        tb_e = html.find('</div>', tb_s)
+        a_s = html.find('<a class="course-home"')
+        chk('位于顶栏容器内（顶栏最左）', 0 <= tb_s < a_s < tb_e)
+        chk('CSS 定义了 .course-home 样式', '.course-home' in css)
+
+    print()
+    print('=== ⑭ 关于面板（顶栏入口 + 使用说明 + 生成工具）===')
+    # 2026-10-17 增补：原顶栏的 pdf-line（「原文件已内嵌……」）与正文的「这份文档怎么用」
+    # 卡都收进了这个面板 —— 使用说明随外壳走，正文不再重复。**非条件式**（与 ⑬ 相反）：
+    # 每份产物都该有它；没有就是构建链出了问题。
+    chk('存在顶栏「关于」入口', 'id="aboutBtn"' in html)
+    chk('存在关于面板（#aboutMask / .ab-card）',
+        'id="aboutMask"' in html and 'class="ab-card"' in html)
+    m_ab = re.search(r'class="ab-list"([\s\S]*?)</ol>', html)
+    n_howto = m_ab.group(1).count('<li>') if m_ab else 0
+    chk('面板含使用说明条目（≥ 6 条）', n_howto >= 6, '%d 条' % n_howto)
+    n_sec = html.count('class="ab-sec"')
+    chk('面板分节（使用说明 + 生成工具 ≥ 2 节）', n_sec >= 2, '%d 节' % n_sec)
+    chk('面板含生成工具说明（GitHub 链接）',
+        'github.com/zzzhen-22/slides-annotated-html' in html)
+    chk('顶栏不再有 pdf-line（已迁进关于面板）', 'class="pdf-line"' not in html)
+    chk('面板带 modal 语义（role=dialog + aria-modal）',
+        'role="dialog"' in html and 'aria-modal="true"' in html)
+    chk('CSS 有关于面板样式（.ab-mask / .ab-card）',
+        '.ab-mask' in css and '.ab-card' in css)
+    chk('JS 有 About 模块（开 / 关 / Esc 接线）',
+        'var About =' in js and 'About.isOpen()' in js and 'About.init();' in js)
 
     print()
     print('=== 数量一致性 ===')

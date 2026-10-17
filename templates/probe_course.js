@@ -259,16 +259,21 @@ function run() {
           T('④c 点一次「显示更多」→ 多渲染一批',
             p2 + ' 条' + (okP2 ? '  ✔' : '（期望 ' + Math.min(2, pn) + '）✘'));
           if (!okP2) bad('点「显示更多」后条数不对（应逐批追加，不是一次全出也不是不动）');
-          /* 点到没有剩余：按钮应自行消失，条数 == 命中数 */
+          /* 点到没有剩余：按钮应自行消失，条数 == 命中数。
+             ⚠ 先把批量**还原成正常值**再重跑一次，然后才点 —— 「每批 1 条」只用于
+             上面两步验证分页**机制**；拿它点到耗尽的话，命中数一大就要点几百次
+             （2026-10-17 实测：桌面课件里「这」字命中 275 处，60 次上限点不完 →
+             误报红）。还原后点 2~3 次即到底，断言的是同一条语义。 */
+          C.find.PAGE_ROWS = keepRows;
+          var pn2 = C.find.run(multi);
           var guard = 0;
-          while ((more = $('#cres .res-more')) && guard++ < 60) more.click();
+          while ((more = $('#cres .res-more')) && guard++ < 50) more.click();
           var pAll = $$('.ck-hit').length;
-          var okAll = (pAll === pn) && (!$('#cres .res-more'));
+          var okAll = (pAll === pn2) && (!$('#cres .res-more'));
           T('④c 全部显示后按钮自行消失',
-            pAll + '/' + pn + ' 条，按钮 ' + ($('#cres .res-more') ? '✘ 还在' : '✔ 已移除') +
+            pAll + '/' + pn2 + ' 条，按钮 ' + ($('#cres .res-more') ? '✘ 还在' : '✔ 已移除') +
             (okAll ? '  ✔' : '  ✘'));
           if (!okAll) bad('点到没有剩余后按钮应消失（否则点了没反应，像坏了）');
-          C.find.PAGE_ROWS = keepRows;
         }
 
         q.value = '';
@@ -508,6 +513,103 @@ function run() {
       if (bootKpValue !== bootH.kp) bad('打开带参链接后过滤框没有恢复 —— 启动读取链断了');
       if (bootKpShown !== exp0) bad('启动恢复后的过滤结果与参数的口径对不上');
       if (bootH.sec && !okS) bad('打开带 sec 段的链接后页面没有滚到那个区块');
+    }
+
+    /* ---------- ⑭ 学习进度（读各讲 localStorage → 渲染） ----------
+       预置键必须用 cdata 里的 ns（真实接线）—— 拿猜的 ns 测不到「ns 链路对不对」。
+       预置结构与单讲 site.js 的 Pos.save / Notes.save 同构；跑完清掉（还原现场）。 */
+    if (!C.lp || typeof C.lp.refresh !== 'function') {
+      T('⑭ 学习进度', '✘ window.__course.lp 不存在');
+      bad('course.js 没有暴露学习进度模块');
+    } else {
+      var A = null, B = null;
+      lecs.forEach(function (l) {
+        if (!(l.ns && l.href)) return;
+        if (!A) A = l;
+        else if (!B) B = l;
+      });
+      if (!A) {
+        T('⑭ 学习进度', '（SKIP：内联数据里没有带 ns 的讲次）');
+      } else {
+        /* 0）boot 时的初始渲染（initLP 真的跑了）：#lpTop 不该是空的
+              —— 空态引导 tip 也算「有内容」。防「initLP 从 boot 里掉了」这类静默断链。 */
+        var topAtBoot = norm(($('#lpTop') || {}).textContent);
+        var okBoot = topAtBoot.length > 0;
+        T('⑭ 初始渲染（boot 后 #lpTop 有内容）',
+          '「' + topAtBoot.slice(0, 40) + '…」' + (okBoot ? '  ✔' : '  ✘'));
+        if (!okBoot) bad('boot 后 #lpTop 是空的 —— initLP 没跑或 LP.render 没执行');
+
+        var KEY_P = A.ns + 'pos', KEY_N = A.ns + 'notes';
+        localStorage.setItem(KEY_P, JSON.stringify({
+          v: 1, p: 'p02', n: 2, t: Date.now() - 3 * 86400000
+        }));
+        localStorage.setItem(KEY_N, JSON.stringify({ v: 1, seq: 4, items: [{}, {}, {}] }));
+        C.lp.refresh();
+        var cellA = $('tr[data-lec="' + A.id + '"] .lp-cell');
+        var txtA = norm(cellA && cellA.textContent);
+        var goA = cellA ? $('.lp-go', cellA) : null;
+        var hrefA = String((goA && goA.getAttribute('href')) || '');
+        var okA = /上次读到/.test(txtA) && /P2/.test(txtA) && /3 条笔记/.test(txtA) &&
+          /天前/.test(txtA) && hrefA.slice(-4) === '#p02';
+        var topTxt = norm(($('#lpTop') || {}).textContent);
+        var okTop = topTxt.indexOf('已开始 1 /') >= 0 && topTxt.indexOf('3 条笔记') >= 0;
+        T('⑭ 学习进度渲染（预置痕迹 → 行 + 总览）',
+          '行=「' + txtA + '」go=' + (hrefA || '✘') + '，总览=「' + topTxt + '」' +
+          ((okA && okTop) ? '  ✔' : '  ✘'));
+        if (!okA) bad('学习进度行没按预置的痕迹渲染（或「继续」链接不是 #p02 结尾）');
+        if (!okTop) bad('学习进度总览没显示（已开始 N 讲 / 笔记数）');
+
+        if (B) {
+          var txtB = norm((($('tr[data-lec="' + B.id + '"] .lp-cell') || {}).textContent));
+          var okB = txtB.indexOf('还没有阅读记录') >= 0;
+          T('⑭ 学习进度：无记录的讲显示空态', '「' + txtB + '」' + (okB ? '  ✔' : '  ✘'));
+          if (!okB) bad('没有痕迹的讲次行没有显示「还没有阅读记录」');
+        }
+
+        /* 清掉痕迹 → 回到空态引导（顺带证明「只读」：页面没把数据写回去） */
+        localStorage.removeItem(KEY_P);
+        localStorage.removeItem(KEY_N);
+        C.lp.refresh();
+        var topTxt2 = norm(($('#lpTop') || {}).textContent);
+        var txtA2 = norm((($('tr[data-lec="' + A.id + '"] .lp-cell') || {}).textContent));
+        var okEmpty = topTxt2.indexOf('打开任一讲') >= 0 && txtA2.indexOf('还没有阅读记录') >= 0;
+        T('⑭ 学习进度空态（清掉痕迹 → 引导文案）',
+          '总览=「' + topTxt2 + '」' + (okEmpty ? '  ✔' : '  ✘'));
+        if (!okEmpty) bad('清掉痕迹后没有回到空态引导');
+      }
+    }
+
+    /* ---------- ⑮ 术语表排序（首见顺 → English A–Z → 还原） ---------- */
+    var sSel = $('#glSort');
+    if (!glRows.length) {
+      T('⑮ 术语排序', '（SKIP：本页没有术语行）');
+    } else if (!sSel || !C.gl || typeof C.gl.sort !== 'function') {
+      T('⑮ 术语排序', '✘ 术语表有行但缺 #glSort 或 sort()');
+      bad('术语排序控件没接上（表有行、控件或实现不在）');
+    } else if (glRows.length < 2) {
+      T('⑮ 术语排序', '（SKIP：术语行不足 2 行，排序无意义）');
+    } else {
+      var cmpEn = function (a, b) {
+        return a.localeCompare(b, 'en', { sensitivity: 'base' });
+      };
+      var enOf = function (tr) { return norm((tr.cells[1] || {}).textContent).toLowerCase(); };
+      C.gl.sort('en');
+      var rowsEn = $$('#glossary tbody tr');
+      var sortedOk = rowsEn.length === glRows.length;
+      for (var ei = 1; sortedOk && ei < rowsEn.length; ei++) {
+        if (cmpEn(enOf(rowsEn[ei - 1]), enOf(rowsEn[ei])) > 0) sortedOk = false;
+      }
+      C.gl.sort('first');
+      var rowsBack = $$('#glossary tbody tr');
+      var backOk = rowsBack.length === glRows.length;
+      for (var bi = 0; backOk && bi < rowsBack.length; bi++) {
+        if (rowsBack[bi] !== glRows[bi]) backOk = false;      // 元素引用逐项比对
+      }
+      T('⑮ 术语排序（English A–Z / 还原首见序）',
+        'A–Z ' + (sortedOk ? '✔' : '✘') + '，还原 ' + (backOk ? '✔' : '✘') +
+        '（' + rowsEn.length + ' 行）');
+      if (!sortedOk) bad('切 English 排序后行序不是字母序（或行了丢行）');
+      if (!backOk) bad('切回首见顺序没有还原初始行序');
     }
   } catch (err) {
     out.push('PROBE_ERROR: ' + (err && err.stack ? err.stack : err));

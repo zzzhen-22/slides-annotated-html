@@ -15,41 +15,8 @@
   </ul>
 </section>
 
-<section class="card howto">
-  <h2>这份文档怎么用</h2>
-  <div class="howto-grid">
-    <div class="howto-item">
-      <span class="n">1</span>
-      <h4>左边栏是页码索引</h4>
-      <p>左侧目录按原文件页码排列，点任意一条直接跳到该页讲解；滚动时目录会自动高亮当前页，方便知道读到哪儿了。目录可以逐级折叠，「展开全部 / 折叠全部」在顶部，折叠状态会被记住。</p>
-    </div>
-    <div class="howto-item">
-      <span class="n">2</span>
-      <h4>每一页都配原页缩略图</h4>
-      <p>每段讲解右侧都放了原文件该页的截图，点一下可放大细看。这样「左看讲解、右对原文」，不用来回切窗口。</p>
-    </div>
-    <div class="howto-item">
-      <span class="n">3</span>
-      <h4>徽标里的页码可跳回原文</h4>
-      <p>每个段落开头的 <span class="pg-badge demo">原文件 P12</span> 会锚定到本文档对应段落；段落里的「打开原 PDF 该页」按钮会尝试直接用系统阅读器翻到原文件的这一页。</p>
-    </div>
-    <div class="howto-item">
-      <span class="n">4</span>
-      <h4>灰底卡片是补充内容</h4>
-      <p>凡是标注「补充」的方框，都不属于原课件内容，而是讲解者加的解释。可以跳过，也可以慢慢看。红色卡片则是原稿本身的问题提醒。</p>
-    </div>
-    <div class="howto-item">
-      <span class="n">5</span>
-      <h4>划词就能做标记</h4>
-      <p>在正文里<b>选中任意一段文字</b>即可加入「我的标记」，选中后直接按 <code>M</code> 也可以。标记会收进右上角的「笔记」抽屉，可以在那里写备注、跳回原文、导出 Markdown。</p>
-    </div>
-    <div class="howto-item">
-      <span class="n">6</span>
-      <h4>侧栏能收起，缩略图会变大</h4>
-      <p>点顶栏最左的「☰ 收起」或按 <code>B</code>，左栏收走后正文会拉宽，右侧的原页缩略图也会从 268 px 放大到 400 px——想把图看清楚时可以这么用。</p>
-    </div>
-  </div>
-</section>
+<!-- 「这份文档怎么用」卡已迁进顶栏「关于」面板（assets/about-zh.html / about-en.html）——
+     正文不再重复；使用说明随外壳走，所有产物保持一致。 -->
 
 <section class="card roadmap" id="roadmap">
   <h2>全文脉络：这 {{page_count}} 页讲一个什么故事</h2>
@@ -65,7 +32,7 @@
 </section>
 
 <section class="card primer" id="primer">
-  <h2>阅读前必读：<!-- TODO 标题，例如「概率论零基础速成（补充）」 --></h2>
+  <h2>前置知识：<!-- TODO 标题，例如「概率论零基础速成（补充）」 --></h2>
   <!-- TODO 如果读者需要前置知识，用下面的折叠卡补上（details.pill 默认折叠，加 open 属性即展开）；
        不需要就整段删掉，并记得从 config.json 的 groups 里去掉 #primer 这一条。
        注意：本注释内不要写任何字面标签，否则会干扰构建与体检的标签配对（pitfalls 第 18 条）。 -->

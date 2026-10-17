@@ -19,7 +19,6 @@
   font-family:var(--mono);background:var(--accent);color:#fff;border-radius:9px;padding:0 5px;
 }
 .tb-count.zero{background:#cbd5e1;color:#475569}
-.topbar .tb-sep{width:1px;height:18px;background:var(--line);flex:0 0 1px}
 /* 正文字号调节（A− / 100% / A＋），状态存 localStorage */
 .tb-font{display:inline-flex;align-items:center;gap:3px}
 .tb-font .tb-btn{width:30px;justify-content:center;padding:5px 0;font-weight:700}
@@ -237,6 +236,39 @@ mark.hl.flash{animation:hlflash 1.9s ease}
 .dr-list .empty{color:var(--muted);font-size:13.6px;text-align:center;padding:44px 18px;line-height:2}
 .dr-list .empty span{font-size:12.5px;opacity:.85}
 body.drawer-open #toTop{right:416px}
+
+/* ---------------------------------------------------------------------------
+   关于面板（顶栏「关于」→ 这份文档怎么用 + 生成工具）
+   原顶栏的 pdf-line 与正文的「这份文档怎么用」卡都收到这里。
+   modal 语义：Esc / 点遮罩 / × 关闭；面板正文由 build.py 按 config.lang 注入。
+   --------------------------------------------------------------------------- */
+.ab-mask{position:fixed;inset:0;z-index:70;background:rgba(16,24,44,.44);
+  opacity:0;pointer-events:none;transition:opacity .18s ease}
+.ab-mask.on{opacity:1;pointer-events:auto}
+.ab-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.98);
+  width:min(720px,calc(100vw - 48px));max-height:min(84vh,780px);display:flex;flex-direction:column;
+  background:var(--surface);border-radius:var(--radius);box-shadow:0 28px 80px rgba(16,24,44,.30);
+  transition:transform .18s ease}
+.ab-mask.on .ab-card{transform:translate(-50%,-50%) scale(1)}
+.ab-close{position:absolute;right:10px;top:10px;width:34px;height:34px;border:0;border-radius:9px;
+  background:transparent;color:var(--muted);font-size:22px;line-height:1;cursor:pointer}
+.ab-close:hover{background:rgba(30,40,70,.08);color:var(--text)}
+.ab-body{overflow:auto;padding:26px 30px 30px}
+.ab-body h3{margin:0 0 6px;font-size:19px;padding-right:36px}
+.ab-meta{margin:0 0 6px;color:var(--muted);font-size:13.5px}
+.ab-meta b{color:var(--text)}
+.ab-meta a{color:var(--accent)}
+.ab-sec{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.ab-sec h4{margin:0 0 10px;font-size:15px}
+.ab-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px;
+  font-size:13.8px;line-height:1.78}
+.ab-list b{color:var(--text)}
+.ab-list code,.ab-meta code{font-family:var(--mono);font-size:12.5px;
+  background:rgba(30,40,70,.06);padding:1px 5px;border-radius:4px}
+.ab-link{margin:6px 0 0;font-size:13.5px}
+.ab-link a{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--accent-line)}
+.ab-link a:hover{border-bottom-style:solid}
+
 @media (max-width:1024px){
   .drawer{width:100%;max-width:100%}
   body.drawer-open #toTop{right:24px}
@@ -244,7 +276,6 @@ body.drawer-open #toTop{right:416px}
 
 /* 移动端顶栏精简 */
 @media (max-width:860px){
-  .topbar .pdf-line{display:none}
   .topbar{gap:9px}
   .tb-btn .tb-label{display:none}
   .tb-btn{padding:5px 9px}

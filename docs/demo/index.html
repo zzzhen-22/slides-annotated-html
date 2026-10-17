@@ -84,10 +84,13 @@ main{margin-left:296px;padding:0 0 90px}
   backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);
   padding:11px 34px;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--muted);
 }
-.topbar .tb-title{font-weight:600;color:var(--text2)}
 .topbar .sp{flex:1}
 .topbar a{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--accent-line)}
 .topbar a:hover{border-bottom-style:solid}
+/* 课程返回入口（可选注入）：只有声明了 config.course_home 的讲次才有这个元素
+   （设计稿 §5.9）。箭头与文字是两个 span，用 gap 排版 —— 窄屏隐藏文字时
+   不会留下尾随空格；颜色与下划线沿用上面的 .topbar a 顶栏链接风格。 */
+.course-home{flex:none;white-space:nowrap;display:inline-flex;align-items:center;gap:.35em}
 #menuBtn{display:none}
 
 /* 封面 */
@@ -266,6 +269,14 @@ code{font-family:var(--mono);font-size:.9em;background:#eef1f7;padding:1px 5px;b
 #toTop:hover{background:var(--accent-soft)}
 
 /* 响应式 */
+/* 小屏（≤1024px，与 toc 抽屉化同断点）课程返回入口只留箭头 —— 它可选的，
+   不该在窄屏挤掉顶栏的固定功能。（2026-10-17：顶栏的「文档标题」已删 ——
+   左上角目录顶部本就有品牌名；删后 1025–1280 区间空间充裕，断点从 1200 收到 1024。）
+   **教训：断点别选常用窗口宽度** —— 最初写的是 1280，恰好罩住「1920 物理 ÷ 150%
+   系统缩放 = 1280 逻辑宽」这类常见配置（实测报告：入口只剩一个「←」、语义不明）。 */
+@media (max-width:1024px){
+  .course-home .ch-label{display:none}
+}
 @media (max-width:1180px){
   .pg{grid-template-columns:minmax(0,1fr) 232px;column-gap:20px}
 }
@@ -314,7 +325,6 @@ code{font-family:var(--mono);font-size:.9em;background:#eef1f7;padding:1px 5px;b
   font-family:var(--mono);background:var(--accent);color:#fff;border-radius:9px;padding:0 5px;
 }
 .tb-count.zero{background:#cbd5e1;color:#475569}
-.topbar .tb-sep{width:1px;height:18px;background:var(--line);flex:0 0 1px}
 /* 正文字号调节（A− / 100% / A＋），状态存 localStorage */
 .tb-font{display:inline-flex;align-items:center;gap:3px}
 .tb-font .tb-btn{width:30px;justify-content:center;padding:5px 0;font-weight:700}
@@ -532,6 +542,39 @@ mark.hl.flash{animation:hlflash 1.9s ease}
 .dr-list .empty{color:var(--muted);font-size:13.6px;text-align:center;padding:44px 18px;line-height:2}
 .dr-list .empty span{font-size:12.5px;opacity:.85}
 body.drawer-open #toTop{right:416px}
+
+/* ---------------------------------------------------------------------------
+   关于面板（顶栏「关于」→ 这份文档怎么用 + 生成工具）
+   原顶栏的 pdf-line 与正文的「这份文档怎么用」卡都收到这里。
+   modal 语义：Esc / 点遮罩 / × 关闭；面板正文由 build.py 按 config.lang 注入。
+   --------------------------------------------------------------------------- */
+.ab-mask{position:fixed;inset:0;z-index:70;background:rgba(16,24,44,.44);
+  opacity:0;pointer-events:none;transition:opacity .18s ease}
+.ab-mask.on{opacity:1;pointer-events:auto}
+.ab-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.98);
+  width:min(720px,calc(100vw - 48px));max-height:min(84vh,780px);display:flex;flex-direction:column;
+  background:var(--surface);border-radius:var(--radius);box-shadow:0 28px 80px rgba(16,24,44,.30);
+  transition:transform .18s ease}
+.ab-mask.on .ab-card{transform:translate(-50%,-50%) scale(1)}
+.ab-close{position:absolute;right:10px;top:10px;width:34px;height:34px;border:0;border-radius:9px;
+  background:transparent;color:var(--muted);font-size:22px;line-height:1;cursor:pointer}
+.ab-close:hover{background:rgba(30,40,70,.08);color:var(--text)}
+.ab-body{overflow:auto;padding:26px 30px 30px}
+.ab-body h3{margin:0 0 6px;font-size:19px;padding-right:36px}
+.ab-meta{margin:0 0 6px;color:var(--muted);font-size:13.5px}
+.ab-meta b{color:var(--text)}
+.ab-meta a{color:var(--accent)}
+.ab-sec{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.ab-sec h4{margin:0 0 10px;font-size:15px}
+.ab-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px;
+  font-size:13.8px;line-height:1.78}
+.ab-list b{color:var(--text)}
+.ab-list code,.ab-meta code{font-family:var(--mono);font-size:12.5px;
+  background:rgba(30,40,70,.06);padding:1px 5px;border-radius:4px}
+.ab-link{margin:6px 0 0;font-size:13.5px}
+.ab-link a{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--accent-line)}
+.ab-link a:hover{border-bottom-style:solid}
+
 @media (max-width:1024px){
   .drawer{width:100%;max-width:100%}
   body.drawer-open #toTop{right:24px}
@@ -539,7 +582,6 @@ body.drawer-open #toTop{right:416px}
 
 /* 移动端顶栏精简 */
 @media (max-width:860px){
-  .topbar .pdf-line{display:none}
   .topbar{gap:9px}
   .tb-btn .tb-label{display:none}
   .tb-btn{padding:5px 9px}
@@ -781,7 +823,7 @@ mark.q-hit{
 <div class="toc-items">
 <a href="#cover" class="group-link"><span class="num">·</span><span class="t">封面与 demo 说明</span></a>
 <a href="#demo-notice" class="group-link"><span class="num">·</span><span class="t">关于这份 demo</span></a>
-<a href="#primer" class="group-link"><span class="num">·</span><span class="t">阅读前必读：概率论速成</span></a>
+<a href="#primer" class="group-link"><span class="num">·</span><span class="t">前置知识：概率论速成</span></a>
 </div></div>
 <div class="toc-group" data-gid="g2">
 <div class="toc-head"><button class="toc-toggle" type="button" aria-expanded="true"><span class="chev"></span><span class="gt">一 · 概率基础（P1–P8）</span></button><span class="gcount">8</span></div>
@@ -824,14 +866,14 @@ mark.q-hit{
       <span class="tb-fsize" id="fontSizeLabel">100%</span>
       <button id="fontPlus" class="tb-btn" type="button" aria-label="增大正文字号" title="增大正文字号">A＋</button>
     </span>
-    <span class="tb-sep"></span>
-    <span class="tb-title">逻辑回归 · 逐页精解 · Demo（节选 P1–P8）</span>
     <span class="sp"></span>
     <button id="notesBtn" class="tb-btn" type="button" aria-expanded="false"
             title="打开我的标记笔记（快捷键 N）">
       <span class="tb-icon">✎</span><span class="tb-label">笔记</span>
       <span class="tb-count zero" id="notesBtnCount">0</span></button>
-    <span class="pdf-line"></span>
+    <button id="aboutBtn" class="tb-btn" type="button"
+            title="关于这份文档：使用说明与生成工具（Esc 关闭）">
+      <span class="tb-icon">ⓘ</span><span class="tb-label">关于</span></button>
     <button id="savePdf" class="tb-btn" type="button" title="把内嵌在本文档里的原文件另存为 PDF" hidden>
       <span class="tb-icon">⤓</span><span class="tb-label">另存原 PDF</span></button>
   </div>
@@ -855,7 +897,7 @@ mark.q-hit{
   <h3>保留下来的部分</h3>
   <ul class="lst">
     <li>封面与这份说明</li>
-    <li>「阅读前必读」的五张<b>折叠卡</b>（前置知识，演示 <code>details</code> 折叠样式）</li>
+    <li>「前置知识」的五张<b>折叠卡</b>（前置知识，演示 <code>details</code> 折叠样式）</li>
     <li>第一节的<b>本节概述卡</b>（核心问题 / 读完应能 / 与前后节关系）</li>
     <li><b>P1–P8 逐页讲解</b>：左侧是中文讲解、右侧贴着原页缩略图，含公式、表格与四类提示卡</li>
     <li>结尾的<b>一页纸速查表</b>与术语表</li>
@@ -887,7 +929,7 @@ mark.q-hit{
 </section>
 
 <section class="card primer" id="primer">
-  <h2>阅读前必读：概率论零基础速成（补充）</h2>
+  <h2>前置知识：概率论零基础速成（补充）</h2>
   <p class="lead">原课件默认读者已学过概率论与微积分，所以第 5 页一上来就用 <script type="math/tex">p(X \mid \mathcal{M})</script> 这样的写法。如果你没学过，先花十分钟把下面九张卡片过一遍，后面就不会卡壳。<b>已经学过的可以直接跳到正文。</b>每张卡片都可以点开／收起。</p>
 
   <details class="pill" open>
@@ -1411,7 +1453,7 @@ mark.q-hit{
       <h4>覆盖范围</h4>
       <ul class="lst">
         <li><b>正文：</b>严格按原文件页序逐页讲解，每页都配有原页缩略图与页码链接。<b>本 demo 只节选了 P1–P8</b>（完整版覆盖 1–63 页）。</li>
-        <li><b>前置知识：</b>「阅读前必读」九张速成卡为本文档新增内容，原文件没有。</li>
+        <li><b>前置知识：</b>「前置知识」九张速成卡为本文档新增内容，原文件没有。</li>
         <li><b>补充篇 A / B：</b>指数族分布与广义线性模型——原文件第 4 页大纲提及但正文未展开，本文档单独补充，<em>不占用原页码</em>。</li>
         <li><b>速查部分：</b>公式速查、术语表均为本文档新增的检索工具。</li>
       </ul>
@@ -1443,6 +1485,41 @@ mark.q-hit{
   <p class="small">原课件版权归原作者所有；白底讲解与彩色卡片为本文档新增内容。</p>
 </footer>
 </main>
+
+<div class="ab-mask" id="aboutMask" hidden>
+  <div class="ab-card" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <button class="ab-close" id="aboutClose" type="button" title="关闭（Esc）">×</button>
+    <div class="ab-body" id="aboutBody">
+<!-- 关于面板正文（中文）—— build.py 按 config.lang 把它注入外壳的「关于面板正文」占位。
+     内容 = 原「这份文档怎么用」卡片（迁自 content-skeleton/00_intro.html）
+          + 原文件信息（原顶栏 pdf-line 的去处）
+          + 生成工具说明（GitHub）。
+     原文件信息行由 build.py 按 embed / 外链 / 无原文件三种状态生成（含语言分支）。
+     注意：本注释里不要写占位符的字面形式，否则会被「残留占位符」体检误报。 -->
+<h3 id="aboutTitle">关于这份文档</h3>
+<p class="ab-meta">本文档没有内嵌原文件（只含讲解与页面截图）。</p>
+
+<section class="ab-sec">
+  <h4>这份文档怎么用</h4>
+  <ol class="ab-list">
+    <li><b>左边栏是页码索引。</b>目录按原文件页码排列，点任意一条直接跳到该页讲解；滚动时目录会自动高亮当前页，方便知道读到哪儿了。目录可以逐级折叠，「展开全部 / 折叠全部」在顶部，折叠状态会被记住。</li>
+    <li><b>每一页都配原页缩略图。</b>每段讲解右侧都放了原文件该页的截图，点一下可放大细看。这样「左看讲解、右对原文」，不用来回切窗口。</li>
+    <li><b>徽标里的页码可跳回原文。</b>每个段落开头的 <code>原文件 P12</code> 会锚定到本文档对应段落；段落里的「打开原 PDF 该页」按钮会尝试直接用系统阅读器翻到原文件的这一页。</li>
+    <li><b>灰底卡片是补充内容。</b>凡是标注「补充」的方框，都不属于原课件内容，而是讲解者加的解释。可以跳过，也可以慢慢看。红色卡片则是原稿本身的问题提醒。</li>
+    <li><b>划词就能做标记。</b>在正文里<b>选中任意一段文字</b>即可加入「我的标记」，选中后直接按 <code>M</code> 也可以。标记会收进右上角的「笔记」抽屉，可以在那里写备注、跳回原文、导出 Markdown。笔记只存在本机浏览器里，不上传。</li>
+    <li><b>侧栏能收起，缩略图会变大。</b>点顶栏最左的「☰ 收起」或按 <code>B</code>，左栏收走后正文会拉宽，右侧的原页缩略图也会从 268 px 放大到 400 px——想把图看清楚时可以这么用。</li>
+  </ol>
+</section>
+
+<section class="ab-sec">
+  <h4>生成工具</h4>
+  <p>这份文档由开源项目 <b>pdf-slides-annotated-html</b> 生成：把 PDF / PPT 课件做成「左看讲解、右对原文」的单文件 HTML —— 断网可用，笔记与阅读进度都只存在本机浏览器里。</p>
+  <p class="ab-link"><a href="https://github.com/zzzhen-22/slides-annotated-html" target="_blank" rel="noopener">github.com/zzzhen-22/slides-annotated-html</a></p>
+</section>
+
+    </div>
+  </div>
+</div>
 
 <aside class="drawer" id="drawer" aria-label="我的标记笔记">
   <div class="dr-head">
@@ -1498,6 +1575,7 @@ mark.q-hit{
   var NAVHIDDEN_KEY = NS + 'nav-hidden';
   var HIDETHUMB_KEY = NS + 'hide-thumb';
   var FS_KEY = NS + 'font-size';
+  var POS_KEY = NS + 'pos';        // 阅读位置（课程主页「学习进度」读取，设计稿 §5.10）
 
   /* ======================= 1. KaTeX 渲染 ======================= */
   function renderMath() {
@@ -3005,6 +3083,7 @@ mark.q-hit{
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       var k = e.key.toLowerCase();
       if (e.key === 'Escape') {
+        if (About.isOpen()) { About.close(); return; }
         if (LB.el && LB.el.classList.contains('on')) { LB.close(); return; }
         hideSelBar();
         hideCtx();
@@ -3222,6 +3301,101 @@ mark.q-hit{
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
   }
 
+  /* ======================= 12b. 阅读位置（学习进度） =======================
+     记录「上次读到哪一页」，供**课程主页**的「学习进度」区块读取
+     （file:// 下跨页面 / 跨目录共享 localStorage —— 2026-10-17 实机实测）。
+     设计稿：docs/v2-course-collection.md §5.10。
+
+     语义完全诚实：记录的是「最后停留的页」，不代表前面都读过 —— 所以课程页
+     的文案写「上次读到 P42」而不是「已读 67%」。
+     只写不读：本页打开时**不**自动跳回上次位置（跳回是课程主页「继续」链接的事）。
+
+     三条覆盖：
+       ① 换页时写（滚动节流 800ms；同一页反复滚动不重复写）
+       ② 页面隐藏时强制写（切标签 / 关窗口的最后一刻，同时刷新时间戳）
+       ③ pagehide 兜底（个别关闭路径不触发 visibilitychange） */
+  var Pos = {
+    KEY: POS_KEY,
+    timer: null,
+    last: '',            // 已写入的页 id：同页反复滚动不重复写
+    cur: function () {
+      /* 「当前页」= 视口顶部最后扫过的页区块 —— 与目录高亮 / J/K 翻页同一套判定
+         （限定 section.pg，不把 #primer 这类卡片算进去）。 */
+      var secs = $$('section.pg');
+      if (!secs.length) return null;
+      var y = window.scrollY + 90, pick = secs[0];
+      for (var i = 0; i < secs.length; i++) {
+        if (secs[i].offsetTop <= y) pick = secs[i];
+      }
+      var pid = String(pick.id || '');
+      if (!pid) return null;
+      return { p: pid, n: parseInt(pid.replace(/^p0*/, ''), 10) || 0 };
+    },
+    save: function (force) {
+      var c = this.cur();
+      if (!c) return;
+      if (!force && c.p === this.last) return;
+      this.last = c.p;
+      LS.set(POS_KEY, { v: 1, p: c.p, n: c.n, t: Date.now() });
+    },
+    init: function () {
+      if (!$('section.pg')) return;      // 不是逐页精解形态（骨架等）就不挂
+      window.addEventListener('scroll', function () {
+        if (Pos.timer) return;           // 简单节流：800ms 一个窗口
+        Pos.timer = setTimeout(function () {
+          Pos.timer = null;
+          Pos.save(false);
+        }, 800);
+      }, { passive: true });
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) Pos.save(true);
+      });
+      window.addEventListener('pagehide', function () { Pos.save(true); });
+    }
+  };
+
+  /* ======================= 关于面板 =======================
+     顶栏「关于」→ 使用说明（原正文 howto 卡）+ 生成工具（GitHub）。
+     modal 语义：Esc / 点遮罩 / × 关闭；关闭后焦点还给「关于」按钮（键盘用户的回路）。
+     面板正文由 build.py 按 config.lang 从 assets/about-<lang>.html 注入。 */
+  var About = {
+    mask: null,
+    btn: null,
+    isOpen: function () { return !!(this.mask && this.mask.classList.contains('on')); },
+    open: function () {
+      if (!this.mask) return;
+      this.mask.hidden = false;
+      this.mask.classList.add('on');
+      document.body.classList.add('about-open');
+      var c = $('#aboutClose');
+      if (c && c.focus) c.focus();
+    },
+    close: function () {
+      var self = this;
+      if (!this.mask) return;
+      this.mask.classList.remove('on');
+      document.body.classList.remove('about-open');
+      /* 等淡出过渡结束再 hidden —— 否则面板会「瞬间消失」、没有过渡 */
+      setTimeout(function () {
+        if (!self.isOpen()) self.mask.hidden = true;
+      }, 200);
+      if (this.btn && this.btn.focus) this.btn.focus();
+    },
+    init: function () {
+      this.mask = $('#aboutMask');
+      this.btn = $('#aboutBtn');
+      if (!this.mask || !this.btn) return;
+      var self = this;
+      this.btn.addEventListener('click', function () { self.open(); });
+      var c = $('#aboutClose');
+      if (c) c.addEventListener('click', function () { self.close(); });
+      /* 点遮罩空白处关闭；点卡片内部不关（别把阅读时的手势误判成关闭） */
+      this.mask.addEventListener('click', function (e) {
+        if (e.target === self.mask) self.close();
+      });
+    }
+  };
+
   /* ======================= 启动 ======================= */
   function boot() {
     ensureSectionIds();          // 先补 id：没有 id 的卡片标不了，也存不下 pid
@@ -3242,6 +3416,8 @@ mark.q-hit{
     initPdfLinks();
     initEmbeddedPdf();
     initDeepLink();       // 放最后：它要用到 #q / #qres 与 Find，前面都准备好才跑
+    Pos.init();           // 纯写不读的旁路，挂载顺序无关紧要
+    About.init();         // 顶栏「关于」→ 使用说明 + 生成工具
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
@@ -3249,6 +3425,7 @@ mark.q-hit{
   /* 无头测试入口 */
   window.__doc = {
     notes: Notes, toc: Toc, font: Font, find: Find,
+    pos: Pos,
     markSelection: markSelection,
     openEmbeddedPdf: openEmbeddedPdf,
     pdfBlob: pdfBlob,

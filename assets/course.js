@@ -238,15 +238,20 @@
     }
   };
 
-  /* ======================= 术语总表过滤 =======================
-     与要点过滤同一套模式：纯 DOM indexOf、多词是「且」、0 命中给显式空态。
-     刻意**只加过滤、不堆视图** —— 术语表是「字典」（设计稿 §5.8 的三表分工），
-     排序一类会改变这张表语义的操作不在这里做。 */
+  /* ======================= 术语总表：过滤 + 排序 =======================
+     过滤与要点过滤同一套模式：纯 DOM indexOf、多词是「且」、0 命中给显式空态。
+     排序是**视图切换**、不改这张表的语义（它仍是「术语字典」，设计稿 §5.8）：
+     默认「首见顺序」（= 生成期文档序），可切「English A–Z」——对字典来说字母序是
+     天然的第二视图（课程 TODO T8③；原设想的「拼音序」需生成期引入拼音数据、
+     违反零依赖纪律，收窄为 English 序）。排序值不进 URL、不持久化 —— 课程页对
+     localStorage 只读不写（设计稿 §5.10），每次打开回到默认序。 */
   var Gl = {
     rows: [],
+    initial: [],       // 初始行序 = 首见顺序，切回默认时还原它
 
     build: function () {
       this.rows = $$('#glossary tbody tr');
+      this.initial = this.rows.slice();
       return this.rows.length;
     },
 
@@ -266,6 +271,23 @@
       var cnt = $('#glCount');
       if (cnt) cnt.textContent = terms.length ? (hit + ' / ' + this.rows.length + ' 条') : '';
       return hit;
+    },
+
+    sort: function (mode) {
+      if (!this.rows.length) return 0;
+      var rows = this.initial.slice();
+      if (mode === 'en') {
+        rows.sort(function (a, b) {
+          var x = a.cells[1] ? norm(a.cells[1].textContent) : '';
+          var y = b.cells[1] ? norm(b.cells[1].textContent) : '';
+          return x.localeCompare(y, 'en', { sensitivity: 'base' }) || 0;
+        });
+      }
+      var tb = $('#glossary tbody');
+      if (!tb) return 0;
+      rows.forEach(function (tr) { tb.appendChild(tr); });   // appendChild 挪行即重排
+      this.rows = rows;
+      return rows.length;
     }
   };
 
@@ -556,6 +578,110 @@
     }
   };
 
+  /* ======================= ⑤ 学习进度（读各讲阅读痕迹） =======================
+     数据来自各讲产物写入**本浏览器** localStorage 的痕迹（设计稿 §5.10）：
+       lr-doc:<h10>:pos    {v,p,n,t}      上次读到哪（单讲 site.js 的 Pos 写的）
+       lr-doc:<h10>:notes  {v,seq,items}  标记笔记
+     <h10> 由 course_site.py 从**产物**提取、内联在 cdata.lectures[].ns（单一真源，
+     course_check.py 复核一致性）。**只读不写**；读不到（隐私模式 / 清缓存 / 数据
+     损坏）一律降级为空态，不影响其它区块。 */
+  var LP = {
+    lecs: [],
+    KEY_TIP: '打开任一讲开始阅读后，这里会自动记录每讲的阅读位置与笔记数。',
+
+    load: function () {
+      var el = document.getElementById('cdata');
+      if (!el) return 0;
+      try { this.lecs = (JSON.parse(el.textContent || '{}').lectures) || []; }
+      catch (e) { this.lecs = []; }
+      return this.lecs.length;
+    },
+
+    /* 读一讲的痕迹：{pos:{p,n,t}|null, notes:Number}。任何异常都按「没有」处理 */
+    readLec: function (lec) {
+      var out = { pos: null, notes: 0 };
+      var ns = lec && lec.ns;
+      if (!ns) return out;
+      try {
+        var raw = localStorage.getItem(ns + 'pos');
+        if (raw) {
+          var o = JSON.parse(raw);
+          if (o && typeof o.p === 'string' && o.p) out.pos = o;
+        }
+        raw = localStorage.getItem(ns + 'notes');
+        if (raw) {
+          var n = JSON.parse(raw);
+          if (n && n.items && n.items.length) out.notes = n.items.length;
+        }
+      } catch (e) { /* 数据坏了按「没有」处理；不打断其它行 */ }
+      return out;
+    },
+
+    ago: function (t) {
+      if (typeof t !== 'number' || !t) return '';
+      var d = Date.now() - t;
+      if (d < 0) return '';
+      var day = 24 * 3600 * 1000;
+      if (d < day) return '今天';
+      if (d < 2 * day) return '昨天';
+      if (d < 30 * day) return Math.floor(d / day) + ' 天前';
+      return Math.floor(d / (30 * day)) + ' 个月前';
+    },
+
+    render: function () {
+      var self = this;
+      var byId = {};
+      this.lecs.forEach(function (l) { byId[l.id] = l; });
+      var started = 0, notesSum = 0, lastT = 0;
+      $$('#progress tbody tr').forEach(function (tr) {
+        var lec = byId[tr.getAttribute('data-lec')] || {};
+        var r = self.readLec(lec);
+        if (r.pos) { started++; if (r.pos.t > lastT) lastT = r.pos.t; }
+        notesSum += r.notes;
+        self.renderRow(tr, lec, r);
+      });
+      this.renderTop(this.lecs.length, started, notesSum, lastT);
+      return { started: started, notes: notesSum };
+    },
+
+    renderRow: function (tr, lec, r) {
+      var cell = tr.querySelector('.lp-cell');
+      if (!cell) return;
+      var href = lec.href || '';
+      var html;
+      if (r.pos) {
+        var n = r.pos.n ? '<b>P' + esc(String(r.pos.n)) + '</b>' : '上次位置';
+        var pc = lec.pageCount ? '（共 ' + esc(String(lec.pageCount)) + ' 页）' : '';
+        var ago = this.ago(r.pos.t);
+        html = '上次读到 ' + n + pc +
+          (ago ? ' <span class="lp-ago">· ' + esc(ago) + '</span>' : '') +
+          (r.notes ? ' <span class="lp-ago">· ' + r.notes + ' 条笔记</span>' : '') +
+          (href ? ' <a class="lp-go" href="' + esc(href) + '#' + esc(r.pos.p) + '">继续 →</a>' : '');
+      } else {
+        html = '还没有阅读记录' +
+          (r.notes ? ' <span class="lp-ago">· ' + r.notes + ' 条笔记</span>' : '') +
+          (href ? ' <a class="lp-go" href="' + esc(href) + '">' +
+            (r.notes ? '打开 →' : '开始 →') + '</a>' : '');
+      }
+      cell.innerHTML = html;
+    },
+
+    renderTop: function (total, started, notesSum, lastT) {
+      var top = $('#lpTop');
+      if (!top) return;
+      if (!started && !notesSum) {
+        top.innerHTML = '<span class="lp-tip">' + esc(this.KEY_TIP) + '</span>';
+        return;
+      }
+      var ago = this.ago(lastT);
+      top.innerHTML = '已开始 <b>' + started + '</b> / ' + total + ' 讲' +
+        ' · 共 <b>' + notesSum + '</b> 条笔记' +
+        (ago ? ' · 最近阅读 <b>' + esc(ago) + '</b>' : '');
+    },
+
+    refresh: function () { this.render(); }
+  };
+
   /* 页内锚点点击接管：滚到区块 + 高亮跟上 + **把现有参数段写进新 hash**。
      不接管的话，点导航会把 hash 覆盖成裸 #xxx（我们写入形态以外的东西），
      参数段随之丢失。只接管「目标是真实 id 的裸锚点」—— 跨页链接与 #q= 深链不碰。 */
@@ -647,6 +773,8 @@
         if (e.key === 'Escape') { f.value = ''; Gl.apply(''); Url.schedule(); f.blur(); }
       });
     }
+    var s = $('#glSort');
+    if (s) s.addEventListener('change', function () { Gl.sort(s.value); });
     return Gl.rows.length;
   }
 
@@ -671,6 +799,16 @@
     });
   }
 
+  function initLP() {
+    /* 学习进度：读各讲 localStorage（只读，设计稿 §5.10）。数据只在浏览器端，
+       没有可预渲染的静态形态 —— 未启用 JS 时表格里是「—」。 */
+    if (!LP.load()) return 0;
+    LP.render();
+    /* bfcache 恢复 / 从讲次返回主页：数字可能已变，重读一遍（只读操作，开销可忽略） */
+    window.addEventListener('pageshow', function () { LP.refresh(); });
+    return LP.lecs.length;
+  }
+
   function boot() {
     /* ⚠ 顺序不能反：先渲染公式，再建要点索引。
        Kp.build() 读的是 li.textContent —— 公式没渲染完就读，索引里存的是
@@ -683,6 +821,7 @@
     initFind();
     initNav();
     initUrl();
+    initLP();
     return nMath;
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
@@ -691,6 +830,7 @@
   /* 无头测试入口（与单讲侧同一个约定：探针靠它读结构，而不是靠猜 DOM） */
   window.__course = {
     kp: Kp,
+    lp: LP,
     find: CFind,
     spy: Spy,
     fold: Fold,
@@ -707,6 +847,8 @@
         glossaryRows: $$('#glossary tbody tr').length,
         glossaryShown: $$('#glossary tbody tr').filter(function (x) { return !x.hidden; }).length,
         progressRows: $$('#progress tbody tr').length,
+        lpCells: $$('#progress .lp-cell').length,
+        lpTopText: norm(($('#lpTop') || {}).textContent),
         emptyShown: !!(($('#kpEmpty') || {}).hidden === false),
         /* 检索结果：当前渲染出的命中行数（分页后 = 已显示条数） */
         resultHits: $$('.ck-hit').length,

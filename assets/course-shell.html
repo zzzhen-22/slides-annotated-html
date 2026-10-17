@@ -69,6 +69,11 @@ __CSS__
     <div class="kp-tools" id="glTools">
       <input id="glFilter" class="kinput" type="search" autocomplete="off"
              placeholder="过滤术语（只筛这张表，不建索引）">
+      <label class="gl-sort dim" for="glSort">排序</label>
+      <select id="glSort" title="切换术语表的排序方式">
+        <option value="first">首见顺序</option>
+        <option value="en">English A–Z</option>
+      </select>
       <span class="kp-count" id="glCount"></span>
     </div>
     <div id="glEmpty" class="kp-empty" hidden>没有匹配的术语 —— 换一个词或清空试试。</div>
@@ -76,8 +81,9 @@ __CSS__
   </section>
 
   <section id="progress" class="card">
-    <h2>进度看板</h2>
-    <p class="lead">哪一讲还没写完，一眼看出来。</p>
+    <h2>学习进度</h2>
+    <p class="lead">每讲读到哪、有多少笔记 —— 阅读痕迹只存在<b>本机浏览器</b>里（不上传、不清云），
+      打开过某讲之后这里会自动出现。</p>
     __PROGRESS__
   </section>
 

@@ -15,6 +15,7 @@
 - **左侧**是逐页中文讲解，**右侧**贴着原页缩略图，不用来回切窗口
 - 公式用 **KaTeX 离线渲染**（字体已转 data URI 内嵌，**完全不联网**）
 - 六类交互：目录逐级折叠 / 每节概述卡 / 侧栏收起后缩略图自动放大 / **划词标记 → 笔记抽屉** / **正文字号 A−/A＋ 调节（存浏览器）** / **正文搜索（搜正文不只搜标题，命中列表可跳转并高亮）**
+- 顶栏「**关于**」面板：使用说明（怎么读、怎么记笔记、怎么跳回原文）+ 生成工具的 GitHub 链接 —— 正文不再重复「这份文档怎么用」长卡，原顶栏「原文件已内嵌」那行也收进这里
 - **代码块**：语法着色（注释/字符串/关键字/数字四类，**构建期上色、不引高亮库**）、
   标题栏标注语言与来源、**一键复制**（复制到的是纯代码，不带着色标记）
 - 页面里明确区分「原文有什么」与「讲解者加了什么」（绿=直觉、蓝=补充推导、红=原稿问题、灰=原文引用）
@@ -118,6 +119,7 @@ python scripts/probe.py      "<输出.html>" scripts/probe_marks.js
 python scripts/probe.py      "<输出.html>" templates/probe_font.js
 python scripts/probe.py      "<输出.html>" templates/probe_find.js
 python scripts/probe.py      "<输出.html>" templates/probe_codecopy.js
+python scripts/probe.py      "<输出.html>" templates/probe_pos.js
 python scripts/probe.py      "<输出.html>" templates/probe_doc.js
 python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看长相
 ```
@@ -133,10 +135,10 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 独立产物，课程层只在它们之外加一层目录：
 
 <p align="center">
-  <img src="docs/images/course.png" width="62%" alt="课程入口页：自上而下五个区块 —— 课程地图、要点总结、跨讲检索、术语总表、进度看板">
+  <img src="docs/images/course.png" width="62%" alt="课程入口页：自上而下五个区块 —— 课程地图、要点总结、跨讲检索、术语总表、学习进度">
 </p>
 <p align="center">
-  <sub>课程入口页（<a href="https://zzzhen-22.github.io/slides-annotated-html/demo-course/">在线试一下</a>）：课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 进度。五个区块的内容都在<b>生成时</b>写进 HTML，所以断网、禁用 JS 也读得到</sub>
+  <sub>课程入口页（<a href="https://zzzhen-22.github.io/slides-annotated-html/demo-course/">在线试一下</a>）：课程地图 / 要点总表 / 跨讲检索 / 术语总表 / 学习进度。五个区块中，除「学习进度」是运行期读本机浏览器里的阅读痕迹外，其余内容都在<b>生成时</b>写进 HTML —— 断网也能读</sub>
 </p>
 
 ```
@@ -154,9 +156,15 @@ python scripts/shot.py       "<输出.html>" "_extract/v_home.png" # 截图看�
 因为把 LaTeX 塞进索引既难读又没检索价值 —— 详见「跨讲检索」的提示语）。
 
 入口页自带一套前端交互：顶栏导航跟随滚动**高亮当前区块**；要点总结与术语总表各有一个
-纯前端过滤框（不建索引、输入即筛）；要点支持一键**全部折叠 / 展开**（默认仍全展开）；
+纯前端过滤框（不建索引、输入即筛），术语总表还能按 **English A–Z** 排序（一键切回首见顺序）；
+要点支持一键**全部折叠 / 展开**（默认仍全展开）；
 筛选词与检索词会写进 **URL**（形如 `#sec=keypoints&kp=梯度`）—— 刷新不丢，也能把
 「我筛出来的这份结果」直接分享给别人，浏览器前进 / 后退可在筛选操作之间回退。
+用 `init_project.py --course` 建骨架的讲次，页顶栏还会多一个「**← 返回课程主页**」入口
+（`config.course_home` 声明，可选）—— 读完一讲顺手返回，不必依赖浏览器后退。
+最后的「**学习进度**」区块会读取各讲写在**本机浏览器**里的阅读痕迹：每讲显示
+「上次读到 P42 · 5 条笔记 · 3 天前」与一键「**继续**」；数据零上传、零联网 ——
+换来的是「换浏览器或清缓存就从零开始」的本机性（笔记与学习进度同一套存储）。
 
 ```bash
 python scripts/course_init.py "<课程目录>" --name "<课程名>"   # 首次：建 course.json
@@ -213,16 +221,21 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 │   ├─ site.css             ← 基础版式
 │   ├─ site.extra.css       ← 六类交互的追加样式
 │   ├─ site.js              ← 全部交互逻辑，暴露 window.__doc 供无头测试
+│   ├─ about-zh.html        ← 顶栏「关于」面板正文（使用说明 + 生成工具；中文）
+│   ├─ about-en.html        ← 同上（英文；config.lang = "en" 时自动选用）
 │   ├─ course-shell.html    ← 【课程层】课程合集入口的骨架（与单讲外壳彻底分开）
-│   ├─ course.css           ← 【课程层】课程页样式（五区块、要点表、进度条）
-│   └─ course.js            ← 【课程层】课程页交互：要点过滤 / 导出 Markdown / 跨讲检索
-├─ templates/               ← 可复制的内容骨架 + 交付体检探针 + 截图 harness
+│   ├─ course.css           ← 【课程层】课程页样式（五区块、要点表、学习进度）
+│   └─ course.js            ← 【课程层】课程页交互：要点过滤 / 导出 Markdown / 跨讲检索 / 术语排序 / 学习进度
+├─ templates/               ← 可复制的内容骨架 + 探针 + 截图 harness（probe_*.js 大多在此；
+│                              唯一的例外 probe_marks.js 属历史摆放，留在 scripts/——两处都由路径直接指定）
 │   ├─ content-skeleton/    ← init_project.py 复制的逐页区块骨架
 │   ├─ probe_doc.js         ← 交付体检：待补页面 N/M、缺缩略图、目录断链、缺字
 │   ├─ probe_font.js        ← 字号调节回归（--profile 跑两遍验跨会话持久化）
 │   ├─ probe_find.js        ← 正文搜索回归（索引/命中/跳转高亮/Esc 还原/不碰笔记）
 │   ├─ probe_codecopy.js    ← 代码块回归（着色不改字/标题栏位置/复制按钮成功与失败两条路径）
-│   ├─ probe_course.js      ← 【课程层】课程入口行为探针（地图/要点表/检索/术语/进度/导出/过滤）
+│   ├─ probe_pos.js         ← 阅读位置回归（换页写 / 同页去重 / 隐藏与 pagehide 强制写）
+│   ├─ probe_about.js       ← 关于面板回归（开/关链路 + Esc/遮罩/焦点归还 + 内容检查）
+│   ├─ probe_course.js      ← 【课程层】课程入口行为探针（地图/要点表/检索/术语/排序/学习进度/导出/过滤）
 │   ├─ harness_nav.js       ← 截图 harness：先触发目录交互再截
 │   └─ harness_markshot.js  ← 截图 harness：先划词标记再截
 ├─ examples/                ← sample-lecture.pdf 示例课件（三步上手 ③ 的输入）、config 样例、逐页区块模板
@@ -260,12 +273,14 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 | `probe.py` + `probe_font.js` | **正文字号调节**：初始 100%、`step()` 后 `--fs`/标签/localStorage 三者一致、`Font.init()` 重读恢复、MIN(0.9)/MAX(1.4) 钳制与按钮禁用；加 `--profile` 跑两遍可验跨进程持久化 | 长相 |
 | `probe.py` + `probe_find.js` | **正文搜索**：索引惰性建且覆盖全部有文字的节、查询命中数 = 结果行数、片段与正文都出现 `mark.q-hit`、跳转只加元素不改块级结构也不改一个字、多词是「且」、0 命中时目录交还、Esc 后高亮归零且正文逐字复原、全程不碰 `mark.hl` | 长相 |
 | `probe.py` + `probe_codecopy.js` | **代码块能不能读、能不能抄**：每块都有标题栏且是首个子元素、着色只用 `c/s/k/n` 四类不越界、**剥掉 span 后与 `textContent` 逐字一致**、`codeOf()` 取到的是干净纯代码、真按一次按钮看 UI 反馈；无头下剪贴板必然失败，探针额外 stub 出成功路径，把「已复制 N 行」与 `done` 态也覆盖上 | 长相 + 复制内容 |
+| `probe.py` + `probe_pos.js` | **阅读位置（学习进度）**：换页时写入 `lr-doc:<ns>:pos`、同页反复滚动不重复写、`visibilitychange`（页面隐藏）与 `pagehide` 时强制写（stub `document.hidden` + 派发事件的**真实接线**测法）、换到下一页时更新、键值结构 `{v,p,n,t}`；无页区块的产物 SKIP | 长相 |
+| `probe.py` + `probe_about.js` | **顶栏「关于」面板**：点「关于」是否真的打开（遮罩 `.on` + 焦点进面板）、内容是否含使用说明与生成工具链接、三条关闭路径（Esc / 点遮罩 / ×）、关闭后焦点是否回到按钮、点卡片内部是否**不会**误关 | 长相 / 接线 |
 | `probe.py` + `probe_doc.js` | **内容写完了没有**：待补页面 N/M、缺缩略图的页、目录断链、KaTeX 残留 script、TODO 注释、正文缺字风险 | 讲解写得对不对 |
 | `shot.py` | 长相与真实交互状态 | 细节正确性 |
 
 **截图看不出结构被改坏**，所以只要动了标记相关代码，`probe.py` 这一行不能省。
 
-> 上表八行查的是**产物**。另有两条查**套件自己**：`check_docs.py` 断言「几类交互」这类口径
+> 上表十行查的是**产物**。另有两条查**套件自己**：`check_docs.py` 断言「几类交互」这类口径
 > 在五份文档与 `check_ui.py` 之间是否一致、README 目录树有没有漏列新文件、
 > `pitfalls.md` 编号是否连续 —— **改功能而忘了改文档**，靠的就是它拦；
 > `build_demo.py --check` 断言仓库里那三份在线 demo（两份单讲 + 一份课程合集）仍能被重建到
@@ -291,7 +306,15 @@ python scripts/build_demo.py --check   # 只校验三份 demo 能被重建（改
 - 输入**只支持 PDF**；PPTX/Keynote 请先自行导出（不引入 LibreOffice 依赖是刻意的）
 - **PDF 文字层不可靠**：讲解一律从逐页渲染图写出，不读抽象文字层；套件不替你判断内容对错——原稿有错会如实标注，不会静默修正
 - 机械部分自动，**逐页看图写讲解由 agent（或你）完成**，套件只告诉你还差几页没写
-- 内嵌原 PDF 时产物 ≈ 原 PDF × 1.34 + 缩略图，几十页课件可能到 20 MB+
+- 内嵌原 PDF 时产物体积 ≈ **原 PDF × 1.34**（base64）**+ 缩略图（约 50 KB/页）** + KaTeX 与外壳约 1.1 MB，
+  几十页课件可能到 20 MB+。四个实测样例（可直接拿来估自己的）：
+
+  | 实测样例 | 原 PDF | 页数 | 产物 |
+  |---|---|---|---|
+  | 课件 `--embed-pdf` | 1.5 MB | 63 | 6.3 MB |
+  | 课件 `--embed-pdf` | 1.5 MB | 80 | 6.9 MB |
+  | 课件 `--embed-pdf` | 2.6 MB | 82 | 9.6 MB |
+  | 示例课件（不含 PDF） | 0.6 MB | 8 | 1.2 MB |
 - 默认产物是**中文排版优化**的（正文字体栈、标点挤压），其他语言内容也能用但排版不专门优化
 - 无头截图依赖 Chromium 系浏览器
 

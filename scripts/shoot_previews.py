@@ -60,11 +60,30 @@ window.addEventListener('load', function () {
 """
 
 JS_COURSE = """\
-/* 预览图用：把「要点总结」的讲次块收起来，让五个区块能在一屏里同时看到。 */
+/* 预览图用：① 把「要点总结」的讲次块收起来，让五个区块能在一屏里同时看到；
+   ② 往 localStorage 预置两讲的阅读痕迹并让「学习进度」重渲染 ——
+   空态表格（三行「还没有阅读记录」）什么都说明不了。
+   预置键名用页面 cdata 里的 ns（与真实接线一致），值结构与单讲 Pos.save / Notes.save 同构；
+   p04/p02 在 demo 讲次产物里真实存在，「继续」链接可点可跳。 */
 window.addEventListener('load', function () {
   setTimeout(function () {
     var ds = document.querySelectorAll('details.klec');
     for (var i = 0; i < ds.length; i++) ds[i].open = false;
+    try {
+      var data = JSON.parse((document.getElementById('cdata') || {}).textContent || '{}');
+      var lecs = (data.lectures || []).filter(function (l) { return l.ns; });
+      if (lecs[0]) {
+        localStorage.setItem(lecs[0].ns + 'pos',
+          JSON.stringify({ v: 1, p: 'p04', n: 4, t: Date.now() - 26 * 3600 * 1000 }));
+        localStorage.setItem(lecs[0].ns + 'notes',
+          JSON.stringify({ v: 1, seq: 4, items: [{}, {}, {}] }));
+      }
+      if (lecs[1]) {
+        localStorage.setItem(lecs[1].ns + 'pos',
+          JSON.stringify({ v: 1, p: 'p02', n: 2, t: Date.now() - 5 * 24 * 3600 * 1000 }));
+      }
+      if (window.__course && window.__course.lp) window.__course.lp.refresh();
+    } catch (e) { /* 预置失败就退回空态，别让截图悄悄变成别的样子 */ }
     window.scrollTo(0, 0);
   }, 1200);
 });

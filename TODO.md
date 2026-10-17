@@ -9,20 +9,20 @@
 > **已完成条目已从正文移除**（不再跟踪），只留在文末「已完成索引」一行。  
 > 基线数据是 2026-10-03 实测，不是估算。
 
-## 当前基线（2026-10-16 实测）
+## 当前基线（2026-10-17 实测）
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 95 个文件（全部已跟踪） ｜ 13.4 MB（不含 `.git`） ｜ 43 个提交 |
+| 仓库 | 99 个文件（全部已跟踪） ｜ 约 13.7 MB（不含 `.git`） ｜ 44 个提交（三批已落库：T5 返回入口 / T7·T8 学习进度 / 顶栏「关于」面板），0 待提交 |
 | 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**51 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
-| 图片资源 | ✅ 4 张（`docs/images/`：hero / overview / notes / course）——取景参数已固化在 `scripts/shoot_previews.py`，改完 demo 重跑即可（2026-10-16 加：此前是手工截的，实测已停在「没有字号按钮、目录没有『本讲要点』」的旧版上） |
-| 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>；**课程合集版**（`docs/demo-course/index.html`，0.66 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-course/>。三份都能由 `scripts/build_demo.py` 一键重建，源工程在 `examples/demo/`（课程 demo 的两讲是两份单讲 demo 的**预构建副本**） |
+| 图片资源 | ✅ 4 张（`docs/images/`：hero / overview / notes / course）——取景参数已固化在 `scripts/shoot_previews.py`，改完 demo 重跑即可（2026-10-16 加：此前是手工截的，实测已停在「没有字号按钮、目录没有『本讲要点』」的旧版上；2026-10-17 学习进度落地后再重截） |
+| 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>；**课程合集版**（`docs/demo-course/index.html`，0.68 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-course/>。三份都能由 `scripts/build_demo.py` 一键重建，源工程在 `examples/demo/`（课程 demo 的两讲是两份单讲 demo 的**预构建副本**） |
 | 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` + `demo/`（两份 demo 的源工程：config + content + 原页图） |
 | 依赖清单 | ✅ `requirements.txt`（`pymupdf` + `pillow`，不锁版本；`node` 与浏览器为可选/外部） |
 | 自检体系 | ✅ 四条线：`selftest.py` = 机械路线 + 语义路线 + **课程路线**（v2.3.0 新增：两份真实产物组成两讲课 → 课程层体检 + **入口行为探针两发** + 反向注入）+ **文档口径**（`check_docs.py`，7 组断言）；**CI 已建**（第 3 条） |
 | CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（四条线）+ `check_docs.py` + **`build_demo.py --check`**（2026-10-16 加：三份 demo 的重建忠实性，纯 Python、不开浏览器） |
 | 代码块 | ✅ v2.4.1：`build.py` 构建期着色 + 标题栏注入 + 逐字自证；`site.js` 的 `initCodeCopy()` + `copyText()` 超时兜底；`templates/probe_codecopy.js` 专项探针（接进 `run_all.py` ⑥d）；`check_ui.py` ⑫ 组（条件式，无块时 SKIP） |
-| 版本号 | ✅ 最新 `v2.4.3`（`CHANGELOG.md` 已记到 v2.4.3「课程主页从能用到好用」）；**已发布 tag = `v2.4.3`**，v2.3.1 / v2.4.0 / v2.4.1 三段已在提交历史里但未单独打 tag（按发布时的决定） |
+| 版本号 | ✅ 最新已发布 `v2.4.3`（`CHANGELOG.md` 已记到 v2.4.3「课程主页从能用到好用」）；**已发布 tag = `v2.4.3`**，v2.3.1 / v2.4.0 / v2.4.1 三段已在提交历史里但未单独打 tag（按发布时的决定）；**未发布批次**：讲次返回入口（T5）+ 课程主页学习进度（T7/T8），见 CHANGELOG `[未发布]` 段 |
 | tag 状况 | 13 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
 | 跨平台 | 代码里有 macOS / Linux 分支；**Linux 已由 CI 覆盖**（ubuntu runner 装 `fonts-noto-cjk`），macOS 仍未真机验证（见第 7 条） |
 | 文档口径 | ✅ 无已知漂移；`check_docs.py` 新增「pitfalls 裸计数」断言（第 1、13 条完成，`check_docs.py` 常驻把关） |
@@ -203,7 +203,7 @@
 
 **验收**：打开 New Issue 时能看到模板
 
-### [ ] 5. `init_project.py` 生成的 `README-项目.md` 写死套件绝对路径
+### [~] 5. `init_project.py` 生成的 `README-项目.md` 写死套件绝对路径 —— 收窄后落地（2026-10-17）
 
 **为什么**：`init_project.py:676` 现在还在写 `KIT="C:/Users/<用户名>/.workbuddy/skills/..."`。  
 套件一旦被拷到别的机器、或者项目目录被单独拷走，README 里的所有重建命令**全部失效**，  
@@ -215,6 +215,13 @@
 - 至少在 README 顶部写明「套件搬家了？改这一行」
 
 **验收**：把项目目录和套件分别拷到两个不同位置，README 里的命令照抄仍能跑
+
+**处置记录（2026-10-17）——收窄后落地**：相对路径档评估为**不可行**——套件目录（通常在
+`~/.workbuddy/skills/` 下）与项目目录的位置关系是**任意的**，不存在稳定相对路径；
+「运行时探测套件在哪」在项目侧是鸡生蛋（探测脚本本身就在套件里）。落地的是**提示档**：
+`README-项目.md` 的 KIT 行改为 `KIT="${KIT:-<默认路径>}"` + 顶部注释「套件搬到别处时
+`export KIT=/新路径` 或改这一行」——换机器 / 多套件版本场景一行解决，其余命令不用动。
+**本条收窄为已处置，不再跟踪**（验收口径随之改为「README 里写明了搬家怎么办、且一行可改」）。
 
 ### [x] 6. `CHANGELOG.md` ✅ **已完成（2026-10-07，随 v2.1.1 发布）**
 
@@ -351,15 +358,17 @@
   > **顺带产出**：`references/pitfalls.md` 新增第 43 条（H 组「文档与口径」），
   > 把这次的根因与处理法记下来——这类漂移会再犯，得留记录。
 
-- [ ] **14.** README 加一张「原 PDF 大小 → 产物大小」换算表（现在只有「≈ × 1.34」一行文字，  
-  藏在「已知限制」里）。让用户提前知道内嵌 PDF 的代价，而不是做完才发现 20 MB
+- [x] **14.** README 加一张「原 PDF 大小 → 产物大小」换算表（现在只有「≈ × 1.34」一行文字，  
+  藏在「已知限制」里）。让用户提前知道内嵌 PDF 的代价，而不是做完才发现 20 MB ✅ **已完成（2026-10-17）**——
+  「已知限制」里升级为「公式 + 四行实测表」（原 PDF / 页数 / 产物），中英同步。
 - [ ] **15.** 缩略图支持 WebP：`prepare_pdf.py` 只出 PNG（`grep webp` 零命中）。  
   demo 的 1.19 MB 里缩略图占大头，WebP 通常能省 30–50%。顺带记一条实测陷阱：  
   **PNG 降采样反而更大**（已在第 1 条截图的实测记录里踩过：1200 px → 380 KB vs 原始 240 KB，  
   插值在大片纯色区造出渐变，压缩率变差）
-- [ ] **16.** `scripts/` 与 `templates/` 的 probe 文件放得不一致：`probe_marks.js` 在  
+- [x] **16.** `scripts/` 与 `templates/` 的 probe 文件放得不一致：`probe_marks.js` 在  
   `scripts/`，`probe_doc.js` / `probe_font.js` 在 `templates/`。统一到一处，或在 README 的  
-  目录树里说清分工
+  目录树里说清分工 ✅ **已完成（2026-10-17）**——选了「说清分工」档：目录树的
+  `templates/` 条目注明「probe_*.js 大多在此；`probe_marks.js` 属历史摆放，留在 `scripts/`」。
 - [x] **17.** `.gitignore` 补 `*.log`、`.pytest_cache/`（若以后加前端再加 `node_modules/`）。  
   现有条目已覆盖 `__pycache__/`、`.venv/`、编辑器与系统文件 ✅ **已完成（2026-10-07）**
 - [ ] **18.** 各脚本头部加 SPDX 标识（GPL 的 "How to Apply" 建议这么做，但会让 diff 变吵，  
@@ -409,8 +418,9 @@ P0 已经清空了，但**现在所有验证都靠人手动跑**——这轮的�
 顺带让贡献者放心；② ubuntu runner 自带 Chrome + `fonts-noto-cjk`，
 **等于把第 7 条（macOS / Linux 真机验证）白送**（Linux 半边已落地）。
 
-**下一步做第 6 条（`CHANGELOG.md`）**——它和第 12 条（清理开发期 tag）合起来做更划算，
-写 CHANGELOG 时顺手把标签约定说清，一次改两件事。
+**下一步做第 4 条（`CONTRIBUTING.md` + Issue 模板）**——「改套件的五条纪律」现在埋在
+`SKILL.md` 第 400 行附近，贡献者根本看不到。P0 / CI / CHANGELOG 均已完成；
+第 5 条已收窄落地（提示档）、第 7 条待外部环境——这是「对陌生人更友好」剩余清单上的最高优先项。
 
 ---
 
@@ -454,6 +464,9 @@ P0 已经清空了，但**现在所有验证都靠人手动跑**——这轮的�
 | `probe_course.js` 对齐 `MAX_ROWS` → `PAGE_ROWS` 并补「显示更多」分页断言（原断言因字段改名恒假，且它只在手动跑 `run_course` 时才执行，静默红了很久） | 2026-10-16 |
 | **课程主页第二梯队**：scrollspy 当前区块高亮 / 要点「全部折叠·展开」开关 / 术语总表过滤框 / **URL 状态同步**（`#sec=&kp=&find=&gl=` 全 kv 格式，防抖写入 + 启动恢复 + 全量套用）；另修 S1–S4（地图卡片文本流分隔、`pages_left()` 抽取、0 命中摘要补边界说明、`course.json` 缺 `summary` 的 WARN） | 2026-10-16 |
 | **课程探针补自动入口**（TODO S5）：`selftest.py` 课程线跑**两发真实探针**（裸跑 + 带 hash 验启动恢复），含空转守卫；探针同步扩六组断言（⑧–⑬），新增断言经 7 例反向注入验证 | 2026-10-16 |
+| **讲次返回入口**（审查 A6 / 课程 TODO 的 T5，拍板落地）：`config.course_home` 可选注入 —— 默认零注入、不构成 C2 依赖（讲次全部功能不读课程目录）；`init_project --course` 自动声明；`build.py` 顶栏注入（锚点唯一硬断言）；配套 `check_ui` ⑬（条件式）/ `course_check`「有则必达」/ `selftest` 端到端 + 两发反向注入；课程 demo 同步演示闭环（`build_demo` 复用同一注入函数、`--check` 断言升级） | 2026-10-16 |
+| **课程主页「学习进度」**（课程 TODO 的 T7 / T8）：读各讲 localStorage 的阅读痕迹（上次位置 / 笔记数）+ 一键「继续」（设计稿 §5.10）；写作进度收敛；术语表排序 + 「出现位置」截断；反向注入四变体 | 2026-10-17 |
+| README 体积换算表（14）+ 目录树 probe 分工（16）+ `KIT="${KIT:-…}"`（5 的提示档） | 2026-10-17 |
 
 已完成条目的**实测记录**没有丢：README 相关截图与体积实测在 `README.md`，
 构建纪律在 `SKILL.md`，具体踩坑（含反向测试的记录）在 `references/pitfalls.md`。

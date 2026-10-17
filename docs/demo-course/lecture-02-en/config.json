@@ -1,12 +1,12 @@
 {
   "out": "index.html",
   "embed_pdf": false,
+  "lang": "en",
   "title": "Logistic Regression · Annotated Walkthrough (Demo · 8-page excerpt)",
   "brand": "Logistic Regression · English walkthrough",
   "course": "",
   "sidebar_title": " · Annotated Walkthrough (Demo)",
   "sidebar_sub": "",
-  "topbar_title": "Logistic Regression · Annotated Walkthrough · Demo (P1–P8)",
   "shards": [
     "content/00_intro.html",
     "content/10_ov1.html",
@@ -64,7 +64,7 @@
         ],
         [
           "#primer",
-          "Before you read: probability crash course"
+          "Prerequisites: probability crash course"
         ]
       ]
     ],
@@ -137,5 +137,5 @@
   ],
   "search_placeholder": "Search body · title · page (/)",
   "nav_foot": "Shortcuts: <b>J</b>/<b>K</b> next/prev · <b>/</b> search text · <b>M</b> highlight · <b>B</b> sidebar · <b>T</b> thumbnails · <b>N</b> notes",
-  "_note": "本讲是**预构建产物**：index.html 由 docs/demo-en/index.html 原样复制而来，源工程在 examples/demo/en/。本 config.json 只为课程层（course_init / course_index）提供 title / brand / pages / out，**不用于重新构建** —— 要改这一讲的正文，请改 examples/demo/en/ 再跑 scripts/build_demo.py。"
+  "_note": "本讲是**预构建产物**：index.html 由 docs/demo-en/index.html 复制并注入「返回课程主页」链接而来（见 scripts/build_demo.py），源工程在 examples/demo/en/。本 config.json 只为课程层（course_init / course_index）提供 title / brand / pages / out，**不用于重新构建** —— 要改这一讲的正文，请改 examples/demo/en/ 再跑 scripts/build_demo.py。"
 }

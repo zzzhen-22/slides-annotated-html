@@ -217,6 +217,24 @@ def inject_codeblock_sample(proj):
     return True
 
 
+def inject_course_home_cfg(proj, href='../index.html'):
+    """给骨架的 config 声明 course_home（课程返回入口，设计稿 §5.9）。
+
+    为什么值是 `../index.html`：本讲产物随后会被课程路线复制到
+    `base/course/lecture-02-en/`，相对那个位置它正好指向课程主页
+    （`base/course/index.html`，由 run_course 生成）。构建发生在复制之前、
+    课程主页还不存在 —— build 不查存在性（设计如此），course_check 才查。
+    """
+    cfg_p = os.path.join(proj, 'config.json')
+    if not os.path.exists(cfg_p):
+        return False
+    cfg = json.load(open(cfg_p, encoding='utf-8'))
+    cfg['course_home'] = href
+    open(cfg_p, 'w', encoding='utf-8').write(
+        json.dumps(cfg, ensure_ascii=False, indent=2) + '\n')
+    return True
+
+
 def semantic_path(base, pdf):
     """语义路线：--stage plan → 校对 outline → 改写确认 → --outline 建骨架 → build → 三校验。
 
@@ -278,6 +296,11 @@ def semantic_path(base, pdf):
         #     以及行尾注释与 `&gt;` 转义（最常漏的那个）。
         checks.append(('④a 样例塞入代码块（供 ⑫/⑥d 真跑）',
                        inject_codeblock_sample(sem)))
+        # ④b 给 config 声明「课程返回入口」（course_home）——
+        #     本讲之后会被课程路线复制成 lecture-02-en，届时 `../index.html` 正好指向
+        #     课程主页（base/course/index.html）。于是 build 期的注入、check_ui ⑬ 组、
+        #     course_check 的「有则必达」断言全部真跑（不是空转）。
+        checks.append(('④b config 声明 course_home（返回入口）', inject_course_home_cfg(sem)))
         out3, rc3 = run_pipeline([sys.executable, '-u', os.path.join(HERE, 'run_all.py'),
                                   pdf, '--out', sem, '--skip-init'])
         checks.append(('④ build + 体检退出码 0', rc3 == 0))
@@ -307,10 +330,20 @@ def semantic_path(base, pdf):
         # 产物里有注入过标题栏 + 四类着色 span ⇒ ⑫ 组走的是「真跑」分支
         has_blk = 'class="codeblk-head"' in phtml and '<span class="c">' in phtml
         checks.append(('④ ⑫ 代码块组真的跑了（非 SKIP）', has_blk))
+        # 产物里有课程返回入口 ⇒ build 的 course_home 注入真跑（check_ui ⑬ 组随之真跑）
+        checks.append(('④ 课程返回入口注入真跑（非空转）', 'class="course-home"' in phtml))
         # 探针侧：探针整体 PASS 且产物里确实有那两个样例块
         checks.append(('④ ⑥d 代码块探针真的跑了（非 SKIP）',
                        has_blk and '自检样例' in phtml
                        and re.search(r'RESULT: PASS', out3) is not None))
+        # ⑥e 阅读位置探针：样例有 6 个页区块 ⇒ 必走「真跑」分支（而非 SKIP）；
+        # 「换页写入: PASS」透传依赖 parse_probe 白名单的对应前缀
+        checks.append(('④ ⑥e 阅读位置探针真的跑了（非 SKIP）',
+                       re.search(r'换页写入: PASS', out3) is not None))
+        # ⑥f 关于面板探针：面板随外壳走、样例必有 ⇒ 必跑；首尾两组都在才算真跑
+        checks.append(('④ ⑥f 关于面板探针真的跑了（非 SKIP）',
+                       re.search(r'关于面板 ① 入口与面板存在', out3) is not None
+                       and re.search(r'关于面板 ⑧ 点卡片内部不误关', out3) is not None))
         checks.append(('④ probe_marks PASS', re.search(r'RESULT: PASS', out3) is not None))
         checks.append(('④ probe_doc 报进度', re.search(r'内容进度', out3) is not None))
         checks.append(('④ run_all 判定全绿', re.search(r'机械部分全绿', out3) is not None))
@@ -340,8 +373,8 @@ def course_path(base):
          **完整输出**来断言（run_course 成功时只回显步骤名），而且失败时错误归属清晰。
          在此之前探针只在手动跑 run_course 时执行，静默红过很久（它引用的字段被改名、
          断言恒假，却没有任何自动化入口会碰到它）。
-      ⑤ **反向注入**：把一条 .xref 指向坏锚点，重跑体检，必须报 FAIL ——
-         证明刚才是真的在查，而不是「永远 PASS」。
+      ⑤ **反向注入（两发）**：把一条 .xref 指向坏锚点、把 L02 的课程返回入口指向死链，
+         重跑体检，都必须报 FAIL —— 证明刚才是真的在查，而不是「永远 PASS」。
 
     返回断言列表（与另两条路线同格式）。
     """
@@ -445,9 +478,11 @@ def course_path(base):
                                   os.path.join(HERE, 'probe.py'), probe_html, probe_js])
     checks.append(('⑤c 课程入口探针（裸跑）PASS',
                    rc_pr == 0 and re.search(r'RESULT: PASS', out_pr) is not None))
-    # 空转守卫：本轮新增的组真的在跑（探针文件若退回旧版，这两组会消失而整体照旧 PASS）
-    checks.append(('⑤c 探针覆盖本轮新增组（scrollspy / URL 链路）',
-                   '⑧ 顶栏 scrollspy' in out_pr and '⑬ URL 写入' in out_pr))
+    # 空转守卫：本轮新增的组真的在跑（探针文件若退回旧版，这些组会消失而整体照旧 PASS）
+    checks.append(('⑤c 探针覆盖本轮新增组（scrollspy / URL / 学习进度）',
+                   '⑧ 顶栏 scrollspy' in out_pr and '⑬ URL 写入' in out_pr
+                   and '⑭ 学习进度渲染' in out_pr))
+    checks.append(('⑤c 探针覆盖术语排序组（⑮）', '⑮ 术语排序' in out_pr))
     out_ph, rc_ph = run_pipeline([sys.executable, '-u',
                                   os.path.join(HERE, 'probe.py'), probe_html, probe_js,
                                   '--hash', 'sec=keypoints&kp=zzz-selftest-none'])
@@ -459,8 +494,9 @@ def course_path(base):
         print('  （课程探针失败时先看上面两发 output 里的 ✘ 行；'
               '改了课程页 JS/CSS/HTML 后必须重跑这里）')
 
-    # ⑤ 反向注入：坏锚点必须被抓到
+    # ⑤ 反向注入（两发）：坏锚点 / course-home 死链，都必须被 course_check 抓到
     checks.append(reverse_check_course(course, prod_rel))
+    checks.append(reverse_check_home_link(course, prod_rel))
     return checks
 
 
@@ -538,7 +574,7 @@ def patch_course_lecture(lec_dir):
 
 
 def reverse_check_course(course, prod_rel):
-    """反向注入：把 L01 的 .xref 改成坏锚点 → 体检**必须**报 FAIL，然后复原。
+    """反向注入 1：把 L01 的 .xref 改成坏锚点 → 体检**必须**报 FAIL，然后复原。
 
     没有这一步，前面那条 ALL PASS 只证明了「脚本没崩」，没证明「脚本在查东西」。
     """
@@ -560,6 +596,36 @@ def reverse_check_course(course, prod_rel):
     run_pipeline([sys.executable, '-u',
                   os.path.join(HERE, 'course_index.py'), course])
     return ('⑤ 反向注入：坏锚点被 course_check 抓到', caught)
+
+
+def reverse_check_home_link(course, prod_rel):
+    """反向注入 2：把 L02 的「课程返回入口」改成死链 → 体检**必须**报 FAIL，然后复原。
+
+    为什么注入在 L02：它是语义路线的产物 —— 那一讲在构建前声明了 course_home
+    （见 inject_course_home_cfg），是整条链里唯一「真的带返回入口」的产物。
+    没有这一步，「有则必达」只证明了脚本没崩，没证明它在查（pitfalls 第 48 条）。
+    """
+    label = '⑤ 反向注入：course-home 死链被 course_check 抓到'
+    prod = os.path.join(course, 'lecture-02-en', prod_rel or '')
+    if not prod_rel or not os.path.exists(prod):
+        return (label, False)
+    html = open(prod, encoding='utf-8').read()
+    if 'class="course-home"' not in html:
+        return (label, False)
+    bad = html.replace('class="course-home" href="../index.html"',
+                       'class="course-home" href="../nope-home.html"', 1)
+    if bad == html:
+        return (label, False)
+    open(prod, 'w', encoding='utf-8', newline='').write(bad)
+    out, _ = run_pipeline([sys.executable, '-u',
+                           os.path.join(HERE, 'course_check.py'), course])
+    caught = (re.search(r'结果: FAILED', out) is not None
+              and '课程返回入口都指向存在的目标' in out)
+    # 复原，并重跑索引让状态回到自洽
+    open(prod, 'w', encoding='utf-8', newline='').write(html)
+    run_pipeline([sys.executable, '-u',
+                  os.path.join(HERE, 'course_index.py'), course])
+    return (label, caught)
 
 
 def main():

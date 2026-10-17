@@ -3,11 +3,11 @@
   "lectures": [
     {
       "id": "L01",
-      "title": "Logistic Regression",
+      "title": "逻辑回归 · 中文精解",
       "status": "done",
       "page_count": 8,
       "done_pages": 8,
-      "hash": "4fb7c10d0d17",
+      "hash": "124aa2933d81",
       "points": [
         {
           "text": "监督学习学的是从输入到输出的预测函数——「学习」的全部信息来自带正确答案的样本，而不是写死的规则。",
@@ -43,11 +43,11 @@
     },
     {
       "id": "L02",
-      "title": "Logistic Regression",
+      "title": "Logistic Regression · English walkthrough",
       "status": "done",
       "page_count": 8,
       "done_pages": 8,
-      "hash": "23d47d8b6436",
+      "hash": "16e8558cb040",
       "points": [
         {
           "text": "Supervised learning fits a predictive function from \"input + correct answer\" pairs — the information all comes from labeled samples, never from hand-written rules.",
