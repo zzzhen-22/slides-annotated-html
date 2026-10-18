@@ -27,6 +27,9 @@
     · 取结果必须 **rfind** 而不是 find —— 注入的 <script> 源码在 DOM dump 里
       不会被转义，若探针抛异常没来得及清空 body，find 会从脚本源码里抠出一段垃圾
     · 命令行里带中文文件名会偶发触发沙箱异常 → 路径尽量由脚本内部给出
+    · 浏览器输出**必须落临时文件，不许走管道**（2026-10-17 实测：Chrome 的幽灵
+      子进程占住 stdout 管道不松手时，capture_output 的读端在超时杀进程后仍等
+      EOF，整体挂死 7m20s；改文件后读端永远不被谁卡住，见 pitfalls 第 54 条）
 """
 import argparse
 import ctypes
@@ -104,18 +107,36 @@ def main():
     # 我们只能抓到「退出码 0 + 0 字节」的假象）。
     cmd += kitpath.browser_flags(find_browser())
     cmd += ['--dump-dom', url]
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=300,
-                           encoding='utf-8', errors='replace')
-    except subprocess.TimeoutExpired:
-        raise SystemExit('探针超时')
 
-    dom = r.stdout or ''
+    # —— 浏览器输出落临时文件，不走管道 ——
+    # 管道版（capture_output=True）的坑：Chromium 主进程退出后，它派生的幽灵
+    # 子进程可能仍握着 stdout 的写端不关；Python 的读端在等 EOF，于是连
+    # 「timeout=300 杀掉子进程」之后读端也照样堵——实测整体挂死 7m20s（2026-10-17）。
+    # 落文件后不存在这个问题：浏览器写它的文件，我们结束后打开读就是了，
+    # 谁占着句柄都堵不到读取端。文件放在 tmp（isolate.html 同目录），
+    # 随 --keep / profile 的既有清理策略一起走，不另留垃圾。
+    out_path = os.path.join(tmp, 'dom.txt')
+    err_path = os.path.join(tmp, 'stderr.txt')
+    rc = None
+    try:
+        with open(out_path, 'w', encoding='utf-8') as fo, \
+                open(err_path, 'w', encoding='utf-8') as fe:
+            r = subprocess.run(cmd, stdout=fo, stderr=fe, timeout=300)
+            rc = r.returncode
+    except subprocess.TimeoutExpired:
+        raise SystemExit('探针超时（300s；已产出的部分输出在 %s）' % out_path)
+
+    with open(out_path, encoding='utf-8', errors='replace') as f:
+        dom = f.read()
+    stderr_tail = ''
+    if os.path.exists(err_path):
+        with open(err_path, encoding='utf-8', errors='replace') as f:
+            stderr_tail = f.read()[-800:]
     key = '<pre id="__r">'
     i = dom.rfind(key)                      # 一定用 rfind，理由见文件头
     if i < 0:
-        print('!! 没拿到探针结果 (dom %d bytes, rc=%s)' % (len(dom), r.returncode))
-        print('stderr tail:', (r.stderr or '')[-800:])
+        print('!! 没拿到探针结果 (dom %d bytes, rc=%s)' % (len(dom), rc))
+        print('stderr tail:', stderr_tail)
         sys.exit(3)
     j = dom.find('</pre>', i)
     body = dom[i + len(key):j]

@@ -14,7 +14,7 @@
 | 项目 | 现状 |
 |---|---|
 | 仓库 | 99 个文件（全部已跟踪） ｜ 约 13.7 MB（不含 `.git`） ｜ 44 个提交（三批已落库：T5 返回入口 / T7·T8 学习进度 / 顶栏「关于」面板），0 待提交 |
-| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**51 条**，三段式、按对象分 A–I 九组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
+| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**55 条**，三段式、按对象分 A–J 十组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
 | 图片资源 | ✅ 4 张（`docs/images/`：hero / overview / notes / course）——取景参数已固化在 `scripts/shoot_previews.py`，改完 demo 重跑即可（2026-10-16 加：此前是手工截的，实测已停在「没有字号按钮、目录没有『本讲要点』」的旧版上；2026-10-17 学习进度落地后再重截） |
 | 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>；**课程合集版**（`docs/demo-course/index.html`，0.68 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-course/>。三份都能由 `scripts/build_demo.py` 一键重建，源工程在 `examples/demo/`（课程 demo 的两讲是两份单讲 demo 的**预构建副本**） |
 | 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` + `demo/`（两份 demo 的源工程：config + content + 原页图） |
