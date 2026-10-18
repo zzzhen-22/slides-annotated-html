@@ -9,11 +9,11 @@
 > **已完成条目已从正文移除**（不再跟踪），只留在文末「已完成索引」一行。  
 > 基线数据是 2026-10-03 实测，不是估算。
 
-## 当前基线（2026-10-17 实测）
+## 当前基线（2026-10-18 实测）
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 99 个文件（全部已跟踪） ｜ 约 13.7 MB（不含 `.git`） ｜ 44 个提交（三批已落库：T5 返回入口 / T7·T8 学习进度 / 顶栏「关于」面板），0 待提交 |
+| 仓库 | 99 个文件（全部已跟踪）｜ 约 14 MB（不含 `.git`）｜ 46 个提交（四批已落库：T5 返回入口 / T7·T8 学习进度 / 顶栏「关于」面板 / 工具链可靠性修复），0 待提交 |
 | 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**55 条**，三段式、按对象分 A–J 十组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
 | 图片资源 | ✅ 4 张（`docs/images/`：hero / overview / notes / course）——取景参数已固化在 `scripts/shoot_previews.py`，改完 demo 重跑即可（2026-10-16 加：此前是手工截的，实测已停在「没有字号按钮、目录没有『本讲要点』」的旧版上；2026-10-17 学习进度落地后再重截） |
 | 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>；**课程合集版**（`docs/demo-course/index.html`，0.68 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-course/>。三份都能由 `scripts/build_demo.py` 一键重建，源工程在 `examples/demo/`（课程 demo 的两讲是两份单讲 demo 的**预构建副本**） |
@@ -22,8 +22,8 @@
 | 自检体系 | ✅ 四条线：`selftest.py` = 机械路线 + 语义路线 + **课程路线**（v2.3.0 新增：两份真实产物组成两讲课 → 课程层体检 + **入口行为探针两发** + 反向注入）+ **文档口径**（`check_docs.py`，7 组断言）；**CI 已建**（第 3 条） |
 | CI | ✅ `.github/workflows/selftest.yml`：push 到 `main` / 每个 PR，ubuntu + windows 双平台跑 `selftest.py`（四条线）+ `check_docs.py` + **`build_demo.py --check`**（2026-10-16 加：三份 demo 的重建忠实性，纯 Python、不开浏览器） |
 | 代码块 | ✅ v2.4.1：`build.py` 构建期着色 + 标题栏注入 + 逐字自证；`site.js` 的 `initCodeCopy()` + `copyText()` 超时兜底；`templates/probe_codecopy.js` 专项探针（接进 `run_all.py` ⑥d）；`check_ui.py` ⑫ 组（条件式，无块时 SKIP） |
-| 版本号 | ✅ 最新已发布 `v2.4.3`（`CHANGELOG.md` 已记到 v2.4.3「课程主页从能用到好用」）；**已发布 tag = `v2.4.3`**，v2.3.1 / v2.4.0 / v2.4.1 三段已在提交历史里但未单独打 tag（按发布时的决定）；**未发布批次**：讲次返回入口（T5）+ 课程主页学习进度（T7/T8），见 CHANGELOG `[未发布]` 段 |
-| tag 状况 | 13 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
+| 版本号 | ✅ 最新已发布 `v2.5.0`（2026-10-18，「返回入口 + 学习进度 + 关于面板 + 工具链修复」，`CHANGELOG.md` 已记到 v2.5.0）；**已发布 tag = `v2.5.0`**；v2.3.1 / v2.4.0 / v2.4.1 三段已在提交历史里但未单独打 tag（按发布时的决定） |
+| tag 状况 | 14 个 tag，其中 6 个非 SemVer（5 个 `v2.0-semantic-outline-step3/4/5/6/12` + 1 个 `v1.0-classic-pipeline`），会干扰 Releases 页（见第 12 条） |
 | 跨平台 | 代码里有 macOS / Linux 分支；**Linux 已由 CI 覆盖**（ubuntu runner 装 `fonts-noto-cjk`），macOS 仍未真机验证（见第 7 条） |
 | 文档口径 | ✅ 无已知漂移；`check_docs.py` 新增「pitfalls 裸计数」断言（第 1、13 条完成，`check_docs.py` 常驻把关） |
 
