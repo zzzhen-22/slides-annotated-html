@@ -6,6 +6,19 @@
 > **标签约定**：Releases 页只看 SemVer 标签（`vX.Y.Z`）。形如 `v2.0-semantic-outline-stepN`、
 > `v1.0-classic-pipeline` 的标签是**开发期快照**，不是正式发布，请勿当作版本号引用。
 
+## [未发布]
+
+### 修复
+
+- **课程层 `file_hash` 换行归一化**：根治「CI ubuntu 上 `build_demo.py --check` 红」。
+  产物 HTML 由生成脚本在 Windows 文本模式写出是 CRLF，而 git 以 LF 存 blob
+  （`core.autocrlf=input`）、Linux 上 checkout 出来是 LF；`file_hash` 此前按原始字节
+  hash，同一份产物在两端算出不同哈希 → 课程层增量缓存在 Linux 上**必然不命中** →
+  强制重抽 → 新哈希写进 `_course/index.json` / `keypoints.json`（glossary.json 没有
+  hash 字段，恰好不红）→ 「课程层五产物可重建且逐字节一致」二进制比对红。改为
+  hash 前把 `\r\n` 归一化成 `\n`，让「仅换行符不同」的文件共享同一哈希；demo 的
+  `_course` 两个 JSON 的 hash 字段随之重建。
+
 ## [v2.5.0] - 2026-10-18
 
 > 主题：**给课程合集补上「往返」与「进度」两块拼图**，讲次外壳的「关于」面板，外加一轮工具链可靠性修复。

@@ -7,7 +7,7 @@
       "status": "done",
       "page_count": 8,
       "done_pages": 8,
-      "hash": "124aa2933d81",
+      "hash": "2bd6170e863d",
       "points": [
         {
           "text": "监督学习学的是从输入到输出的预测函数——「学习」的全部信息来自带正确答案的样本，而不是写死的规则。",
@@ -47,7 +47,7 @@
       "status": "done",
       "page_count": 8,
       "done_pages": 8,
-      "hash": "16e8558cb040",
+      "hash": "3d58d3837983",
       "points": [
         {
           "text": "Supervised learning fits a predictive function from \"input + correct answer\" pairs — the information all comes from labeled samples, never from hand-written rules.",

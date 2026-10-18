@@ -463,14 +463,23 @@ def glossary_entries(html):
 
 
 def file_hash(path):
-    """产物内容的短哈希，用于课程层的**增量**：没变就不重抽。"""
+    """产物内容的短哈希，用于课程层的**增量**：没变就不重抽。
+
+    **换行归一化（\\r\\n → \\n）后再 hash**：产物 HTML 由生成脚本在 Windows 文本
+    模式写出是 CRLF，而 git 以 LF 存 blob（`core.autocrlf=input`）、Linux 上 checkout
+    出来是 LF。若按原始字节 hash，同一份产物在 Windows / Linux 会算出两个哈希 →
+    课程层增量缓存在 Linux 上必然不命中 → 强制重抽 → 新哈希写进 index.json /
+    keypoints.json → 「课程层五产物可重建且逐字节一致」在 CI 的 ubuntu 上红
+    （2026-10-18 实测 build_demo --check 抓到的正是 index/keypoints 两个文件，
+    而 glossary.json 没有 hash 字段、恰好不红）。归一化后「仅换行符不同」的文件
+    共享同一哈希，跨平台增量稳定。一次性读入：产物 HTML 最多几十 MB，无内存之忧，
+    且省掉了「分块 replace 的跨块 \\r\\n 边界」这个坑。
+    """
     if not path or not os.path.exists(path):
         return ''
-    h = hashlib.sha1()
     with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(1 << 20), b''):
-            h.update(chunk)
-    return h.hexdigest()[:12]
+        data = f.read()
+    return hashlib.sha1(data.replace(b'\r\n', b'\n')).hexdigest()[:12]
 
 
 def long_path(p):
