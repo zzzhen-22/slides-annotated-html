@@ -90,7 +90,27 @@ python scripts/run_all.py examples/sample-lecture.pdf --out demo   # ③ 一键�
 |---|---|---|
 | Python 3.9+ | 全部脚本 | 依赖清单见 `requirements.txt`；缺包时脚本会给出可直接照抄的 pip 命令 |
 | Chrome / Edge | 无头截图与 DOM 断言 | 自动探测：环境变量 → PATH → 常见安装位置 |
-| Node.js（可选） | `check_math.js` 公式自检 | 唯一用到 node 的地方；缺了时该步自动跳过 |
+| Node.js（可选） | `check_math.js` 公式语法自检 | **唯一**用到 node 的地方；缺了时该步自动跳过，静态兜底见下文「不装 Node 会少什么」 |
+
+### 不装 Node 会少什么（以及怎么补）
+
+**结论：不装 Node 也能完整跑完流水线**，只少一项能力 —— 公式**语法能不能被 KaTeX 渲染**
+（`\frac` 少写参数、命令名拼错这类）。这一步在 `run_all.py` 里是**自动跳过**的
+（输出 `④ 跳过 check_math.js（没有 node）`），不报错、不中断、不影响产物。
+
+`check_math.js` 里那些**不需要渲染**就能判定的部分，已经由 `check_ui.py` 的 ⑮ 组
+（纯 Python，随 ⑤ 一起跑）兜住，口径与它逐条对齐：
+
+| 检查项 | 需要 Node | 不装时谁来兜 |
+|---|---|---|
+| 公式标签成对闭合 / 花括号平衡 / `\left`·`\right` 配对 / `\begin`·`\end` 配对 | 否 | `check_ui.py` ⑮ 组 |
+| HTML 标签配对（排除注释后逐标签数开闭） | 否 | `check_ui.py` ⑮ 组 |
+| 目录锚点是否都存在 | 否 | `check_ui.py` ⑮ 组 |
+| 公式**语法**能否渲染（少参数、未知命令、`strict` 违反） | **是** | 无替代；装 Node 才有 |
+
+补上唯一缺项：装 Node.js（>= 14，Windows / macOS / Linux 均可）后重跑
+`python scripts/run_all.py "<课件.pdf>" --out "<目录>" --skip-init --skip-prepare`，
+④ 会自动出现。`kitpath.py` 会把 node 列为**可选依赖**——缺它不会让环境自查报红。
 
 ### 跑完 ③ 你会得到
 
@@ -191,6 +211,7 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 
 ```
 ├─ SKILL.md                 ← 给 AI agent 的执行指令：完整工作流 + 铁律 + 改套件的纪律
+├─ CONTRIBUTING.md          ← 给贡献者：环境、五条纪律、改完要跑什么、要同步哪些文档
 ├─ scripts/
 │   ├─ run_all.py           ← 主入口：一键流水线（①–⑧）；--stage plan 先出大纲草案 / --stage check 只复检
 │   ├─ kitpath.py           ← 路径自查：python / node / 浏览器 / Python 依赖
@@ -253,8 +274,10 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 │   ├─ demo-course/         ← 在线 demo（课程层）：把上面两份当两讲 + 课程入口页
 │   └─ images/              ← README 里那几张截图（scripts/shoot_previews.py 可重截）
 ├─ .github/
-│   └─ workflows/
-│       └─ selftest.yml     ← CI：每次 push 到 main / 每个 PR 跑四条自查线
+│   ├─ workflows/
+│   │   └─ selftest.yml     ← CI：每次 push 到 main / 每个 PR 跑四条自查线
+│   ├─ ISSUE_TEMPLATE/      ← Issue 模板（bug 报告要求附 kitpath.py --json 输出）
+│   └─ PULL_REQUEST_TEMPLATE.md ← PR 清单：动了哪条链、跑了什么、文档同步
 └─ TODO.md                  ← 路线图：让它对陌生人更好用的待办清单
 ```
 
@@ -267,8 +290,8 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 
 | 脚本 | 管什么 | 不管什么 |
 |---|---|---|
-| `check_math.js` | 公式能不能渲染、CJK 有没有混进公式、标签配对、目录锚点、缩略图/区块/深链数量、正文缺字（组合符号 U+20D0–U+20FF，硬失败）、TODO 残留 | 长相、交互 |
-| `check_ui.py` | 六类交互的 DOM 与 CSS/JS 是否对齐（分组数与按钮数相等、收起后列宽真的变大、抽屉元素齐全、`DOC_NS` 已注入、字号调节的 `--fs`/反向补偿/localStorage 键、搜索面板与两套高亮类名的隔离、标记上色的结构安全），外加**代码块**一组（每块都有标题栏与复制按钮、四类着色 span 齐全、按钮有成功/失败态、打印时隐藏、`toast` 有实现） | 长相、实际行为 |
+| `check_math.js` | 公式能不能渲染、CJK 有没有混进公式、标签配对、目录锚点、缩略图/区块/深链数量、正文缺字（组合符号 U+20D0–U+20FF，硬失败）、TODO 残留。**需要 node**（套件唯一的可选外部依赖） | 长相、交互 |
+| `check_ui.py` | 六类交互的 DOM 与 CSS/JS 是否对齐（分组数与按钮数相等、收起后列宽真的变大、抽屉元素齐全、`DOC_NS` 已注入、字号调节的 `--fs`/反向补偿/localStorage 键、搜索面板与两套高亮类名的隔离、标记上色的结构安全），外加**代码块**一组（每块都有标题栏与复制按钮、四类着色 span 齐全、按钮有成功/失败态、打印时隐藏、`toast` 有实现），以及 ⑮ 组**静态兜底**（公式标签/花括号/`\left`·`\right`/`\begin`·`\end` 配对、HTML 标签配对、目录锚点 —— 不依赖 node，是 `check_math.js` 的降级替身） | 长相、实际行为 |
 | `probe.py` + `probe_marks.js` | **结构有没有被改坏**：自动找跨格/跨段/跨公式/单段四种选区，用**真实入口**标记后断言「块级元素数、可见文本、表格 tr/td 一字不变、无块级元素进 mark、无零宽 mark」，再拆掉全部 mark 重新定位一遍复查 | 长相 |
 | `probe.py` + `probe_font.js` | **正文字号调节**：初始 100%、`step()` 后 `--fs`/标签/localStorage 三者一致、`Font.init()` 重读恢复、MIN(0.9)/MAX(1.4) 钳制与按钮禁用；加 `--profile` 跑两遍可验跨进程持久化 | 长相 |
 | `probe.py` + `probe_find.js` | **正文搜索**：索引惰性建且覆盖全部有文字的节、查询命中数 = 结果行数、片段与正文都出现 `mark.q-hit`、跳转只加元素不改块级结构也不改一个字、多词是「且」、0 命中时目录交还、Esc 后高亮归零且正文逐字复原、全程不碰 `mark.hl` | 长相 |
@@ -333,6 +356,9 @@ python scripts/build_demo.py --check   # 只校验三份 demo 能被重建（改
 ---
 
 ## 改这个套件时的纪律
+
+> 完整的贡献流程（环境自查、改完必须跑什么、要同步哪些文档、提交与发版）在
+> **[CONTRIBUTING.md](CONTRIBUTING.md)**。下面是精华五条：
 
 - **先看 mtime**，不要凭记忆假定文件内容——`assets/` 与 `scripts/` 可能刚被别的会话改过。
 - **改完必须「重建 ＋ 三校验 ＋ 截图」四连**，并把新产物与旧产物 diff；目录块应当逐字节一致。

@@ -152,7 +152,11 @@ def _hint_course(out_dir):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('pdf')
+    # pdf 故意用 nargs='?'：漏传时**不甩 argparse 的 "the following arguments are
+    # required"**（那句话不告诉人下一步敲什么），改为打印「三步上手」——
+    # 第一次用的人漏参数是常态，这里是最值得多写两行的地方。
+    ap.add_argument('pdf', nargs='?', default=None,
+                    help='课件 PDF；省略时打印三步上手')
     ap.add_argument('--out', default=None)
     ap.add_argument('--skip-init', action='store_true')
     ap.add_argument('--skip-prepare', action='store_true')
@@ -175,9 +179,24 @@ def main():
     ap.add_argument('--thumb-quality', type=int, default=75)
     a = ap.parse_args()
 
+    if not a.pdf:
+        print("""还没有给课件 PDF。三步上手（在仓库根目录执行）：
+
+  ① 装依赖   pip install -r requirements.txt
+  ② 自查     python scripts/kitpath.py
+  ③ 一键跑   python scripts/run_all.py examples/sample-lecture.pdf --out demo
+
+想先看结构、不建骨架：     加 --stage plan
+只想复检已有项目：        加 --skip-init --skip-prepare
+全部参数与每一步做什么：  python scripts/run_all.py --help
+""")
+        return 2
+
     pdf = os.path.abspath(a.pdf)
     if not os.path.exists(pdf):
-        raise SystemExit('找不到 PDF: %s' % pdf)
+        kitpath.die('找不到课件文件：%s' % pdf,
+                    '路径不对，或文件已被挪走/改名（相对路径按当前目录解析）。',
+                    '换个路径再跑：python scripts/run_all.py "<课件.pdf>" --out <项目目录>')
     stem = os.path.splitext(os.path.basename(pdf))[0]
     out_dir = os.path.abspath(a.out) if a.out else os.path.join(os.path.dirname(pdf), stem + '-讲解')
     cfg_path = os.path.join(out_dir, 'config.json')
@@ -329,4 +348,6 @@ def main():
     print('      内容进度看 ⑦ 的「内容进度：待补页面」——目标是 0。')
 
 if __name__ == '__main__':
-    main()
+    # 用返回值当退出码：漏传 pdf 时 main() 返回 2（与 argparse 的参数错误同码），
+    # 其余路径返回 None（= 0）。硬失败仍由 main 内部的 sys.exit(1) 直接退出。
+    sys.exit(main())

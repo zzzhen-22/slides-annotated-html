@@ -8,6 +8,36 @@
 
 ## [未发布]
 
+### 新增
+
+- **`CONTRIBUTING.md` + Issue / PR 模板**（TODO 第一梯队 #4）：把原本散在 README 与
+  `SKILL.md` 的「改套件的五条纪律」抽成贡献者入口 —— 环境自查、先看 mtime、五条纪律、
+  「改完必须跑什么」与「改完必须同步哪些文档」两张表、提交 / PR / 发布流程。
+  `.github/ISSUE_TEMPLATE/bug_report.md` 要求附 `python scripts/kitpath.py --json` 的输出；
+  另有 `feature_request.md` 与 `PULL_REQUEST_TEMPLATE.md`（PR 里点明「动了哪条链 / 跑了什么 /
+  有没有配反向注入 / 文档同步」）。
+- **`kitpath.arg_parser()` 与 `kitpath.die()`**（TODO 第一梯队 #8）：全套件统一 argparse
+  报错与致命错误口径 —— 三段式「问题 / 原因 / 可直接照抄的命令」，退出码保持 argparse 惯例的 2。
+- **`check_ui.py` ⑮ 组「静态兜底」**（TODO 第一梯队 #9 的方案 C 前半，**不需要 node**）：
+  公式 script 标签闭合 / 花括号平衡 / `\left`·`\right` 配对 / `\begin`·`\end` 配对；
+  HTML 标签配对（与 `check_math.js` ③ 同口径：body 切片 + 先挖注释 + 同一份 tag 列表）；
+  目录锚点（同 ④ 口径）。没有公式的课件 → 公式三项 SKIP（合法形态）。
+
+### 变更
+
+- **六个脚本统一 argparse**：`build.py` / `prepare_pdf.py` / `kitpath.py` / `check_ui.py` /
+  `katex_offline.py`，外加顺手补齐的 `check_docs.py` —— 全部有可用的 `--help`。
+  `prepare_pdf.py` 的位置参数顺序 `pdf outdir [宽] [质]` **未动**
+  （`init_project.py` 生成的重建命令依赖它）。
+- `run_all.py` 漏传 pdf 时不再甩 argparse 原文，改为打印「三步上手」并以 2 退出；
+  找不到课件时给三段式报错。
+- `kitpath.py` 新增 `--json`（机器可读，Issue 模板直接要它）与 `--quiet`；
+  **node 归入「可选依赖」**：缺失只提示、不再让环境自查报红（与 README 口径对齐）。
+- README 新增「不装 Node 会少什么（以及怎么补）」小节（对比表 + 唯一缺项 + 怎么补）；
+  `README.en.md` 加 "Without Node"；「三重校验」表两行同步标注 node 依赖与 ⑮ 组。
+- `check_docs.py` 的 ① / ⑤ 组把 `CONTRIBUTING.md` 纳入扫描
+  （文档里引用的脚本路径必须真实存在，反向注入验过）。
+
 ### 修复
 
 - **课程层 `file_hash` 换行归一化**：根治「CI ubuntu 上 `build_demo.py --check` 红」。

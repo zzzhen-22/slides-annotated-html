@@ -5,6 +5,10 @@
 用法：
     python katex_offline.py <输出目录> [katex版本]
 
+    （位置参数顺序不变：目录在前、版本可选；`--help` 有完整说明。
+      版本参数保留为**可选位置参数**而不是 `--version`，因为后者在 argparse 里
+      是「打印版本号」的惯例选项，混在一起会让 `--help` 变得让人误解。）
+
 产物：
     <输出目录>/katex.offline.css   —— 字体已内嵌，无任何外部引用
     <输出目录>/katex.min.js        —— 渲染引擎，直接内联进 HTML
@@ -26,6 +30,9 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import kitpath  # noqa: E402  统一的参数解析与三段式报错
 
 MIRRORS = [
     'https://registry.npmmirror.com/katex/-/katex-%s.tgz',
@@ -91,10 +98,19 @@ def build(dist_dir, outdir):
 
 
 def main():
-    if len(sys.argv) < 2:
-        raise SystemExit(__doc__)
-    outdir = os.path.abspath(sys.argv[1])
-    version = sys.argv[2] if len(sys.argv) > 2 else '0.16.11'
+    ap = kitpath.arg_parser(
+        'katex_offline.py',
+        description='把 KaTeX 打包成完全离线的 CSS（字体转 base64）+ JS，之后 build.py 自动取用。',
+        epilog='例：python scripts/katex_offline.py vendor/katex            # 默认 0.16.11\n'
+               '    python scripts/katex_offline.py vendor/katex 0.16.9   # 指定版本\n'
+               '产物：katex.offline.css / katex.min.js / katex.src.json（一次生成，可跨项目复用）')
+    ap.add_argument('outdir', metavar='输出目录')
+    ap.add_argument('version', nargs='?', default='0.16.11', metavar='katex版本',
+                    help='npm 上的 KaTeX 版本号（默认 0.16.11）')
+    a = ap.parse_args()
+
+    outdir = os.path.abspath(a.outdir)
+    version = a.version
     os.makedirs(outdir, exist_ok=True)
 
     tgz = fetch(version, outdir)

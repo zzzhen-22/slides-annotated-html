@@ -18,8 +18,9 @@
 
 | 项目 | 现状 |
 |---|---|
-| 仓库 | 99 个文件（全部已跟踪）｜ 约 14 MB（不含 `.git`）｜ 46 个提交（四批已落库：T5 返回入口 / T7·T8 学习进度 / 顶栏「关于」面板 / 工具链可靠性修复），0 待提交 |
-| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`references/pitfalls.md`（**55 条**，三段式、按对象分 A–J 十组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
+| 仓库 | 103 个文件（全部已跟踪）｜ 约 14 MB（不含 `.git`）｜ 49 个提交，0 待提交（2026-10-20 第一梯队：`CONTRIBUTING.md` + Issue/PR 模板 / 六个脚本统一 argparse / 去 Node 依赖的方案 C 前半） |
+| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`CONTRIBUTING.md`（贡献者：五条纪律 / 改完跑什么 / 要同步哪些文档）、`references/pitfalls.md`（**55 条**，三段式、按对象分 A–J 十组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
+| 依赖面 | **Python**（`pymupdf` + `pillow`）与**浏览器**必需；**node 可选** —— 唯一用途是 `check_math.js` 的公式语法自检，缺了损失一项，静态兜底见 `check_ui.py` ⑮（2026-10-20） |
 | 图片资源 | ✅ 4 张（`docs/images/`：hero / overview / notes / course）——取景参数已固化在 `scripts/shoot_previews.py`，改完 demo 重跑即可（2026-10-16 起脚本化；2026-10-17 学习进度落地后已按新版重截） |
 | 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>；**课程合集版**（`docs/demo-course/index.html`，0.68 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-course/>。三份都能由 `scripts/build_demo.py` 一键重建，源工程在 `examples/demo/`（课程 demo 的两讲是两份单讲 demo 的**预构建副本**） |
 | 示例素材 | ✅ `examples/sample-lecture.pdf`（8 页 / 590 KB，metadata 已中性化）+ `config.example.json` + `section-template.html` + `demo/`（两份 demo 的源工程：config + content + 原页图） |
@@ -236,14 +237,19 @@
 ---
 
 
-## 未来计划（2026-10-18 随 v2.5.0 发布重估）
+## 未来计划（2026-10-18 随 v2.5.0 发布重估；2026-10-20 第一梯队收口）
 > **重估结论**：功能主线已收口，下一阶段的杠杆按序是**门槛**（陌生人/贡献者）、
 > **依赖面**（能不能少装东西）、**按需增强**（阶段 4，按性价比重排）。
 > 原条目编号全部继承不变；阶段 4 的四项起用新编号 21–24。
+>
+> **2026-10-20 更新**：第一梯队 4 / 8 已完成、9 落地方案 C 前半（缺 node 的损失压到只剩
+> 「公式语法能否渲染」一项），**下一轮从第二梯队（课程层增强 21–24）开工**；
+> 第一梯队剩下的只有「方案 B：把公式语法搬进浏览器、彻底删掉 `check_math.js`」，
+> 它属于「依赖面」的第二刀，工程量大于 21–24 中的任何一项。
 
-## 第一梯队 · 门槛与贡献体验（下一轮从这里开工）
+## 第一梯队 · 门槛与贡献体验（2026-10-20 收口：4 / 8 已完成，9 落地方案 C 前半）
 
-### [ ] 4. `CONTRIBUTING.md` + Issue / PR 模板
+### [x] 4. `CONTRIBUTING.md` + Issue / PR 模板 ✅ **已完成（2026-10-20）**
 
 **为什么**：项目里其实有一套很成熟的「改套件的五条纪律」，
 但它埋在 `SKILL.md` 第 400 行附近，**贡献者根本看不到**。
@@ -258,7 +264,22 @@
 
 **验收**：打开 New Issue 时能看到模板
 
-### [ ] 8. 补 `argparse`，并统一致命错误格式
+**落地记录（2026-10-20）**
+
+- `CONTRIBUTING.md`：先读三份（SKILL / pitfalls / TODO）→ 环境自查 → 「改之前先看 mtime」
+  → **五条纪律** → 「改完必须跑什么」（表）→ **「改完必须同步哪些文档」**（表）→
+  提交与 PR → 发布（维护者）。全篇只用相对路径，不写死任何本机位置。
+- `.github/ISSUE_TEMPLATE/bug_report.md`：**必填 `python scripts/kitpath.py --json` 输出**，
+  外加平台 / 浏览器 / node / 页数 / 动了哪条链；并提示不要上传有版权的课件。
+- `.github/ISSUE_TEMPLATE/feature_request.md`：先说「现在卡在哪」，再写影响面
+  （单讲 / 课程层 / 套件自身 / 新依赖）。
+- `.github/PULL_REQUEST_TEMPLATE.md`：动了哪条链、跑了哪些体检、**有没有配反向注入**、文档同步清单。
+- **新文档纳入体检**：`check_docs.py` 的 ① 组（文档提到的带路径文件）与 ⑤ 组
+  （pitfalls 裸总数）都把 `CONTRIBUTING.md` 列入 —— 反向注入验过：临时写一个不存在的
+  `scripts/no_such_file.py`，① 立刻报红，还原后回到 ALL PASS。
+- README 目录树补 `CONTRIBUTING.md` 与 `.github/` 展开；「改这个套件时的纪律」顶部指向它。
+
+### [x] 8. 补 `argparse`，并统一致命错误格式 ✅ **已完成（2026-10-20）**
 
 **为什么**：脚本已经有一半用了 argparse（`init_project` / `plan_outline` / `probe` / `run_all` /  
 `selftest` / `shot` / `glyph_probe`），但 `build.py` / `prepare_pdf.py` / `kitpath.py` /  
@@ -274,7 +295,23 @@
 
 **验收**：`python scripts/build.py --help` 等 5 个都有可用帮助；故意传错参数时给出的是人话不是 traceback
 
-### [ ] 9. 评估去掉 Node 依赖
+**落地记录（2026-10-20）**
+
+- 五个脚本全部接上 argparse（`--help` 可用）；`prepare_pdf.py` 的
+  `pdf outdir [缩略图宽度] [JPEG质量]` 顺序**一个没动**（`init_project.py` 生成的重建命令依赖它，
+  实测 `run_all` 的 ② 与新命令都能跑）。
+- **顺手多接了一个**：`check_docs.py` 原来也在裸读 `-v`，共 6 个脚本风格统一。
+- 公共件放在 `kitpath.py`（本来就是「任何脚本都可 import 的标准库模块」）：
+  - `arg_parser(prog, description, epilog)` —— 把 `error()` 改写成三段式，退出码保持 argparse 惯例的 2；
+  - `die(problem, cause, fix)` —— 三段式致命错误，`fix` 支持多行命令。
+- `run_all.py` 漏传 pdf → 打印「三步上手」（含 `--stage plan` / `--skip-init` 两条捷径）并以 2 退出，
+  不再甩 `the following arguments are required`。
+- `kitpath.py` 新增 `--json`（机器可读，Issue 模板直接要它）与 `--quiet`（只给退出码）；
+  同时把 **node 降为「可选依赖」**：缺失只提示、不再让自查报红（与 README 的口径对齐）。
+- **验收实测**：6 个 `--help` 全部可用；`build.py /tmp/nope.json`、`prepare_pdf.py`（缺参）、
+  `kitpath.py --nope` 三条错误路径输出的都是「问题 / 原因 / 解决」。
+
+### [~] 9. 评估去掉 Node 依赖 —— **方案 C 前半已落地（2026-10-20）**，方案 B 仍待评估
 
 **为什么**：这是**门槛最实质**的一条。重新核过依赖面：`node` 的唯一用途是 `check_math.js`  
 （KaTeX 语法自检）——`probe.py` 走的是浏览器 `--dump-dom`，**不需要 node**。  
@@ -292,6 +329,29 @@
 但它能把「Python + 浏览器」变成**唯一的两项依赖**，对新人门槛是数量级的下降。
 
 **验收**：`check_math.js` 要么被删掉，要么 README 明确写出「没有它会少什么、怎么补」
+
+**落地记录（2026-10-20，方案 C 前半）**
+
+- `check_ui.py` 新增 **⑮ 组「静态兜底」（不需要 node）**，三块：
+  1. **公式结构**：`math/tex` script 标签成对闭合、花括号平衡（`\{` `\}` 是字面量，先剥离）、
+     `\left`·`\right` 配对（负向断言避开 `\leftarrow` / `\rightarrow`）、`\begin`·`\end` 逐环境配对；
+     CJK 混入只提示不判死（与 `check_math.js` ② 同口径）。
+  2. **HTML 标签配对**：与 `check_math.js` ③ **同口径** —— body 切片 + 先挖注释 +
+     同一份 tag 列表（刻意不含 `script`，否则内联的 katex.min.js 必然误报）。
+  3. **目录锚点**：与 `check_math.js` ④ 同口径。
+  条件式口径同 ⑫：没有公式的课件**公式三项 SKIP**（合法形态），标签与锚点照常查。
+- **口径一致性实测**：同一份 `docs/demo/index.html`（191 条公式），两个检查器都报
+  「排除 2 段注释、全部平衡」「16 条链接、缺失锚点 0」。
+- **反向注入 6/6 抓到**（脚本 `_analysis/reverse-inject-checkui-015-2026-10-20.py`，可重跑）：
+  花括号 / `\left` / `\begin` / 公式标签未闭合 / HTML 标签未闭合 / 目录锚点缺失。
+  其中「HTML 标签未闭合」首次误报为漏 —— 因为删到了 `<body>` **之前**的 `</div>`
+  （shell 里顶栏那一段），而配对只在 body 切片内数；改注入点后抓到。
+- README 新增 **「不装 Node 会少什么（以及怎么补）」** 小节（对比表 + 唯一缺项 + 怎么补）；
+  环境表、三重校验表两行同步；`README.en.md` 加 "Without Node" 对应段落。
+- `kitpath.py` 把 node 归入「可选依赖」，缺它不再让环境自查报红。
+- **仍未做**：方案 B（把公式语法搬进浏览器探针、删掉 `check_math.js`）。只有做完 B，
+  依赖面才真正压到「Python + 浏览器」两项；当前状态是「**缺 node 的损失**被压到一项」，
+  而不是「不需要 node」。
 
 ---
 
@@ -476,7 +536,7 @@ P0 已经清空了，但**现在所有验证都靠人手动跑**——这轮的�
 
 ---
 
-## 已完成索引（2026-09-24 ~ 2026-10-18，不再跟踪）
+## 已完成索引（2026-09-24 ~ 2026-10-20，不再跟踪）
 
 正文里已勾掉的条目不再重复列出。这里记的是**没有对应 TODO 条目、但确实做掉的事**：
 
@@ -521,6 +581,9 @@ P0 已经清空了，但**现在所有验证都靠人手动跑**——这轮的�
 | demo 的生成脚本入库（`build_demo.py`：zh/en 两份 demo 源工程入 `examples/demo/` + `--check` 忠实性闸门，重建产物逐字节一致） | 2026-10-14（v2.2.0，第 10 条） |
 | README 体积换算表（14）+ 目录树 probe 分工（16）+ `KIT="${KIT:-…}"`（5 的提示档） | 2026-10-17 |
 | `probe.py` 浏览器输出改临时文件（根治 Chromium 幽灵进程占管道 → 永久挂死，实测 7m20s）；`pitfalls.md` 新增 52–55 条（51→55，分组扩到 A–J） | 2026-10-18（v2.5.0） |
+| **第一梯队 #4**：`CONTRIBUTING.md`（五条纪律 + 改完跑什么 + 要同步哪些文档）+ Issue 双模板（bug 报告必填 `kitpath.py --json`）+ PR 模板；新文档纳入 `check_docs` ①⑤ 并反向注入验证 | 2026-10-20 |
+| **第一梯队 #8**：六个脚本统一 argparse（`build` / `prepare_pdf` / `kitpath` / `check_ui` / `katex_offline` / `check_docs`）；`kitpath.arg_parser()` + `die()` 统一三段式报错；`run_all` 漏传 pdf 打印「三步上手」 | 2026-10-20 |
+| **第一梯队 #9（方案 C 前半）**：`check_ui` ⑮ 组静态兜底（公式配对 / HTML 标签配对 / 目录锚点，与 `check_math.js` ③④ 同口径）；README 补「不装 Node 会少什么」；node 降为可选依赖；反向注入 6/6 | 2026-10-20 |
 
 已完成条目的**实测记录**没有丢：README 相关截图与体积实测在 `README.md`，
 构建纪律在 `SKILL.md`，具体踩坑（含反向测试的记录）在 `references/pitfalls.md`。

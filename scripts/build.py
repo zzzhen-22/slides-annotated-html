@@ -37,6 +37,8 @@ if hasattr(sys.stderr, 'reconfigure'):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, '..', 'assets')
+sys.path.insert(0, HERE)
+import kitpath  # noqa: E402  统一的参数解析与三段式报错（见 kitpath.arg_parser / die）
 
 # 占位符 → 允许出现次数的校验
 REQUIRED = ['__KATEX_CSS__', '__CSS__', '__KATEX_JS__', '__TITLE__', '__BRAND__',
@@ -400,13 +402,25 @@ def collect_anchors(cfg):
 
 # ============================================================ 主流程
 def main():
-    args = list(sys.argv[1:])
-    out_override = None
-    if '--out' in args:
-        i = args.index('--out')
-        out_override = args[i + 1]
-        del args[i:i + 2]
-    cfg_path = os.path.abspath(args[0] if args else 'config.json')
+    ap = kitpath.arg_parser(
+        'build.py',
+        description='把「讲解正文分片 + 离线 KaTeX + 页面缩略图」组装成单个断网可用的 HTML。',
+        epilog='例：\n'
+               '    python build.py config.json\n'
+               '    python build.py config.json --out /tmp/try.html   # 试构建，不动正式产物')
+    ap.add_argument('config', nargs='?', default='config.json', metavar='config.json',
+                    help='项目配置（默认 ./config.json；相对路径按当前目录解析）')
+    ap.add_argument('--out', default=None, metavar='输出路径',
+                    help='覆盖 config.out（试构建用；笔记命名空间仍按 config.out 算，'
+                         '所以试构建不会丢笔记）')
+    a = ap.parse_args()
+    cfg_path = os.path.abspath(a.config)
+    out_override = a.out
+    if not os.path.exists(cfg_path):
+        kitpath.die('找不到配置文件：%s' % cfg_path,
+                    '路径不对，或还没建项目骨架（config.json 由 init_project.py 生成）。',
+                    ['建骨架：python scripts/init_project.py <课件.pdf> --out <项目目录>',
+                     '再构建：python scripts/build.py <项目目录>/config.json'])
     root = os.path.dirname(cfg_path)
     cfg = json.load(open(cfg_path, encoding='utf-8'))
     # 命名空间种子用「配置里的输出路径」而不是 --out 覆盖值，

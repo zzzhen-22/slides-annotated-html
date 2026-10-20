@@ -56,13 +56,27 @@ python scripts/run_all.py examples/sample-lecture.pdf --out demo   # ③ one-sho
 ```
 
 - Step ② prints a four-item check; anything missing comes with a copy-paste fix.
-- Step ③ needs Chrome / Edge for headless checks and screenshots (auto-detected, or set `KIT_BROWSER`). Node is optional — only `check_math.js` uses it, and the step is skipped if absent.
+- Step ③ needs Chrome / Edge for headless checks and screenshots (auto-detected, or set `KIT_BROWSER`). Node is optional — only `check_math.js` uses it, and the step is skipped if absent (see "Without Node" below).
 
 | Dependency | Used for | Notes |
 |---|---|---|
 | Python 3.9+ | all scripts | see `requirements.txt`; missing packages produce a copy-paste pip command |
 | Chrome / Edge | headless checks & screenshots | auto-detect: env var → PATH → common install locations |
-| Node.js (optional) | `check_math.js` formula check | the only place node is used; skipped if absent |
+| Node.js (optional) | `check_math.js` formula **syntax** check | the only place node is used; skipped if absent — group ⑮ of `check_ui.py` statically covers the rest |
+
+### Without Node
+
+Everything still runs; you lose exactly one thing — whether a formula's **syntax** is valid
+KaTeX (missing arguments, unknown commands, `strict` violations). Step ④ is reported as skipped
+and the pipeline continues.
+
+Every check in `check_math.js` that does **not** need rendering is covered by group ⑮ of
+`check_ui.py` (pure Python, runs with step ⑤): formula tag pairing / brace balance /
+`\left`·`\right` pairing / `\begin`·`\end` pairing, HTML tag pairing, and TOC anchors.
+Both checkers use the same definitions, so they agree on the same product.
+
+`kitpath.py` lists node as an **optional** dependency — its absence does not turn the
+environment self-check red.
 
 You get: `config.json`, `content/` skeletons with TODO markers, `_extract/` page images + thumbnails, `_katex/` offline KaTeX (bundled, no download), the single-file HTML plus a per-project `README`. Step ⑦ reports **pending pages N / M — target 0**.
 

@@ -38,6 +38,8 @@ if hasattr(sys.stderr, 'reconfigure'):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 KIT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+import kitpath  # noqa: E402  统一的参数解析与三段式报错
 
 # 中文数字 → int（只覆盖 1–10，够用；写多了反而是负担）
 CN_NUM = {'一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
@@ -75,7 +77,9 @@ def to_int(tok):
 
 
 # ────────────────────────────────────────────────────────────── ① 文件存在性
-DOCS = ['README.md', 'README.en.md', 'SKILL.md', 'docs/workflow.md']
+# CONTRIBUTING.md 也纳入：它是贡献者的入口，里面引用的脚本/模板一旦改名，
+# 新人照着敲的第一条命令就会失败 —— 而这条错误只有机器扫得出来。
+DOCS = ['README.md', 'README.en.md', 'SKILL.md', 'docs/workflow.md', 'CONTRIBUTING.md']
 
 # **只校验带路径分隔符的引用**（scripts/x.py、templates/y.js…）。
 # 为什么不校验裸文件名：文档里大量裸文件名是「概念名」而非仓库文件
@@ -95,7 +99,7 @@ def check_files_exist():
         for name in sorted(set(CODE_REF.findall(read(doc)))):
             if not os.path.exists(os.path.join(KIT, name)):
                 missing.append('%s → %s' % (doc, name))
-    chk('四份文档提到的带路径文件全部存在', not missing,
+    chk('文档提到的带路径文件全部存在', not missing,
         '%d 处缺失' % len(missing))
     for m in missing[:12]:
         print('      ✘ %s' % m)
@@ -288,7 +292,8 @@ def check_pitfalls():
     # 扫描面含 docs/ 下的设计稿——2026-10-15 发现 v2-course-collection.md 头部仍写
     # 「（48 条）」，而当时已是 51 条：它不在原来的 5 文件名单里，所以一直没被拦住。
     count_bad = []
-    count_srcs = ['README.md', 'README.en.md', 'SKILL.md', 'docs/workflow.md', 'TODO.md']
+    count_srcs = ['README.md', 'README.en.md', 'SKILL.md', 'docs/workflow.md',
+                  'CONTRIBUTING.md', 'TODO.md']
     dd = os.path.join(KIT, 'docs')
     if os.path.isdir(dd):
         count_srcs += ['docs/' + f for f in sorted(os.listdir(dd)) if f.endswith('.md')]
@@ -404,7 +409,16 @@ def check_tree():
 
 
 def main():
-    verbose = '-v' in sys.argv or '--verbose' in sys.argv
+    ap = kitpath.arg_parser(
+        'check_docs.py',
+        description='套件自身的文档口径体检（7 组，不依赖浏览器 / 产物 / node）。',
+        epilog='改完 README / SKILL / TODO / CONTRIBUTING 必跑；秒级。\n'
+               '例：python scripts/check_docs.py\n'
+               '    python scripts/check_docs.py -v   # 额外打印派生出的口径明细')
+    ap.add_argument('-v', '--verbose', action='store_true',
+                    help='额外打印派生出的口径明细（调口径时用）')
+    a = ap.parse_args()
+    verbose = a.verbose
     if verbose:
         notes.append('check_ui 声明的交互：%s' % '、'.join(read_interaction_items()))
     print('套件文档口径体检 —— %s' % KIT)

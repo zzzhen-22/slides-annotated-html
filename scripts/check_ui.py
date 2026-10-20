@@ -14,11 +14,15 @@
     ⑥ 正文搜索：搜索框与结果面板、索引惰性建、临时高亮与笔记高亮的类名隔离、
        清空时拆除并 normalize、↑↓/Enter/Esc 键盘路径、搜索框是否真的接到 Find
 
-（⑦–⑬ 是「结构安全 / 附加功能」类检查，不计入上面的「六项交互」——
+（⑦–⑮ 是「结构安全 / 附加功能」类检查，不计入上面的「六项交互」——
    它们的编号延续历史顺序：⑦ 目录滚动、⑧ 标记上色、⑨ 位置标签、
    ⑩ 字号调节、⑪ 正文搜索的补充、⑫ 代码块的标题栏与复制按钮、
    ⑬ 课程返回入口（可选注入，无此元素是合法形态 → 整组 SKIP）、
-   ⑭ 关于面板（顶栏入口 + 使用说明 + 生成工具；**非条件式**，每份产物都该有）。）
+   ⑭ 关于面板（顶栏入口 + 使用说明 + 生成工具；**非条件式**，每份产物都该有）、
+   ⑮ 静态兜底（**不需要 node**）：公式标签闭合 / 花括号 / \\left·\\right /
+      \\begin·\\end ＋ HTML 标签配对 ＋ 目录锚点。公式部分在没有公式时 SKIP
+      （合法形态），标签与锚点照常查 —— 它是 `check_math.js` 的降级替身，
+      唯一补不上的是「公式语法能不能渲染」。）
 
 浏览器失灵时（见 references/pitfalls.md 第 29 条）用它兜底，
 能覆盖"结构对不对"，覆盖不了"长得对不对"。
@@ -36,12 +40,25 @@ if hasattr(sys.stderr, 'reconfigure'):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, '..', 'assets')
+sys.path.insert(0, HERE)
+import kitpath  # noqa: E402  统一的参数解析与三段式报错
 
 
 def main():
-    if len(sys.argv) < 2:
-        raise SystemExit(__doc__)
-    path = os.path.abspath(sys.argv[1])
+    ap = kitpath.arg_parser(
+        'check_ui.py',
+        description='产物的静态体检（不依赖浏览器）：交互接线 + 结构安全 + 公式静态校验。',
+        epilog='例：python scripts/check_ui.py "<输出.html>"\n'
+               '它覆盖「结构对不对」，覆盖不了「长得对不对」—— 长相靠 shot.py 截图。')
+    ap.add_argument('path', metavar='输出.html', help='要体检的单文件产物')
+    a = ap.parse_args()
+
+    path = os.path.abspath(a.path)
+    if not os.path.exists(path):
+        kitpath.die('找不到要体检的产物：%s' % path,
+                    '路径不对，或还没构建（产物由 build.py 生成）。',
+                    ['先构建：  python scripts/build.py <项目目录>/config.json',
+                     '再体检：  python scripts/check_ui.py "<输出.html>"'])
     html = open(path, encoding='utf-8').read()
     css = '\n'.join(open(os.path.join(ASSETS, f), encoding='utf-8').read()
                     for f in ('site.css', 'site.extra.css')
@@ -369,6 +386,95 @@ def main():
         '.ab-mask' in css and '.ab-card' in css)
     chk('JS 有 About 模块（开 / 关 / Esc 接线）',
         'var About =' in js and 'About.isOpen()' in js and 'About.init();' in js)
+
+    print()
+    print('=== ⑮ 静态兜底：公式配对 / 标签配对 / 目录锚点（不需要 node）===')
+    # 为什么单列一组：`check_math.js` 需要 node，而 node 是本套件**唯一的可选外部依赖**
+    # （其余链路全是 Python + 浏览器）。不装 node 时 ④ 整步跳过，公式写错
+    # （花括号没闭合、\left 没配对）会一路带进成品，只在浏览器里显示成红色报错文本。
+    # 这里把 check_math.js 里「不需要渲染就能判定」的三块补上，让缺 node 的人也有兜底：
+    #   A 公式结构配对   B HTML 标签配对（check_math ③ 同口径）
+    #   C 目录锚点（check_math ④ 同口径）
+    # 分工要说清楚：语法**能不能渲染**只有 KaTeX 说了算（那一步仍要 node）；
+    # 这里查的是**结构与配对**，命中即必然出问题，不存在误报。
+    # 与 ⑫ 同一原则：没有公式的课件完全合法 → 公式那部分 SKIP，不能报 FAIL。
+    MATH_OPEN = re.compile(r'<script type="math/tex[^"]*">')
+    MATH_RE = re.compile(r'<script type="math/tex[^"]*">([\s\S]*?)</script>')
+    CJK_RE = re.compile(r'[\u2e80-\u9fff\uff00-\uffef\u3000-\u303f]')
+    n_math_open = len(MATH_OPEN.findall(html))
+    maths = MATH_RE.findall(html)
+
+    def brief(ids):
+        """把「第几条」列表压成一行，超过 8 个就省略（避免刷屏）。"""
+        if not ids:
+            return ''
+        return '第 %s 条%s' % ('、'.join(str(i) for i in ids[:8]),
+                              ' …（共 %d 条）' % len(ids) if len(ids) > 8 else '')
+
+    if n_math_open == 0:
+        print('%-52s %s %s' % ('（本文档没有公式，公式三项跳过）', 'SKIP', '0 条'))
+    else:
+        chk('公式 script 标签成对闭合', n_math_open == len(maths),
+            '%d 开标签 / %d 闭合' % (n_math_open, len(maths)))
+        bad_brace, bad_left, bad_env, cjk = [], [], [], []
+        for idx, src in enumerate(maths, 1):
+            plain = re.sub(r'\\[{}]', '', src)      # \{ \} 是字面花括号，不参与配对
+            if plain.count('{') != plain.count('}'):
+                bad_brace.append(idx)
+            # `\left(` / `\right)` 必须成对；负向断言是为了避开 \leftarrow / \rightarrow
+            if (len(re.findall(r'\\left(?![a-zA-Z])', src))
+                    != len(re.findall(r'\\right(?![a-zA-Z])', src))):
+                bad_left.append(idx)
+            envs = {}
+            for kind, name in re.findall(r'\\(begin|end)\s*\{([^}]*)\}', src):
+                envs.setdefault(name, [0, 0])[0 if kind == 'begin' else 1] += 1
+            if any(b != e for b, e in envs.values()):
+                bad_env.append(idx)
+            if CJK_RE.search(src):
+                cjk.append(idx)
+        chk('每条公式的花括号平衡', not bad_brace, brief(bad_brace))
+        chk('每条公式的 \\left / \\right 配对', not bad_left, brief(bad_left))
+        chk('每条公式的 \\begin / \\end 配对', not bad_env, brief(bad_env))
+        # CJK 不报 FAIL：check_math.js 也只统计、不判死（math/tex 里出现中文多数是
+        # 手滑，但个别场景是有意用 \text{中文}，KaTeX 用兜底字体仍能显示）。
+        if cjk:
+            print('  含 CJK 的公式 %d 条（KaTeX 字体不含中文，会走兜底字体、字距错乱）：%s'
+                  % (len(cjk), brief(cjk)))
+
+    # ---- B. HTML 标签配对（与 check_math.js ③ **同口径**：先按 body 切片，
+    # 再挖掉注释，否则注释里的字面标签（「插到 </section> 之前」）会造成假性不平衡，
+    # 见 pitfalls 第 18 条。tags 列表也照抄 —— 刻意不含 script：内联的 katex.min.js
+    # 里满是 `if(a){` 这类子串，按标签名数必然误报。）
+    body_s = html.find('<body')
+    body_e = html.find('<!--BODY-END')
+    if body_e < 0:
+        body_e = html.find('<div class="lightbox"')      # 兼容旧模板
+    tag_body = html[body_s:body_e] if 0 <= body_s < body_e else html
+    tag_body, n_cmt = re.subn(r'<!--[\s\S]*?-->', '', tag_body)
+    TAG_NAMES = ['section', 'div', 'p', 'table', 'thead', 'tbody', 'tr', 'td', 'th',
+                 'details', 'summary', 'figure', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4',
+                 'aside', 'main', 'nav', 'span', 'b', 'em', 'a', 'code', 'button',
+                 'textarea', 'mark', 'pre']
+    unbalanced = []
+    for t in TAG_NAMES:
+        o = len(re.findall(r'<%s[\s>]' % t, tag_body))
+        c = len(re.findall(r'</%s>' % t, tag_body))
+        if o != c:
+            unbalanced.append('%s(开%d/闭%d)' % (t, o, c))
+    chk('HTML 标签配对（已排除 %d 段注释）' % n_cmt, not unbalanced,
+        '；'.join(unbalanced[:4]))
+
+    # ---- C. 目录锚点（check_math.js ④ 同口径）
+    nav_s, nav_e2 = html.find('<nav'), html.find('</nav>')
+    if not (0 <= nav_s < nav_e2):
+        print('%-52s %s %s' % ('（没有 <nav>，目录锚点跳过）', 'SKIP', ''))
+    else:
+        nav_html = html[nav_s:nav_e2]
+        hrefs = re.findall(r'href="(#[^"]+)"', nav_html)
+        miss_anchor = [h for h in hrefs if ('id="%s"' % h[1:]) not in html]
+        chk('目录锚点都存在', not miss_anchor,
+            '%d 条链接' % len(hrefs) if not miss_anchor
+            else '缺 %d 个：%s' % (len(miss_anchor), '、'.join(miss_anchor[:6])))
 
     print()
     print('=== 数量一致性 ===')

@@ -5,6 +5,9 @@
 用法：
     python prepare_pdf.py <pdf> <输出目录> [缩略图宽度] [缩略图质量]
 
+    位置参数按上面的顺序解析（`init_project.py` 生成的重建命令依赖它，
+    所以永远是 `pdf outdir [宽] [质]`，不要调换）。`--help` 里有完整说明。
+
 产物（输出目录下）：
     page-01.png ...            逐页整图渲染，**给 agent 自己逐页看**（这一步不能省）
     thumb_01.jpg ...           压缩后的缩略图，build.py 会 base64 内嵌
@@ -31,12 +34,26 @@ from PIL import Image  # noqa: E402
 
 
 def main():
-    if len(sys.argv) < 3:
-        raise SystemExit(__doc__)
-    pdf = os.path.abspath(sys.argv[1])
-    outdir = os.path.abspath(sys.argv[2])
-    thumb_w = int(sys.argv[3]) if len(sys.argv) > 3 else 860
-    quality = int(sys.argv[4]) if len(sys.argv) > 4 else 75
+    ap = kitpath.arg_parser(
+        'prepare_pdf.py',
+        description='把课件 PDF 渲染成「逐页大图 + 内嵌缩略图 + 文字层」，供逐页目视核对。',
+        epilog='产物：page-NN.png（逐页大图）/ thumb_NN.jpg（内嵌用）/ raw.txt / chroma.txt / report.txt\n'
+               '位置参数顺序固定为 pdf outdir [宽] [质]（init_project.py 生成的重建命令依赖它）。')
+    ap.add_argument('pdf', metavar='课件.pdf')
+    ap.add_argument('outdir', metavar='输出目录')
+    ap.add_argument('thumb_w', nargs='?', type=int, default=860, metavar='缩略图宽度',
+                    help='缩略图宽度像素（默认 860；影响产物体积）')
+    ap.add_argument('quality', nargs='?', type=int, default=75, metavar='JPEG质量',
+                    help='缩略图 JPEG 质量（默认 75）')
+    a = ap.parse_args()
+
+    pdf = os.path.abspath(a.pdf)
+    outdir = os.path.abspath(a.outdir)
+    thumb_w, quality = a.thumb_w, a.quality
+    if not os.path.exists(pdf):
+        kitpath.die('找不到课件文件：%s' % pdf,
+                    '路径不对，或文件已经被挪走/改名。',
+                    '确认路径后重跑：python scripts/prepare_pdf.py "<课件.pdf>" "<输出目录>"')
     os.makedirs(outdir, exist_ok=True)
 
     doc = pymupdf.open(pdf)

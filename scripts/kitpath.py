@@ -13,6 +13,12 @@
     · 本模块**只依赖标准库**，可被任何脚本 `import kitpath`。
     · 所有探测函数返回**绝对路径字符串或 None**，不抛异常（由调用方决定怎么报错）。
     · 不假设 Windows —— 非 Windows 走 PATH / 常见 Unix 位置。
+    · 顺带提供两个全套件共用的东西：`arg_parser()`（统一 argparse 报错口径）与
+      `die()`（三段式致命错误：问题 / 原因 / 可直接照抄的命令）。
+
+直接运行即自查（`--json` 输出机器可读版，贴 Issue 用；`--quiet` 只给退出码）：
+    python kitpath.py
+    python kitpath.py --json
 """
 import os
 import shutil
@@ -227,13 +233,67 @@ def require_deps(*mods):
     raise SystemExit('\n'.join(lines))
 
 
+# ----------------------------------------------------------------- 统一的报错口径
+def die(problem, cause=None, fix=None, code=1):
+    """三段式致命错误：**问题 + 原因 + 可直接照抄的解决命令**。
+
+    套件里所有「用户自己能治好」的错误都走这里，而不是裸 `raise SystemExit('xx')`
+    （那句话既不解释为什么，也不告诉人下一步敲什么），更不该让 traceback 糊到脸上。
+    `require_deps()` 的输出早就是这个风格，本函数把它固定成约定：
+
+        【问题】找不到配置文件：/path/config.json
+        【原因】路径不对，或还没跑 init_project.py 建骨架。
+        【解决】
+                python scripts/init_project.py <课件.pdf> --out <项目目录>
+
+    `fix` 可以给多行（列表），一条命令一行。信息写 stderr、退出码自己定
+    （参数错误照 argparse 惯例用 2）。
+    """
+    lines = ['', '【问题】' + problem]
+    if cause:
+        lines.append('【原因】' + cause)
+    if fix:
+        fixes = fix if isinstance(fix, (list, tuple)) else [fix]
+        lines.append('【解决】')
+        for one in fixes:
+            lines.append('        ' + one)
+    sys.stderr.write('\n'.join(lines) + '\n')
+    raise SystemExit(code)
+
+
+def arg_parser(prog, description=None, epilog=None):
+    """统一的参数解析器：错误信息走三段式，而不是 argparse 的原始报错风格。
+
+    直接 `argparse.ArgumentParser` 的问题是 `error: the following arguments are
+    required: pdf` —— 人话半句，且不告诉人「怎么知道自己该传什么」。这里把
+    `error()` 改写成「三段式 + 一条 --help 命令」，退出码仍是 argparse 惯例的 2。
+
+    `description` / `epilog` 都按原文输出（RawDescriptionHelpFormatter），
+    所以多行排版（用法示例、产物清单）不会被 argparse 折成一坨。
+    """
+    import argparse
+
+    class _Parser(argparse.ArgumentParser):
+        def error(self, message):
+            self.print_usage(sys.stderr)
+            die('参数不对 —— %s' % message,
+                '这条命令的参数与脚本期望的不一致（拼错了选项名，或漏了必填参数）。',
+                '看完整参数说明：python %s --help' % os.path.basename(self.prog),
+                code=2)
+
+    kw = dict(prog=prog, description=description,
+              formatter_class=argparse.RawDescriptionHelpFormatter)
+    if epilog:
+        kw['epilog'] = epilog      # argparse 默认把 epilog 放在参数表之后
+    return _Parser(**kw)
+
+
 # ----------------------------------------------------------------- 自查
 def report():
     """打印所有探测结果，便于换机器后先跑一次确认环境。"""
     rows = [
         ('套件目录 KIT', KIT),
         ('python', python_exe()),
-        ('node', node_exe()),
         ('浏览器', browser_exe(required=False)),
     ]
     print('=== 套件路径自查 ===')
@@ -249,8 +309,52 @@ def report():
     if bad_dep:
         print('  提示：缺依赖时 init_project / prepare_pdf / selftest 会直接退出。')
 
+    # node 是**可选依赖**：只影响 check_math.js 的公式语法自检，其余链路全是
+    # Python + 浏览器。所以它缺失只提示、不改变退出码 —— 早先把它算进
+    # `all(rows)` 里，没装 node 的人跑自查会得到一个「环境不合格」的红灯，
+    # 而实际上他只是少了公式自检（README「不装 Node 会少什么」一节说明补偿手段）。
+    node = node_exe()
+    print('=== 可选依赖 ===')
+    print('  %-14s %s' % ('node', '✔ 已安装（公式语法自检可用）' if node
+                          else '✘ 未安装（只影响 ④ 公式语法自检，其余照常；'
+                               '静态兜底见 check_ui.py ⑮ 组）'))
+
     return all(v for _, v in rows) and not bad_dep
 
 
+def report_json():
+    """机器可读版自查（贴 Issue 用）。字段与 report() 一一对应。"""
+    import json
+    data = {
+        'kit': KIT,
+        'python': python_exe(),
+        'node': node_exe(),
+        'browser': browser_exe(required=False),
+        'deps': [{'module': m, 'ok': ok, 'install': cmd, 'why': why}
+                 for m, ok, cmd, why in dep_status()],
+    }
+    data['ok'] = bool(data['browser']) and all(d['ok'] for d in data['deps'])
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+    return data['ok']
+
+
+def main():
+    ap = arg_parser(
+        'kitpath.py',
+        description='套件环境自查：套件路径 / python / 浏览器（必需）+ node（可选）+ Python 依赖。',
+        epilog='换机器后先跑一次。提 Issue 时贴 --json 的输出最省事：\n'
+               '    python scripts/kitpath.py --json')
+    ap.add_argument('--json', action='store_true', help='输出机器可读 JSON（贴 Issue 用）')
+    ap.add_argument('--quiet', action='store_true', help='不打印，只用退出码表达结果（脚本里判断环境用）')
+    a = ap.parse_args()
+    if a.quiet:
+        ok = bool(browser_exe(required=False)) and all(d[1] for d in dep_status())
+    elif a.json:
+        ok = report_json()
+    else:
+        ok = report()
+    return 0 if ok else 1
+
+
 if __name__ == '__main__':
-    sys.exit(0 if report() else 1)
+    sys.exit(main())
