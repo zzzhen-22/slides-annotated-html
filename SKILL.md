@@ -74,7 +74,19 @@ PY="$(command -v python || command -v python3)"
 ```
 
 **② 是硬闸门，不许跳过：**
-1. 先渲染逐页图（`prepare_pdf.py`，见上一步命令），再逐页 Read `_extract/page-NN.png`；
+1. 先渲染逐页图（`prepare_pdf.py`，见上一步命令），**再拼联系表**，
+   然后用「两级看图」把整份课件过一遍：
+   ```bash
+   "$PY" "$KIT/scripts/contact_sheet.py" "<项目目录>/_extract"        # 默认 3×3，90 页 → 10 张
+   ```
+   - **第一级（扫结构）**：一次 Read 一张 `_extract/sheets/sheet-NN.png`，
+     一张 9 页，标题、要点、图和公式的**位置**都看得清，足够定分段与页标题；
+   - **第二级（抠细节）**：只有需要**逐字核对公式 / 抄代码 / 辨认小字**的那几页，
+     才单独 Read `_extract/page-NN.png`。
+   - **不要逐页连读几十张 `page-NN.png`。** 这类调用的参数只差一个数字，宿主端会把它们
+     判成「同一个操作在重复执行」，于是一次次要求人工确认，把整轮看图中断成碎片。
+     拼表把 90 次读图压成 10 次，从形态上绕开这个判定（见 pitfalls 第 56 条）。
+   - 需要放大某几页时用 `--cols 2 --rows 2 --cell 760`，四页一张、每格更宽。
    （① 为省资源默认不渲染图——但**看图这一步不能省**，文字层顺序 ≠ 视觉顺序，见 pitfalls §40）
 2. 逐条处理 outline 里的 `warnings`——存疑页**必须**看图复核，不许当噪音忽略；
 3. `sections[].name` 改成语义段名，`sections[].toc_label` 填「N · 段名（P起–P止）」；

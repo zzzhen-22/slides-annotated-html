@@ -225,6 +225,7 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 │   ├─ course_check.py      ← 【课程层】课程层体检：跨讲链接/术语一致/伏笔指向/要点锚点/索引哈希
 │   ├─ run_course.py        ← 【课程层】主入口：一键同步一门课（init→index→brief→site→check→probe）
 │   ├─ prepare_pdf.py       ← PDF → 逐页 png + 缩略图 + 文字层
+│   ├─ contact_sheet.py     ← 把逐页图拼成「联系表」（9–12 页一张），看图从 N 次 Read 降到 N/9 次
 │   ├─ katex_offline.py     ← 制作离线 KaTeX（一次即可，可跨项目复用）
 │   ├─ build.py             ← 组装单文件（可用 0 命令行参数：python build.py config.json）
 │   ├─ build_demo.py        ← 重建仓库里那两份在线 demo（源工程在 examples/demo/）
@@ -262,7 +263,7 @@ python scripts/course_check.py "<课程目录>"                    # 课程层�
 ├─ examples/                ← sample-lecture.pdf 示例课件（三步上手 ③ 的输入）、config 样例、逐页区块模板
 │   └─ demo/                ← 两份在线 demo 的源工程（zh/ + en/，见 demo/README.md）
 ├─ references/
-│   ├─ pitfalls.md          ← 踩坑清单（55 条，按「频率 × 隐蔽度」排序）
+│   ├─ pitfalls.md          ← 踩坑清单（56 条，按「频率 × 隐蔽度」排序）
 │   └─ content-quality.md   ← 讲解内容的质量标准
 ├─ vendor/katex/            ← 离线 KaTeX（MIT，见下方致谢）
 ├─ docs/
@@ -366,7 +367,7 @@ python scripts/build_demo.py --check   # 只校验三份 demo 能被重建（改
 - **不许写死本机路径**。校验：`grep -rn "/home/\|/Users/\|C:/Users/" scripts/ assets/ templates/` 应当无命中。
 - **模板注释里不许出现字面标签**。`build.py` 用非贪婪正则匹配整段区块，注释里的假 `<section>` 会让它提前收尾，症状是「图在文件里、但 DOM 里查不到」，极难排查。
 
-动笔前先扫一遍 `references/pitfalls.md`（55 条，每条都对应一个真实事故）。
+动笔前先扫一遍 `references/pitfalls.md`（56 条，每条都对应一个真实事故）。
 
 ---
 

@@ -19,7 +19,7 @@
 | 项目 | 现状 |
 |---|---|
 | 仓库 | 103 个文件（全部已跟踪）｜ 约 14 MB（不含 `.git`）｜ 49 个提交，0 待提交（2026-10-20 第一梯队：`CONTRIBUTING.md` + Issue/PR 模板 / 六个脚本统一 argparse / 去 Node 依赖的方案 C 前半） |
-| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`CONTRIBUTING.md`（贡献者：五条纪律 / 改完跑什么 / 要同步哪些文档）、`references/pitfalls.md`（**55 条**，三段式、按对象分 A–J 十组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
+| 文档 | `README.md`（中文）、`README.en.md`（英文精简版）、`SKILL.md`（面向 agent）、`docs/workflow.md`（人类向流程）、`CONTRIBUTING.md`（贡献者：五条纪律 / 改完跑什么 / 要同步哪些文档）、`references/pitfalls.md`（**56 条**，三段式、按对象分 A–J 十组）、`references/content-quality.md`、`CHANGELOG.md`、`docs/v2-course-collection.md`（v2 设计稿） |
 | 依赖面 | **Python**（`pymupdf` + `pillow`）与**浏览器**必需；**node 可选** —— 唯一用途是 `check_math.js` 的公式语法自检，缺了损失一项，静态兜底见 `check_ui.py` ⑮（2026-10-20） |
 | 图片资源 | ✅ 4 张（`docs/images/`：hero / overview / notes / course）——取景参数已固化在 `scripts/shoot_previews.py`，改完 demo 重跑即可（2026-10-16 起脚本化；2026-10-17 学习进度落地后已按新版重截） |
 | 示例产物 | ✅ 在线 demo（`docs/demo/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo/>；**英文版**（`docs/demo-en/index.html`，1.22 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-en/>；**课程合集版**（`docs/demo-course/index.html`，0.68 MB）→ <https://zzzhen-22.github.io/slides-annotated-html/demo-course/>。三份都能由 `scripts/build_demo.py` 一键重建，源工程在 `examples/demo/`（课程 demo 的两讲是两份单讲 demo 的**预构建副本**） |
